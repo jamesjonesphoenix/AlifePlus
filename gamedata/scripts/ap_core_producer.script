@@ -149,7 +149,7 @@ local function _try_publish(on_map, result, trace, category, cause_type)
     result._trace = trace
     result.cause_type = cause_type
     ap_core_util.event_publish(result.cause, result)
-    if stats_collecting() then stats.inc_causes(cause_type) end
+    if stats_collecting() then stats.inc_pub(cause_type) end
     ap_core_debug.debug("[PRODUCER] PUBLISHED cause=%s category=%s sq=%s on_map=%s level=%s",
         result.cause, category, result.squad_id, on_map, result.level_id)
 end
@@ -160,17 +160,29 @@ end
 --- the picked cause; producer calls handler directly.
 --- @param handlers table Indexed array of registered handlers for this callback
 --- @param on_map boolean|nil On-map status for ratio logging
+-- Run one reactive handler; publish on cause, classify on non-publishing rejection.
+-- @complexity O(1) | 0 luabind (delegates to handler)
+local function _try_one_reactive(on_map, entry, args, sc)
+    local trace = ap_core_debug.trace()
+    local result = entry.handler(trace, unpack(args))
+    if sc then sx.causes = sx.causes + 1 end
+    if not result then return end
+    if result.cause then
+        _try_publish(on_map, result, trace, entry.category, entry.cause_type)
+        return
+    end
+    if sc then stats.classify_cause(result, false) end
+end
+
 local function _eval_reactive_handlers(handlers, on_map, ...)
     -- Lua 5.1 vararg fan-out: we dispatch the same ... to N handlers in the loop below.
     -- Capturing {...} once + unpack(args) per handler is the only way to preserve args
     -- across loop iterations. Allocation is ~50us/sec in dense combat; acceptable cost
     -- for reactive pipeline fan-out.
     local args = {...}
+    local sc = stats_collecting()
     for i = 1, #handlers do
-        local entry = handlers[i]
-        local trace = ap_core_debug.trace()
-        local result = entry.handler(trace, unpack(args))
-        if result and result.cause then _try_publish(on_map, result, trace, entry.category, entry.cause_type) end
+        _try_one_reactive(on_map, handlers[i], args, sc)
     end
 end
 
@@ -182,20 +194,30 @@ local math_random = math.random
 --- Cascade through radiant generators in random order. Stop on first publish.
 --- Per-cause check budget is reset here and consumed inside generators per cause attempt.
 --- Predicates self-gate against their per-category cause-rate budget; producer doesn't.
+-- Run one radiant cascade entry; publish on cause (caller breaks), classify on non-publishing.
+-- @complexity O(1) | 0 luabind (delegates to handler)
+local function _try_one_radiant(on_map, squad, entry, sc)
+    local trace = ap_core_debug.trace()
+    local result = entry.handler(trace, squad)
+    if sc then sr.causes = sr.causes + 1 end
+    if not result then return false end
+    if result.cause then
+        _try_publish(on_map, result, trace, entry.category, entry.cause_type)
+        return true
+    end
+    if sc then stats.classify_cause(result, true) end
+    return false
+end
+
 local function _eval_radiant_cascade(on_map, squad)
     local cascade_size = #_cascade_buf
     for i = cascade_size, 2, -1 do
         local j = math_random(i)
         if j ~= i then _cascade_buf[i], _cascade_buf[j] = _cascade_buf[j], _cascade_buf[i] end
     end
+    local sc = stats_collecting()
     for i = 1, cascade_size do
-        local entry = _cascade_buf[i]
-        local trace = ap_core_debug.trace()
-        local result = entry.handler(trace, squad)
-        if result and result.cause then
-            _try_publish(on_map, result, trace, entry.category, entry.cause_type)
-            break
-        end
+        if _try_one_radiant(on_map, squad, _cascade_buf[i], sc) then break end
     end
 end
 
