@@ -39,16 +39,6 @@ local PACER_1_INTERVAL = 0.1
 --- PACER_2: budget limiter (cfg.distributor_interval_sec). Only eligible squads consume triggers.
 local _next_pacer2 = 0
 
---- Per-tick cause-check budget. One slot consumed per cause attempt inside any generator.
---- Reset at the top of each radiant cascade. Generators call take_check_slot() before each
---- per-cause attempt (the function that runs RULES + optional SCAN for one cause).
-local _check_budget = xttltable.create_budget(ap_core_const.RADIANT_MAX_CHECKS_PER_TICK)
-
---- Take one slot from the per-tick check budget. Returns true if available, false if exhausted.
-function take_check_slot()
-    return _check_budget:take()
-end
-
 --- GATE: RATIO (radiant 3/4, reactive 2/3)
 --- @complexity O(1) | 0 luabind
 --- @param on_map boolean true = on-map, false = off-map
@@ -193,7 +183,6 @@ local math_random = math.random
 --- Per-cause check budget is reset here and consumed inside generators per cause attempt.
 --- Predicates self-gate against their per-category cause-rate budget; producer doesn't.
 local function _eval_radiant_cascade(on_map, squad)
-    _check_budget:reset()
     local cascade_size = #_cascade_buf
     for i = cascade_size, 2, -1 do
         local j = math_random(i)

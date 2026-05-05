@@ -8,6 +8,8 @@ local CAUSE_TYPE = ap_core_const.CAUSE_TYPE
 local CAUSE_CATEGORY = ap_ext_const.CAUSE_CATEGORY
 local CATEGORY = CAUSE_CATEGORY.NEEDS
 local CAP_KEY = "cause_max_needs"
+local SCAN_KEY = "scan_radiant"
+local SCAN_MAX = 5
 local RESULT = ap_core_const.RESULT
 local REASON = ap_core_const.REASON
 local RANGE_RADIO = ap_core_const.RANGE_RADIO
@@ -110,11 +112,13 @@ local function _try_cause(trace, squad, level_id, entry)
         and ap_ext_util.check_alignment(entry.alignment, squad.player_id)
         and ap_ext_util.check_personality(entry.personality, squad.player_id, {
             name = entry.name,
-        }) then
+        })
+        and ap_core_limiter.check_cause_rate_limit(SCAN_KEY, SCAN_MAX) then
         local filter = _build_filter(entry, squad.player_id)
         smart = ap_core_util.find_smart_observed(trace, squad.position, {
             level_id = level_id, filter = filter, max_distance = RANGE_RADIO,
         })
+        if smart then ap_core_limiter.increment_cause_counter(SCAN_KEY) end
     end
     return smart
 end
@@ -154,7 +158,6 @@ local function _try_need(trace, squad, level_id, overdue_entry)
         if not result and entry.need == need_name
             and cfg["cause_" .. entry.name .. "_enabled"]
             and ap_ext_util.check_alignment(entry.alignment, squad.player_id) then
-            if not ap_core_producer.take_check_slot() then break end
             local smart = _try_cause(trace, squad, level_id, entry)
             if smart then result = _make_result(squad, level_id, overdue_entry, entry, smart) end
         end

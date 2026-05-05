@@ -8,6 +8,8 @@ local CAUSE_TYPE = ap_core_const.CAUSE_TYPE
 local CAUSE_CATEGORY = ap_ext_const.CAUSE_CATEGORY
 local CATEGORY = CAUSE_CATEGORY.OPPORTUNITIES
 local CAP_KEY = "cause_max_opportunities"
+local SCAN_KEY = "scan_radiant"
+local SCAN_MAX = 5
 local RESULT = ap_core_const.RESULT
 local REASON = ap_core_const.REASON
 local RANGE_EYE = ap_core_const.RANGE_EYE
@@ -93,7 +95,6 @@ end
 local function _eligible_conquer(squad, now, level_id, trace)
     if not cfg.cause_area_conquer_enabled then return nil end
     if not _alignment_conquer_human[squad.player_id] then return nil end
-    if not ap_core_producer.take_check_slot() then return nil end
     if not ap_ext_util.is_active_period(squad.player_id) then return nil end
     local elapsed = now - _read_dto_field(squad.id, CONQUER_FIELD, now)
     if elapsed <= cfg.cause_area_conquer_threshold * HOURS_TO_SECONDS then return nil end
@@ -101,9 +102,11 @@ local function _eligible_conquer(squad, now, level_id, trace)
         { name = "area_conquer" }) then
         return nil
     end
+    if not ap_core_limiter.check_cause_rate_limit(SCAN_KEY, SCAN_MAX) then return nil end
     local smart = ap_core_util.find_smart_observed(trace, squad.position,
         { level_id = level_id, filter = _build_conquer_filter(), max_distance = RANGE_EYE })
     if not smart then return nil end
+    ap_core_limiter.increment_cause_counter(SCAN_KEY)
     return {
         cause = CAUSE.AREA_CONQUER,
         squad_id = squad.id,
@@ -119,7 +122,6 @@ end
 local function _eligible_swarm(squad, species, now, level_id, trace)
     if not cfg.cause_area_swarm_enabled then return nil end
     if not _alignment_conquer_mutant[species] then return nil end
-    if not ap_core_producer.take_check_slot() then return nil end
     if not ap_ext_util.is_active_period(species) then return nil end
     local elapsed = now - _read_dto_field(squad.id, SWARM_FIELD, now)
     if elapsed <= cfg.cause_area_swarm_threshold * HOURS_TO_SECONDS then return nil end
@@ -127,9 +129,11 @@ local function _eligible_swarm(squad, species, now, level_id, trace)
         { name = "area_swarm" }) then
         return nil
     end
+    if not ap_core_limiter.check_cause_rate_limit(SCAN_KEY, SCAN_MAX) then return nil end
     local smart = ap_core_util.find_smart_observed(trace, squad.position,
         { level_id = level_id, filter = _build_conquer_filter(), max_distance = RANGE_EYE })
     if not smart then return nil end
+    ap_core_limiter.increment_cause_counter(SCAN_KEY)
     return {
         cause = CAUSE.AREA_SWARM,
         squad_id = squad.id,
@@ -146,7 +150,6 @@ end
 local function _eligible_infest(squad, species, now, level_id, trace)
     if not cfg.cause_area_infest_enabled then return nil end
     if not _alignment_conquer_mutant[species] then return nil end
-    if not ap_core_producer.take_check_slot() then return nil end
     if not ap_ext_util.is_active_period(species) then return nil end
     local elapsed = now - _read_dto_field(squad.id, INFEST_FIELD, now)
     if elapsed <= cfg.cause_area_infest_threshold * HOURS_TO_SECONDS then return nil end
@@ -162,9 +165,11 @@ local function _eligible_infest(squad, species, now, level_id, trace)
         if ap_ext_smart_mutator.is_infested(smart.id) then return false end
         return base_filter(smart)
     end
+    if not ap_core_limiter.check_cause_rate_limit(SCAN_KEY, SCAN_MAX) then return nil end
     local smart = ap_core_util.find_smart_observed(trace, squad.position,
         { level_id = level_id, filter = filter, max_distance = RANGE_EYE })
     if not smart then return nil end
+    ap_core_limiter.increment_cause_counter(SCAN_KEY)
     return {
         cause = CAUSE.AREA_INFEST,
         squad_id = squad.id,

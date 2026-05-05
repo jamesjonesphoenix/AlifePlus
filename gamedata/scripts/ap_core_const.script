@@ -111,9 +111,7 @@ WOUNDED_CALLBACKS = {
 }
 
 --- Pipeline caps (internal tuning, not MCM).
---- RADIANT_MAX_CHECKS_PER_TICK: producer cascade ceiling per tick across all generators.
 --- REACTIVE_MAX_CONSEQUENCES_PER_CAUSE: consumer ceiling on consequences fired per cause publish.
-RADIANT_MAX_CHECKS_PER_TICK = 5
 REACTIVE_MAX_CONSEQUENCES_PER_CAUSE = 5
 
 --- Result codes: consequence handler return values (template method phases)

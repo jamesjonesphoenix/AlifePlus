@@ -8,6 +8,8 @@ local CAUSE_TYPE = ap_core_const.CAUSE_TYPE
 local CAUSE_CATEGORY = ap_ext_const.CAUSE_CATEGORY
 local CATEGORY = CAUSE_CATEGORY.INSTINCTS
 local CAP_KEY = "cause_max_instincts"
+local SCAN_KEY = "scan_radiant"
+local SCAN_MAX = 5
 local RESULT = ap_core_const.RESULT
 local REASON = ap_core_const.REASON
 local RANGE_SCENT = ap_core_const.RANGE_SCENT
@@ -157,7 +159,8 @@ local function _try_cause(trace, squad, level_id, species, entry)
     local personality_ok = ap_ext_util.check_personality(entry.personality, species, {
         name = entry.name,
     })
-    if cfg["cause_" .. entry.name .. "_enabled"] and alignment_ok and personality_ok then
+    if cfg["cause_" .. entry.name .. "_enabled"] and alignment_ok and personality_ok
+        and ap_core_limiter.check_cause_rate_limit(SCAN_KEY, SCAN_MAX) then
         if entry.scan == "scatter" then
             smart = _scatter_smart(trace, squad, level_id, species)
         else
@@ -167,6 +170,7 @@ local function _try_cause(trace, squad, level_id, species, entry)
             opts.filter = filter
             smart = ap_core_util.find_smart_observed(trace, squad.position, opts)
         end
+        if smart then ap_core_limiter.increment_cause_counter(SCAN_KEY) end
     end
     return smart
 end
@@ -193,7 +197,6 @@ local function _try_drive(trace, squad, level_id, species, overdue_entry)
         if not result and entry.drive == drive_name
             and cfg["cause_" .. entry.name .. "_enabled"]
             and ((not entry.alignment) or entry.alignment[species]) then
-            if not ap_core_producer.take_check_slot() then break end
             local smart = _try_cause(trace, squad, level_id, species, entry)
             if smart then result = _make_result(squad, level_id, overdue_entry, entry, smart, species) end
         end
