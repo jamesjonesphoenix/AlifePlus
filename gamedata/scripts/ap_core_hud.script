@@ -326,7 +326,7 @@ local function _on_visibility_timer()
 end
 
 -- HUD layout: { type, label, field, field_x, denom }
--- type: "input" (white, totals), "output" (green, passed), "filter" (red, blocked), "separator" (blank row)
+-- type: "input" (white, totals), "output" (green, passed), "filter" (red, blocked)
 -- field_x: nil = same as field, false = N/A for X, string = different field name for X
 -- denom: filter rows only - the field used as denominator for the % column (R+X summed)
 local _ROWS = {
@@ -336,24 +336,20 @@ local _ROWS = {
     { type = "filter", label = "prot",   field = "protected", field_x = false,   denom = "events" },
     { type = "filter", label = "ratio",  field = "ratio",                        denom = "events" },
     { type = "filter", label = "pacer2", field = "pacer2",    field_x = false,   denom = "events" },
-    { type = "separator" },
     -- Cause stage (causes is total predicate runs, filters count blocked)
     { type = "input",  label = "causes", field = "causes" },
     { type = "filter", label = "rules",  field = "cause_rules",  denom = "causes" },
     { type = "filter", label = "scan",   field = "cause_scan",   denom = "causes" },
     { type = "filter", label = "budget", field = "cause_budget", denom = "causes" },
-    { type = "separator" },
     -- Publish/dispatch stage (pub is published causes, cap/bucket count blocked at consumer entry)
     { type = "output", label = "pub",    field = "pub" },
     { type = "filter", label = "cap",    field = "csq_cap",    field_x = false, denom = "pub" },
     { type = "filter", label = "bucket", field = "csq_bucket",                  denom = "pub" },
-    { type = "separator" },
     -- Classify stage (csqs is handlers actually invoked, filters count blocked)
     { type = "input",  label = "csqs",   field = "_csq_tried" },
     { type = "filter", label = "rules",  field = "csq_rules",  denom = "_csq_tried" },
     { type = "filter", label = "scan",   field = "csq_scan",   denom = "_csq_tried" },
     { type = "filter", label = "action", field = "csq_action", denom = "_csq_tried" },
-    { type = "separator" },
     -- Final (exec is successful consequences)
     { type = "output", label = "exec",   field = "consequences" },
 }
@@ -411,20 +407,17 @@ function UIStatsHUD:__init() super()
         filter = { clr_filter_lbl, clr_filter_val },
     }
 
-    -- Data rows (separator rows reserve vertical space, render nothing)
     self._entries = {}
     for row_idx = 1, #_ROWS do
         local row = _ROWS[row_idx]
-        if row.type ~= "separator" then
-            local row_y = (row_idx + 1) * ROW_H + 2
-            local clr = colors[row.type]
-            self:_text(xml, 0, row_y, LABEL_W, row.label, clr[1])
-            local val_r = self:_text(xml, LABEL_W, row_y, VAL_W, "0", clr[2])
-            local val_x = self:_text(xml, LABEL_W + VAL_W, row_y, VAL_W, "0", clr[2])
-            local extra = self:_text(xml, LABEL_W + VAL_W * 2, row_y, EXTRA_W, "", clr_extra)
-            self._entries[#self._entries + 1] = { val_r = val_r, val_x = val_x, extra = extra,
-                field = row.field, field_x = row.field_x, row_type = row.type, denom = row.denom }
-        end
+        local row_y = (row_idx + 1) * ROW_H + 2
+        local clr = colors[row.type]
+        self:_text(xml, 0, row_y, LABEL_W, row.label, clr[1])
+        local val_r = self:_text(xml, LABEL_W, row_y, VAL_W, "0", clr[2])
+        local val_x = self:_text(xml, LABEL_W + VAL_W, row_y, VAL_W, "0", clr[2])
+        local extra = self:_text(xml, LABEL_W + VAL_W * 2, row_y, EXTRA_W, "", clr_extra)
+        self._entries[#self._entries + 1] = { val_r = val_r, val_x = val_x, extra = extra,
+            field = row.field, field_x = row.field_x, row_type = row.type, denom = row.denom }
     end
 end
 
