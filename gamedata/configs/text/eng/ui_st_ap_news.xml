@@ -5,13 +5,6 @@
     <string id="st_ap_news_ago_recent"><text>just now</text></string>
     <string id="st_ap_news_ago_hours"><text>a few hours ago</text></string>
 
-    <!-- ==== #count# sibling-count words ==== -->
-    <string id="st_ap_news_count_two"><text>two</text></string>
-    <string id="st_ap_news_count_three"><text>three</text></string>
-    <string id="st_ap_news_count_four"><text>four</text></string>
-    <string id="st_ap_news_count_five"><text>five</text></string>
-    <string id="st_ap_news_count_many"><text>several</text></string>
-
     <!-- ==== mutant engine faction display plurals (capitalized for mid-sentence consistency) ==== -->
     <string id="st_ap_news_mutant_predatory_day"><text>Predators</text></string>
     <string id="st_ap_news_mutant_predatory_night"><text>Night Predators</text></string>
@@ -332,53 +325,5 @@
     <string id="st_ap_news_tpl_area_infest_003"><text>I was scouting the corner when #subject_species# came into #location# #ago# and dug in. That part of #level# is theirs now.</text></string>
     <string id="st_ap_news_tpl_area_infest_004"><text>Tracks at #location# show a #subject_species# pack settled in and has been breeding since they came up.</text></string>
     <string id="st_ap_news_tpl_area_infest_005"><text>A #subject_species# pack claimed #location# for a den #ago#.</text></string>
-
-    <!-- ========================================================================= -->
-    <!-- PAIR-COMPOSITE: fires when both sibling consequences of a reactive pair    -->
-    <!-- share a cause_id. Slot suffix _a / _b indexes the two siblings in          -->
-    <!-- alphabetical consequence order (stable pair-pool key). 5 variants each on  -->
-    <!-- the same speaker rotation. Every variant tags cause + A consequence + B    -->
-    <!-- consequence explicitly.                                                    -->
-    <!-- ========================================================================= -->
-
-    <!-- cause:massacre pair (a=investigate / stalker, b=scavenge / mutant) -->
-    <!-- Required: subject_faction_a, subject_species_b, location, ago. other_faction = killer. -->
-    <string id="st_ap_news_tpl_cause_massacre_pair_massacre_investigate_massacre_scavenge_001"><text>Heard a #subject_faction_a# recovery crew came up to their dead at #location# with a #subject_species_b# pack already feeding.</text></string>
-    <string id="st_ap_news_tpl_cause_massacre_pair_massacre_investigate_massacre_scavenge_002"><text>Saw a #subject_faction_a# crew walk into #location# to ID their #other_faction# wipe with #subject_species_b# already on the bodies.</text></string>
-    <string id="st_ap_news_tpl_cause_massacre_pair_massacre_investigate_massacre_scavenge_003"><text>I was with the #subject_faction_a# patrol that walked into #location# #ago# to recover the dead. We found a #subject_species_b# pack feeding and left half the bodies.</text></string>
-    <string id="st_ap_news_tpl_cause_massacre_pair_massacre_investigate_massacre_scavenge_004"><text>Tracks at #location# show a #subject_faction_a# crew came up after a #other_faction# wipe and ran into a #subject_species_b# pack on the bodies.</text></string>
-    <string id="st_ap_news_tpl_cause_massacre_pair_massacre_investigate_massacre_scavenge_005"><text>#subject_name_a# took a #subject_faction_a# crew to #location# #ago# and found a #subject_species_b# pack feeding on their dead.</text></string>
-
-    <!-- cause:squadkill pair (a=flee / stalker, b=revenge / stalker; same faction) -->
-    <!-- Required: subject_faction_a, location, ago. other_faction = killer. Names_a and Names_b live (both stalkers). -->
-    <string id="st_ap_news_tpl_cause_squadkill_pair_squadkill_flee_squadkill_revenge_001"><text>Heard a #subject_faction_a# squad got cut down at #location# and a revenge crew chased #other_faction# east.</text></string>
-    <string id="st_ap_news_tpl_cause_squadkill_pair_squadkill_flee_squadkill_revenge_002"><text>Saw a #subject_faction_a# evac pulling wounded from the #location# wipe while a revenge crew chased #other_faction# east.</text></string>
-    <string id="st_ap_news_tpl_cause_squadkill_pair_squadkill_flee_squadkill_revenge_003"><text>I was with the #subject_faction_a# evac pulling wounded out of #location# #ago# after #other_faction# hit us. The revenge crew that went after them never came back.</text></string>
-    <string id="st_ap_news_tpl_cause_squadkill_pair_squadkill_flee_squadkill_revenge_004"><text>Tracks at #location# show a #subject_faction_a# wipe by #other_faction# and a revenge chase east before the wounded reached safe ground.</text></string>
-    <string id="st_ap_news_tpl_cause_squadkill_pair_squadkill_flee_squadkill_revenge_005"><text>#subject_name_a# pulled #subject_faction_a# survivors out of the #location# wipe #ago# while #subject_name_b# chased #other_faction# with the revenge crew.</text></string>
-
-    <!-- cause:basekill pair (a=flee / stalker, b=support / stalker; same faction) -->
-    <!-- Required: subject_faction_a, location, ago. other_faction = attacker who took base. Names_a and Names_b live. -->
-    <string id="st_ap_news_tpl_cause_basekill_pair_basekill_flee_basekill_support_001"><text>Heard #subject_faction_a# lost #location# to #other_faction# #ago# and the backup crew got there too late.</text></string>
-    <string id="st_ap_news_tpl_cause_basekill_pair_basekill_flee_basekill_support_002"><text>Saw a #subject_faction_a# crew pulling wounded out of #location# while another #subject_faction_a# crew came up to take it back from #other_faction#.</text></string>
-    <string id="st_ap_news_tpl_cause_basekill_pair_basekill_flee_basekill_support_003"><text>I was on the #location# wall when #other_faction# took it #ago#. We pulled out before our backup crew got there.</text></string>
-    <string id="st_ap_news_tpl_cause_basekill_pair_basekill_flee_basekill_support_004"><text>Tracks at #location# show #subject_faction_a# lost the gate to #other_faction# and another crew came up to take it back too late.</text></string>
-    <string id="st_ap_news_tpl_cause_basekill_pair_basekill_flee_basekill_support_005"><text>#subject_name_a# led #subject_faction_a# survivors out of #location# #ago# while #subject_name_b# brought backup against #other_faction# and lost the gate anyway.</text></string>
-
-    <!-- cause:wounded pair (a=help / stalker medic, b=hunt / mutant predator) -->
-    <!-- Required: subject_faction_a, subject_species_b, location, ago. -->
-    <string id="st_ap_news_tpl_cause_wounded_pair_wounded_help_wounded_hunt_001"><text>Heard a #subject_faction_a# medic crew was racing a #subject_species_b# pack to a wounded brother at #location# #ago#.</text></string>
-    <string id="st_ap_news_tpl_cause_wounded_pair_wounded_help_wounded_hunt_002"><text>Saw a #subject_faction_a# medic crew running for the bleeder at #location# without knowing a #subject_species_b# pack was on the same trail.</text></string>
-    <string id="st_ap_news_tpl_cause_wounded_pair_wounded_help_wounded_hunt_003"><text>I was with the #subject_faction_a# medic crew running for the bleeder at #location# #ago# when a #subject_species_b# pack got there first and we lost two more carrying him out.</text></string>
-    <string id="st_ap_news_tpl_cause_wounded_pair_wounded_help_wounded_hunt_004"><text>Tracks at #location# show a #subject_faction_a# medic crew and a #subject_species_b# pack reached the same bleeder with no clean exit.</text></string>
-    <string id="st_ap_news_tpl_cause_wounded_pair_wounded_help_wounded_hunt_005"><text>#subject_name_a# led a #subject_faction_a# evac to #location# #ago# and lost the bleeder to a #subject_species_b# pack.</text></string>
-
-    <!-- cause:harvest pair (a=haunt / aberrant mutant, b=rob / outlaw stalker) -->
-    <!-- Required: subject_species_a, subject_faction_b, location, ago. other_faction = artefact carrier. Names_b live. -->
-    <string id="st_ap_news_tpl_cause_harvest_pair_harvest_haunt_harvest_rob_001"><text>Heard a #other_faction# carrier came out of #location# with a #subject_faction_b# crew chasing and a #subject_species_a# pack on the scent.</text></string>
-    <string id="st_ap_news_tpl_cause_harvest_pair_harvest_haunt_harvest_rob_002"><text>Saw a #other_faction# stalker carrying an artefact off #location# with #subject_faction_b# closing and a #subject_species_a# pack circling in.</text></string>
-    <string id="st_ap_news_tpl_cause_harvest_pair_harvest_haunt_harvest_rob_003"><text>I was with #subject_faction_b# chasing a #other_faction# carrier off #location# #ago# when a #subject_species_a# pack hit our flank and the artefact ended up in the dirt.</text></string>
-    <string id="st_ap_news_tpl_cause_harvest_pair_harvest_haunt_harvest_rob_004"><text>Tracks at #location# show an artefact came out under #other_faction# colors with #subject_faction_b# pursuit close behind and a #subject_species_a# pack crossing the same scent.</text></string>
-    <string id="st_ap_news_tpl_cause_harvest_pair_harvest_haunt_harvest_rob_005"><text>#subject_name_b# led a #subject_faction_b# crew on the #other_faction# carrier from #location# with a #subject_species_a# pack on the same scent.</text></string>
 
 </string_table>

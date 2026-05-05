@@ -32,10 +32,16 @@ local CAUSE = ap_core_const.CAUSE
 local CAUSE_TYPE = ap_core_const.CAUSE_TYPE
 local RESULT = ap_core_const.RESULT
 local REASON = ap_core_const.REASON
+local CAUSE_CATEGORY = ap_ext_const.CAUSE_CATEGORY
+local CATEGORY = CAUSE_CATEGORY.OPPORTUNITIES
+local CAP_KEY = "cause_max_opportunities"
 local cfg = ap_core_mcm.cfg
 
 local function _predicate(trace, squad)
     if not cfg.cause_ambush_enabled then return { code = RESULT.FAILED_RULES } end
+    if not ap_core_limiter.check_cause_rate_limit(CATEGORY, cfg[CAP_KEY]) then
+        return { code = RESULT.FAILED_RULES, reason = REASON.BUDGET_EXHAUSTED }
+    end
 
     local level_id = xlevel.get_level_id(squad)
     if not level_id then return { code = RESULT.FAILED_RULES, reason = REASON.NO_LEVEL_ID } end
@@ -46,6 +52,7 @@ local function _predicate(trace, squad)
     })
     if not smart then return { code = RESULT.FAILED_RULES, reason = REASON.NO_SMART } end
 
+    ap_core_limiter.increment_cause_counter(CATEGORY)
     return {
         cause = CAUSE.AMBUSH,
         squad_id = squad.id,
@@ -62,7 +69,7 @@ function on_game_start()
         ap_core_producer.register({
             callback = cbs[i],
             cause_type = CAUSE_TYPE.RADIANT,
-            category = CAUSE_CATEGORY.OPPORTUNITIES,
+            category = CATEGORY,
         }, _predicate)
     end
 end
@@ -71,12 +78,13 @@ end
 Rules:
 - Return `{ cause = CAUSE.X, ...payload }` on match, `{ code = RESULT.FAILED_RULES, ... }` on reject
 - Each call publishes one specific cause; no umbrella names
-- Predicates self-observe (prof + trace:push + debug log) — never call `observe()` or manipulate counters
+- Predicates self-observe (prof + trace:push + debug log) -- never call `observe()` or manipulate framework state beyond the cause counter
+- Self-gate against the per-category cause budget via `ap_core_limiter.check_cause_rate_limit(CATEGORY, cfg[CAP_KEY])` and increment via `increment_cause_counter(CATEGORY)` before returning the published payload. The producer does not gate cause budgets.
 - Include `level_id` from the source entity, never the actor
-- Include `community = squad.player_id` for downstream alignment/personality checks
+- Include `community = squad.player_id` for downstream alignment / personality checks
 - Add `CAUSE.AMBUSH = "cause:ambush"` to ap_core_const
-- Add MCM `cause_ambush_enabled` to ap_core_mcm.defaults
-- `config.category` is required. Pick from `CAUSE_CATEGORY.REACTIONS / NEEDS / INSTINCTS / OPPORTUNITIES` based on what your cause represents.
+- Add MCM `cause_ambush_enabled` and `cause_max_opportunities` (or whichever category cap key applies) to ap_core_mcm.defaults
+- `config.category` is required. Pick from `CAUSE_CATEGORY.REACTIONS / NEEDS / INSTINCTS / OPPORTUNITIES`. `CAUSE_CATEGORY` lives in `ap_ext_const`.
 
 ---
 
@@ -145,8 +153,7 @@ local function _handler(event_data)
         if #moved == 0 then return { code = RESULT.FAILED_ACTION, reason = REASON.MOVE_FAILED } end
 
         for i = 1, #moved do
-            ap_ext_news.record_event(moved[i], CAUSE.AMBUSH, CONSEQUENCE.AMBUSH_SETUP, {
-                cause_id = event_data._cause_id,
+            ap_ext_news.add(moved[i], CAUSE.AMBUSH, CONSEQUENCE.AMBUSH_SETUP, {
                 smart = smart, level_id = event_data.level_id,
             })
         end
@@ -171,7 +178,7 @@ Rules:
 - Personality checked inside handler via `ap_ext_util.check_personality`
 - Wrap the handler body in `ap_core_debug.observe(trace, CONSEQUENCE.X, function() ... end)`
 - Wrap actions (move) in their own `observe` calls for structured tracing
-- Call `ap_ext_news.record_event()` after successful script_squad (composer dispatches PDA gossip from the journal; no per-consequence PDA call needed)
+- Call `ap_ext_news.add()` after successful `script_squad`. News owns its own session FIFO; the composer drains it on a randomized interval and dispatches PDA gossip via `dynamic_news_manager`. No per-consequence PDA call. `add()` rolls `cfg.news_chance` (1-100, default 20) and drops silently on miss; pass `opts.other_squad` for two-party events so templates can render the other side.
 - Use `find_squads_observed` for traced search (protections applied automatically)
 - Add `CONSEQUENCE.AMBUSH_SETUP = "consequence:ambush_setup"` to ap_core_const
 
@@ -216,7 +223,7 @@ Link arrival to squad: pass `on_arrive = CONSEQUENCE.AMBUSH_SETUP` in `script_sq
 1. Add `CAUSE.X` to ap_core_const CAUSE table
 2. Add `CONSEQUENCE.X_VERB` to ap_core_const CONSEQUENCE table
 3. Add MCM defaults to ap_core_mcm.defaults
-4. Create `ap_ext_cause_<family>.script` (singular — generator publishes one cause) or `ap_ext_causes_<family>.script` (plural — generator publishes multiple) with predicate, register in on_game_start
+4. Create `ap_ext_cause_<family>.script` (singular: generator publishes one cause) or `ap_ext_causes_<family>.script` (plural: generator publishes multiple) with predicate, register in `on_game_start`
 5. Create `ap_ext_consequences_<family>.script` (always plural) with handler(s), register in on_game_start
 6. (Optional) Add 5 templates at `st_ap_news_tpl_<consequence>_001..005` in `gamedata/configs/text/eng/ui_st_ap_news.xml` so the consequence surfaces in PDA news
 7. Add MCM UI entries to ap_core_mcm menu builder
@@ -266,14 +273,11 @@ ap_core_broker.register_owner("warfare", function(squad)
 end)
 ```
 
-AP already registers warfare and BAO in `ap_core_compat`:
+AP already registers warfare in `ap_core_compat`:
 
 ```lua
 ap_core_broker.register_owner("warfare", function(squad)
     return squad.registered_with_warfare == true
-end)
-ap_core_broker.register_owner("bao", function(squad)
-    return squad.__lock == true
 end)
 ```
 
@@ -329,7 +333,7 @@ end
 | cause:hunger_campfire / cause:sleep_campfire / cause:rest_campfire / cause:heal_shelter / cause:shelter_indoor / cause:shelter_outdoor / cause:supply_trader / cause:money_harvest / cause:money_hunt / cause:job_outpost / cause:job_explore / cause:job_research / cause:social_campfire / cause:social_base | radiant | position, level_id, squad_id, community, dto_field, drive |
 | cause:scatter / cause:feed / cause:slumber_field / cause:slumber_lair / cause:slumber_surge / cause:roam / cause:pack | radiant | position, level_id, squad_id, community, species, dto_field, drive |
 
-All events include `_trace`, `_cause_id` (broker-assigned monotonic seq), and `cause_type` ("radiant" or "reactive"). The umbrella names (`cause:stash`, `cause:area`, `cause:needs`, `cause:instincts`) are **never published** — only the specific child causes above flow through xbus.
+All events include `_trace` and `cause_type` (`"radiant"` or `"reactive"`). The umbrella names (`cause:stash`, `cause:area`, `cause:needs`, `cause:instincts`) are **never published**: only the specific child causes above flow through xbus.
 
 ---
 
@@ -352,12 +356,14 @@ Direct access to AP domain systems. APIs may change between versions.
 
 | Function | Returns |
 |----------|---------|
-| `get_alpha(entity_id)` | alpha data table { level, kills } or nil |
+| `get_alpha(entity_id)` | alpha data table `{ level, kills }` or nil |
 | `get_alpha_level(entity_id)` | integer level or 0 |
 | `is_alpha(entity_id)` | boolean (true even during death grace period) |
-| `get_alphas()` | all alive alphas as { [npc_id] = data } |
-| `get_stalker_needs(squad_id)` | needs DTO { last_hunger_at, last_sleep_at, last_rest_at, last_heal_at, last_shelter_at, last_supply_at, last_money_at, last_job_at, last_social_at } or nil |
-| `get_mutant_instincts(squad_id)` | instinct DTO { last_scatter_at, last_feed_at, last_slumber_at, last_roam_at, last_pack_at } or nil |
+| `get_alphas()` | all alive alphas as `{ [npc_id] = data }` |
+| `get_alpha_marker_squads()` | array of unique squad ids hosting alive alphas (registered as the HUD identity source) |
+| `get_stalker_needs(squad_id)` | per-squad needs DTO (9 `last_<need>_at` timestamps) or nil |
+| `get_mutant_instincts(squad_id)` | per-squad instinct DTO (5 `last_<instinct>_at` timestamps) or nil |
+| `get_squad_opportunities(squad_id)` | per-squad opportunity DTO (6 MVT `last_<opportunity>_at` timestamps for stash and area causes) or nil |
 | `projected_kill_count(killer_id, victim_id)` | kill count inclusive of a pending death |
 
 ---
@@ -366,7 +372,10 @@ Direct access to AP domain systems. APIs may change between versions.
 
 | Function | Returns |
 |----------|---------|
-| `conquer_smart(smart_id, faction)` | set faction ownership with FIFO eviction and decay |
+| `conquer_smart(smart_id, faction)` | shared spawn injection (LTX entries continue alongside). FIFO eviction at `cfg.area_conquest_max_smarts`, decay after `cfg.area_conquest_decay_hours` |
+| `infest_smart(smart_id, faction, level_id)` | exclusive spawn injection (LTX entries suppressed via faction gate). Per-level cap `cfg.area_infest_max_per_level` |
+| `is_infested(smart_id)` | boolean |
+| `can_infest_on_level(level_id)` | boolean (per-level cap not exceeded) |
 
 ---
 
@@ -374,17 +383,24 @@ Direct access to AP domain systems. APIs may change between versions.
 
 | Function | Returns |
 |----------|---------|
-| `script_squad(squad, smart, opts)` | { code, id, dst, dst_id } -- script with lifecycle |
-| `script_actor_target(squad)` | { code, id, dst, dst_id } -- pursue player (no arrival) |
-| `is_protected(squad)` | boolean, reason, detail, name -- check all guards |
-| `get_owner(squad)` | string or nil -- ownership query |
+| `script_squad(squad, smart, opts)` | `{ code, id, dst, dst_id }` - script with full lifecycle |
+| `script_actor_target(squad)` | `{ code, id, dst, dst_id }` - pursue player (no arrival detection) |
+| `is_protected(squad)` | `boolean, reason, detail, name` - check all guards |
+| `get_owner(squad)` | `string` or nil - ownership query |
 | `register_owner(name, filter_fn)` | register ownership filter (replaces on name match) |
-| `record(squad_id, cause, consequence, opts)` | append to activity FIFO (markers, composer, external queries) |
-| `get_record(opts)` | return the most-recent record matching `opts` (AND-logic) or nil. `{ squad_id, assigned = true }` is O(1) |
-| `get_records(opts)` | return array of records matching `opts` (AND-logic). `{ assigned = true }` reads live entries only |
-| `clear_record(squad_id)` | clear assigned entry on entity death (pure entry drop -- broker stays out of marker lifecycle) |
-| `register_arrival_handler(key, fn)` | register on-arrival callback by key; consumer.register also accepts an `on_arrive` opt that wires this for you |
-| `get_scripted_ids()` | read-only reference to _ap_scripted_squads table |
+| `register_arrival_handler(key, fn)` | register on-arrival callback by key. `consumer.register` also accepts an `on_arrive` opt that wires this for you |
+| `get_scripted_ids()` | read-only reference to `_ap_scripted_squads` table (keyed by squad id; each entry carries `scripted_target`, `target_smart_id`, `tracked_at`, `on_arrive`, `on_arrive_args`, `pre_release_gulag`, `arrived`, `release_at`) |
+
+---
+
+### HUD (ap_core_hud)
+
+Optional hooks for mods that surface their own AP-style markers or want to override the marker subject line.
+
+| Function | Effect |
+|----------|--------|
+| `register_identity_source(fn)` | add a squad-id list provider. Squads in the returned list receive the `ALPHA_PROMOTE` marker when not currently scripted. Last writer wins on duplicate registration. Today: tracker registers `get_alpha_marker_squads`. |
+| `register_subject_resolver(fn)` | replace the marker subject-line resolver (`function(squad) -> string`). Today: `ap_ext_util.format_subject` returns `"<name|species_display> (<faction_display>)"`. |
 
 ---
 
@@ -417,51 +433,20 @@ ap_core_broker.script_squad(squad, smart, {
 
 ---
 
-### Activity Record
-
-After a consequence scripts a squad, AP appends an entry to a bounded FIFO (capacity 256). The broker stores ids, event-time facts, and squad-derived display strings (faction key + localized display, commander name, species + localized plural — eagerly captured at record time so dead/unregistered squads stay renderable). Smart and level remain lazy. External mods query the squad's currently-assigned record via `get_record({ squad_id, assigned = true })` and render the localized action phrase via `ap_core_const.CONSEQUENCE_INFO[record.consequence].action_key` + `game.translate_string()`.
-
-Schema (per entry):
-
-| Field | Type | Notes |
-|-------|------|-------|
-| `squad_id` | number | subject squad server id |
-| `other_squad_id` | number or nil | opposing party (killer, bleeder, taker) in two-party events |
-| `cause` | string | CAUSE.X enum (e.g. `"cause:massacre"`) |
-| `consequence` | string | CONSEQUENCE.X enum (e.g. `"consequence:massacre_investigate"`) |
-| `cons_id` | number | monotonic sequence id assigned by broker |
-| `cause_id` | number or nil | shared by siblings of one cause publish; groups siblings for news dispatch |
-| `smart_id` | number or nil | acting smart terrain (resolve display lazily via `xlevel.get_smart_display_name(xobject.se(smart_id))`) |
-| `level_id` | number or nil | acting level (resolve display lazily via `xlevel.get_level_name(level_id)`) |
-| `game_hours` | number | event-time snapshot (hours) |
-| `subject_faction` | string or nil | engine faction key (e.g. `"stalker"`, `"monster_predatory_day"`) |
-| `subject_faction_display` | string or nil | localized faction (`"Loners"`, `"predators"`); use directly in UI text |
-| `subject_name` | string or nil | commander's character name; nil for empty / mutant / unbound squads |
-| `subject_species` | string or nil | xcreature species (`"bloodsucker"`); nil for stalker squads |
-| `subject_species_display` | string or nil | localized species plural (`"bloodsuckers"`); nil if species not in `SPECIES_DISPLAY_KEY` |
-| `other_faction`, `other_faction_display`, `other_name`, `other_species`, `other_species_display` | string or nil | same five fields for `other_squad`; all nil for single-actor consequences |
-| `assigned` | boolean | true while this is the squad's current entry; flips to false on supersede or clear |
-
-Display strings are captured at the moment the entry is written. Locale switches mid-session leave older entries in the previous locale until natural FIFO churn (~10-50 minutes); switches are rare and self-correcting.
-
-When a new entry is recorded for the same squad, the previous entry's `assigned` flag is set to false. Map markers only display `assigned` entries. The FIFO is session-lifetime (resets on load, no save persistence).
-
----
-
 ### Warfare map tooltip: display AP activity
 
-Goal: when your warfare map UI hovers a squad, append what the squad is doing according to AlifePlus ("Investigating a Massacre Site", "Guarding an Outpost", "Hunting the Wounded"). Strings are localized. Both English and Russian ship with AP. Copy-paste example, warfare author edits only the call site at the bottom:
+Goal: when your warfare map UI hovers a squad, append what the squad is doing according to AlifePlus ("Investigating a Massacre Site", "Guarding an Outpost", "Hunting the Wounded"). Strings are localized; both English and Russian ship with AP. Copy-paste example; warfare author edits only the call site at the bottom:
 
 ```lua
 --- Return localized AP action phrase for a squad, or nil if nothing to show.
---- Graceful no-op when AlifePlus is absent, squad is owned by warfare, or squad has no record.
+--- Graceful no-op when AlifePlus is absent or the squad is not currently scripted by AP.
 local function get_ap_action(squad_id)
     if not ap_core_broker or not ap_core_const then return nil end
 
-    local record = ap_core_broker.get_record({ squad_id = squad_id, assigned = true })
-    if not record then return nil end
+    local scripted = ap_core_broker.get_scripted_ids()[squad_id]
+    if not scripted or not scripted.on_arrive then return nil end
 
-    local info = ap_core_const.CONSEQUENCE_INFO[record.consequence]
+    local info = ap_core_const.CONSEQUENCE_INFO[scripted.on_arrive]
     if not info then return nil end
 
     local text = game.translate_string(info.action_key)
@@ -478,14 +463,13 @@ end
 
 Notes for warfare authors:
 
-- Call `get_record` fresh on every render tick. Records mutate as squads move between consequences.
-- `ap_core_const.CONSEQUENCE_INFO` is a static const table — read it directly, don't cache.
+- Call `get_scripted_ids()` fresh on every render tick. Entries mutate as squads move between consequences.
+- `ap_core_const.CONSEQUENCE_INFO` is a static const table; read it directly, no caching needed.
 - Each entry has both `action_key` (full phrase shown to the player) and `name_key` (short caption for config / debug). Pick whichever fits your UI.
-- Locale switch (English/Russian) works automatically because the resolve happens at render time via `game.translate_string`.
-- A nil return means the squad has no recent AP activity (or is warfare-owned). Render nothing.
-- Squads warfare owns are already excluded from AP via the ownership registry (`ap_core_broker.register_owner("warfare", ...)`, registered by default). They get no record, so `get_record` returns nil, so you render nothing. No additional filtering needed on warfare's side.
+- Locale switch (English / Russian) works automatically because the resolve happens at render time via `game.translate_string`.
+- A nil return means the squad is not currently scripted by AP (or is warfare-owned, since warfare-owned squads are excluded at the protection gate and never enter scripting). Render nothing.
 
-Typical action outputs (EN): "Investigating a Massacre Site", "Scavenging a Massacre Site", "Reinforcing Attacked Base", "Evacuating Attacked Base", "Hunting the Wounded", "Guarding an Outpost", "Out Exploring", "Heading to a Campfire to Rest", "Restocking at Trader", "Harvesting Artefacts". 36 entries total, one per AP consequence. Full map: `ap_core_const.CONSEQUENCE_INFO` keys.
+Typical action outputs (EN): "Investigating a Massacre Site", "Scavenging a Massacre Site", "Reinforcing Attacked Base", "Evacuating Attacked Base", "Hunting the Wounded", "Guarding an Outpost", "Out Exploring", "Heading to a Campfire to Rest", "Restocking at Trader", "Harvesting Artefacts". One entry per AP consequence; full map in `ap_core_const.CONSEQUENCE_INFO`.
 
 ---
 

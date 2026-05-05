@@ -2,7 +2,9 @@
 
 local CAUSE = ap_core_const.CAUSE
 local CAUSE_TYPE = ap_core_const.CAUSE_TYPE
-local CAUSE_CATEGORY = ap_core_const.CAUSE_CATEGORY
+local CAUSE_CATEGORY = ap_ext_const.CAUSE_CATEGORY
+local CATEGORY = CAUSE_CATEGORY.REACTIONS
+local CAP_KEY = "cause_max_reactions"
 local CALLBACK = ap_core_const.CALLBACK
 local RESULT = ap_core_const.RESULT
 local REASON = ap_core_const.REASON
@@ -17,6 +19,9 @@ local function _on_squad_npc_death(trace, squad, npc, killer)
 
     if not cfg.cause_squadkill_enabled then return { code = RESULT.FAILED_RULES } end
     if not squad then return { code = RESULT.FAILED_RULES, reason = REASON.NIL_SQUAD } end
+    if not ap_core_limiter.check_cause_rate_limit(CATEGORY, cfg[CAP_KEY]) then
+        return { code = RESULT.FAILED_RULES, reason = REASON.BUDGET_EXHAUSTED }
+    end
 
     if squad:npc_count() > 1 then return { code = RESULT.FAILED_RULES, reason = REASON.SQUAD_ALIVE } end
     if xsquad.is_squad_at_base(squad) then return { code = RESULT.FAILED_RULES, reason = REASON.AT_BASE } end
@@ -51,6 +56,7 @@ local function _on_squad_npc_death(trace, squad, npc, killer)
         ap_core_debug.debug("%s [tid=%d path=%s] sq=%d faction=%s [%.2fms]",
             LOG, trace.id, trace.path, squad.id, victim_faction, prof:get_ms())
     end
+    ap_core_limiter.increment_cause_counter(CATEGORY)
     return result
 end
 

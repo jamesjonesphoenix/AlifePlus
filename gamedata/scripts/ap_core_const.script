@@ -94,17 +94,6 @@ CALLBACK = {
 --- Pipeline-mechanism axis: how the producer schedules predicate evaluation.
 CAUSE_TYPE = { RADIANT = "radiant", REACTIVE = "reactive" }
 
---- Cause category classification (behavioral axis, parallel to CAUSE_TYPE).
---- What kind of squad behavior the cause represents. Drives rate-limit grouping (per-category cap),
---- MCM organization, news template families. Future parallel axes (attack/flee, expansive/contracting)
---- get their own enums (e.g. CAUSE_INTENT) — never overload CAUSE_CATEGORY.
-CAUSE_CATEGORY = {
-    REACTIONS     = "category:reactions",
-    NEEDS         = "category:needs",
-    INSTINCTS     = "category:instincts",
-    OPPORTUNITIES = "category:opportunities",
-}
-
 --- Radiant cause callbacks (all radiant causes register on these)
 RADIANT_CALLBACKS = {
     CALLBACK.SQUAD_ON_UPDATE,

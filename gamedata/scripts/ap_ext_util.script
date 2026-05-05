@@ -1,5 +1,6 @@
---- ap_ext_util: Ext-layer utilities (alignment gates, personality gates, species resolution)
+--- ap_ext_util: Ext-layer utilities (alignment gates, personality gates, species resolution, display helpers)
 local math_random = math.random
+local game_translate_string = game.translate_string
 
 local PERSONALITY = ap_ext_const.PERSONALITY
 local _alignment_mutant_night = ap_ext_const.alignment_mutant_night
@@ -79,5 +80,57 @@ function get_species(squad_id)
     local species = xcreature.get_mutant_species(squad_id)
     _species_cache:set(squad_id, species or false)
     return species
+end
+
+--- Localized faction display string (mutants via MUTANT_FACTION_DISPLAY_KEY, humans via engine translation)
+--- Returns nil for nil faction; never returns the raw key on miss (engine translate returns key on miss → caller checks).
+--- @param faction string|nil Engine faction key (squad.player_id, e.g. "stalker", "monster_predatory_day")
+--- @return string|nil Localized faction text
+function get_faction_display(faction)
+    if not faction then return nil end
+    local mutant_key = ap_ext_const.MUTANT_FACTION_DISPLAY_KEY[faction]
+    if mutant_key then return game_translate_string(mutant_key) end
+    return game_translate_string(faction)
+end
+
+--- Localized species display plural (xcreature species → SPECIES_DISPLAY_KEY → translate).
+--- Returns nil for nil species or species not in the display key table; empty string on translate miss.
+--- @param species string|nil xcreature species string ("bloodsucker", "boar", etc.)
+--- @return string|nil Localized plural text or nil
+function get_species_display(species)
+    if not species then return nil end
+    local key = ap_ext_const.SPECIES_DISPLAY_KEY[species]
+    if not key then return nil end
+    local v = game_translate_string(key)
+    if v and v ~= key and v ~= "" then return v end
+    return ""
+end
+
+-- Build "Name (Faction)" or just "Faction" if no name.
+-- For mutants, name slot receives species_display (mutants have no character names).
+local function _format_party(name_or_species, faction_display)
+    local primary = (name_or_species and name_or_species ~= "") and name_or_species or nil
+    if primary then return primary .. " (" .. (faction_display or "?") .. ")" end
+    return faction_display or "?"
+end
+
+--- Build the HUD subject string for a squad: "Name (Faction)" for stalkers,
+--- "<species_display> (<faction_display>)" for mutants, bare faction otherwise.
+--- Used by ap_core_hud through the registered subject resolver.
+--- @safety SAFE - nil-guarded, never raises
+--- @cost O(1) | ~4 luabind (commander_id+xobject.se for name; player_id field read; clsid+section for species miss)
+--- @param squad userdata Server squad
+--- @return string Subject display string
+function format_subject(squad)
+    if not squad then return "?" end
+    local faction_display = get_faction_display(squad.player_id)
+    local name = xsquad.get_commander_name(squad)
+    local species = xcreature.get_mutant_species(squad)
+    local species_display = get_species_display(species)
+    return _format_party(name or species_display, faction_display)
+end
+
+function on_game_start()
+    ap_core_hud.register_subject_resolver(ap_ext_util.format_subject)
 end
 

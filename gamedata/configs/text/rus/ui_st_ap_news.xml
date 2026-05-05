@@ -5,13 +5,6 @@
     <string id="st_ap_news_ago_recent"><text>только что</text></string>
     <string id="st_ap_news_ago_hours"><text>несколько часов назад</text></string>
 
-    <!-- ==== #count# sibling-count words ==== -->
-    <string id="st_ap_news_count_two"><text>двое</text></string>
-    <string id="st_ap_news_count_three"><text>трое</text></string>
-    <string id="st_ap_news_count_four"><text>четверо</text></string>
-    <string id="st_ap_news_count_five"><text>пятеро</text></string>
-    <string id="st_ap_news_count_many"><text>несколько</text></string>
-
     <!-- ==== mutant engine faction display plurals (capitalized for mid-sentence consistency) ==== -->
     <string id="st_ap_news_mutant_predatory_day"><text>Хищники</text></string>
     <string id="st_ap_news_mutant_predatory_night"><text>Ночные хищники</text></string>
@@ -334,53 +327,5 @@
     <string id="st_ap_news_tpl_area_infest_003"><text>Я разведывал угол, когда #subject_species# зашли к #location# #ago# и закрепились. Этот кусок земли теперь их.</text></string>
     <string id="st_ap_news_tpl_area_infest_004"><text>По следам у #location# видно, как стая #subject_species# осела и плодится с тех пор, как заняла место.</text></string>
     <string id="st_ap_news_tpl_area_infest_005"><text>Стая #subject_species# заняла #location# под логово #ago#.</text></string>
-
-    <!-- ========================================================================= -->
-    <!-- PAIR-COMPOSITE: fires when both sibling consequences of a reactive pair    -->
-    <!-- share a cause_id. Slot suffix _a / _b indexes the two siblings in          -->
-    <!-- alphabetical consequence order (stable pair-pool key). 5 variants each on  -->
-    <!-- the same speaker rotation. Every variant tags cause + A consequence + B    -->
-    <!-- consequence explicitly.                                                    -->
-    <!-- ========================================================================= -->
-
-    <!-- cause:massacre pair (a=investigate / stalker, b=scavenge / mutant) -->
-    <!-- Required: subject_faction_a, subject_species_b, location, ago. other_faction = killer. -->
-    <string id="st_ap_news_tpl_cause_massacre_pair_massacre_investigate_massacre_scavenge_001"><text>Слышал, поисковики #subject_faction_a# поднялись к своим мёртвым у #location#, а на телах уже жрала стая #subject_species_b#.</text></string>
-    <string id="st_ap_news_tpl_cause_massacre_pair_massacre_investigate_massacre_scavenge_002"><text>Видел, как звено #subject_faction_a# зашло к #location# опознавать своих мёртвых после удара парней #other_faction#, а на трупах уже стояла стая #subject_species_b#.</text></string>
-    <string id="st_ap_news_tpl_cause_massacre_pair_massacre_investigate_massacre_scavenge_003"><text>Я ходил с патрулём #subject_faction_a#, что зашёл к #location# #ago# забирать мёртвых. Мы наткнулись на жрущую стаю #subject_species_b# и оставили половину тел там.</text></string>
-    <string id="st_ap_news_tpl_cause_massacre_pair_massacre_investigate_massacre_scavenge_004"><text>По следам у #location# видно, как поисковики #subject_faction_a# подошли после удара парней #other_faction# и наткнулись на стаю #subject_species_b# на телах.</text></string>
-    <string id="st_ap_news_tpl_cause_massacre_pair_massacre_investigate_massacre_scavenge_005"><text>#subject_name_a# привёл отряд #subject_faction_a# к #location# #ago# и нашёл стаю #subject_species_b# на своих мёртвых.</text></string>
-
-    <!-- cause:squadkill pair (a=flee / stalker, b=revenge / stalker; same faction) -->
-    <!-- Required: subject_faction_a, location, ago. other_faction = killer. Names_a and Names_b live (both stalkers). -->
-    <string id="st_ap_news_tpl_cause_squadkill_pair_squadkill_flee_squadkill_revenge_001"><text>Слышал, у #subject_faction_a# вырезали звено у #location#, а мстительная группа ушла за парнями #other_faction# на восток.</text></string>
-    <string id="st_ap_news_tpl_cause_squadkill_pair_squadkill_flee_squadkill_revenge_002"><text>Видел, как эвакуация #subject_faction_a# тащила раненых с побоища у #location#, пока другая группа #subject_faction_a# гнала парней #other_faction# на восток.</text></string>
-    <string id="st_ap_news_tpl_cause_squadkill_pair_squadkill_flee_squadkill_revenge_003"><text>Я был с эвакуацией #subject_faction_a#, что вытаскивала раненых от #location# #ago# после удара парней #other_faction#. Мстители, что пошли за ними, обратно не вернулись.</text></string>
-    <string id="st_ap_news_tpl_cause_squadkill_pair_squadkill_flee_squadkill_revenge_004"><text>По следам у #location# видно, как звено #subject_faction_a# полегло под парнями #other_faction#, а другая группа сразу ушла мстить на восток раньше, чем раненые добрались до своих.</text></string>
-    <string id="st_ap_news_tpl_cause_squadkill_pair_squadkill_flee_squadkill_revenge_005"><text>#subject_name_a# вывел уцелевших #subject_faction_a# с побоища у #location# #ago#, пока #subject_name_b# гнал парней #other_faction# с мстительной группой.</text></string>
-
-    <!-- cause:basekill pair (a=flee / stalker, b=support / stalker; same faction) -->
-    <!-- Required: subject_faction_a, location, ago. other_faction = attacker who took base. Names_a and Names_b live. -->
-    <string id="st_ap_news_tpl_cause_basekill_pair_basekill_flee_basekill_support_001"><text>Слышал, #subject_faction_a# отдали #location# парням #other_faction# #ago#, а подмога подошла, когда уже было поздно.</text></string>
-    <string id="st_ap_news_tpl_cause_basekill_pair_basekill_flee_basekill_support_002"><text>Видел, как одно звено #subject_faction_a# выводило раненых от #location#, пока другое поднималось отбивать ворота у парней #other_faction#.</text></string>
-    <string id="st_ap_news_tpl_cause_basekill_pair_basekill_flee_basekill_support_003"><text>Я стоял на стене у #location#, когда её взяли парни #other_faction# #ago#. Мы ушли раньше, чем туда поднялась наша подмога.</text></string>
-    <string id="st_ap_news_tpl_cause_basekill_pair_basekill_flee_basekill_support_004"><text>По следам у #location# видно, как #subject_faction_a# отдали ворота парням #other_faction#, а другая группа подошла отбивать слишком поздно.</text></string>
-    <string id="st_ap_news_tpl_cause_basekill_pair_basekill_flee_basekill_support_005"><text>#subject_name_a# вывел уцелевших #subject_faction_a# от #location# #ago#, пока #subject_name_b# поднимал подмогу на парней #other_faction# и всё равно потерял ворота.</text></string>
-
-    <!-- cause:wounded pair (a=help / stalker medic, b=hunt / mutant predator) -->
-    <!-- Required: subject_faction_a, subject_species_b, location, ago. -->
-    <string id="st_ap_news_tpl_cause_wounded_pair_wounded_help_wounded_hunt_001"><text>Слышал, медики #subject_faction_a# гонялись со стаей #subject_species_b# за раненым братом у #location# #ago#.</text></string>
-    <string id="st_ap_news_tpl_cause_wounded_pair_wounded_help_wounded_hunt_002"><text>Видел, как медики #subject_faction_a# бежали за подранком к #location#, не зная, что по тому же следу шла стая #subject_species_b#.</text></string>
-    <string id="st_ap_news_tpl_cause_wounded_pair_wounded_help_wounded_hunt_003"><text>Я был с медиками #subject_faction_a#, что бежали за подранком к #location# #ago#, когда стая #subject_species_b# подошла первой, и мы потеряли ещё двоих, пока его выносили.</text></string>
-    <string id="st_ap_news_tpl_cause_wounded_pair_wounded_help_wounded_hunt_004"><text>По следам у #location# видно, как медики #subject_faction_a# и стая #subject_species_b# вышли на одного подранка без чистого выхода.</text></string>
-    <string id="st_ap_news_tpl_cause_wounded_pair_wounded_help_wounded_hunt_005"><text>#subject_name_a# повёл эвакуацию #subject_faction_a# к #location# #ago# и потерял подранка стае #subject_species_b#.</text></string>
-
-    <!-- cause:harvest pair (a=haunt / aberrant mutant, b=rob / outlaw stalker) -->
-    <!-- Required: subject_species_a, subject_faction_b, location, ago. other_faction = artefact carrier. Names_b live. -->
-    <string id="st_ap_news_tpl_cause_harvest_pair_harvest_haunt_harvest_rob_001"><text>Слышал, носильщик #other_faction# вышел от #location# с артефактом, за ним гналось звено #subject_faction_b#, а по запаху шла стая #subject_species_a#.</text></string>
-    <string id="st_ap_news_tpl_cause_harvest_pair_harvest_haunt_harvest_rob_002"><text>Видел, как сталкер #other_faction# уходил с артефактом от #location#, а звено #subject_faction_b# поджимало с одной стороны, и стая #subject_species_a# заходила с другой.</text></string>
-    <string id="st_ap_news_tpl_cause_harvest_pair_harvest_haunt_harvest_rob_003"><text>Я шёл с #subject_faction_b# за носильщиком #other_faction# от #location# #ago#, когда стая #subject_species_a# ударила нам во фланг, и артефакт остался лежать в грязи.</text></string>
-    <string id="st_ap_news_tpl_cause_harvest_pair_harvest_haunt_harvest_rob_004"><text>По следам у #location# видно, как артефакт ушёл с носильщиком #other_faction#, погоня #subject_faction_b# шла вплотную, а стая #subject_species_a# пересекала тот же запах.</text></string>
-    <string id="st_ap_news_tpl_cause_harvest_pair_harvest_haunt_harvest_rob_005"><text>#subject_name_b# увёл звено #subject_faction_b# за носильщиком #other_faction# от #location#, а по тому же запаху шла стая #subject_species_a#.</text></string>
 
 </string_table>

@@ -52,8 +52,7 @@ local function _handler_support(event_data)
         end)
         if #moved == 0 then return { code = RESULT.FAILED_ACTION, reason = last_reason or REASON.MOVE_FAILED } end
         for i = 1, #moved do
-            ap_ext_news.record_event(moved[i], CAUSE.BASEKILL, CONSEQUENCE.BASEKILL_SUPPORT, {
-                cause_id = event_data._cause_id,
+            ap_ext_news.add(moved[i], CAUSE.BASEKILL, CONSEQUENCE.BASEKILL_SUPPORT, {
                 other_squad = event_data.killer_squad,
                 smart = smart, level_id = level_id,
             })
@@ -102,8 +101,7 @@ local function _handler_flee(event_data)
         end)
         if #moved == 0 then return { code = RESULT.FAILED_ACTION, reason = last_reason or REASON.MOVE_FAILED } end
         for i = 1, #moved do
-            ap_ext_news.record_event(moved[i], CAUSE.BASEKILL, CONSEQUENCE.BASEKILL_FLEE, {
-                cause_id = event_data._cause_id,
+            ap_ext_news.add(moved[i], CAUSE.BASEKILL, CONSEQUENCE.BASEKILL_FLEE, {
                 other_squad = event_data.killer_squad,
                 smart = destination, level_id = level_id,
             })

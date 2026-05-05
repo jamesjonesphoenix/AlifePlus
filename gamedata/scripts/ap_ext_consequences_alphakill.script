@@ -84,8 +84,7 @@ local function _handler(event_data)
         if #moved == 0 then return { code = RESULT.FAILED_ACTION, reason = REASON.MOVE_FAILED } end
 
         for i = 1, #moved do
-            ap_ext_news.record_event(moved[i], CAUSE.ALPHAKILL, CONSEQUENCE.ALPHAKILL_TARGETED, {
-                cause_id = event_data._cause_id,
+            ap_ext_news.add(moved[i], CAUSE.ALPHAKILL, CONSEQUENCE.ALPHAKILL_TARGETED, {
                 other_squad = killer_squad,
                 smart = dst_smart, level_id = level_id,
             })

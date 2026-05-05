@@ -2,7 +2,9 @@
 local tostring = tostring
 local CAUSE = ap_core_const.CAUSE
 local CAUSE_TYPE = ap_core_const.CAUSE_TYPE
-local CAUSE_CATEGORY = ap_core_const.CAUSE_CATEGORY
+local CAUSE_CATEGORY = ap_ext_const.CAUSE_CATEGORY
+local CATEGORY = CAUSE_CATEGORY.REACTIONS
+local CAP_KEY = "cause_max_reactions"
 local CALLBACK = ap_core_const.CALLBACK
 local RESULT = ap_core_const.RESULT
 local REASON = ap_core_const.REASON
@@ -29,6 +31,9 @@ local function _on_npc_medkit_use(trace, npc, _medkit, kind)
     prof:start()
 
     if not cfg.cause_wounded_enabled then return { code = RESULT.FAILED_RULES } end
+    if not ap_core_limiter.check_cause_rate_limit(CATEGORY, cfg[CAP_KEY]) then
+        return { code = RESULT.FAILED_RULES, reason = REASON.BUDGET_EXHAUSTED }
+    end
     if not npc or not npc:alive() then return { code = RESULT.FAILED_RULES, reason = REASON.NIL_OR_DEAD } end
 
     local squad = xsquad.get_squad_by_member(npc:id())
@@ -59,6 +64,7 @@ local function _on_npc_medkit_use(trace, npc, _medkit, kind)
         ap_core_debug.debug("%s [tid=%d path=%s] npc=%d kind=%s [%.2fms]",
             LOG, trace.id, trace.path, result.npc_id, tostring(kind), prof:get_ms())
     end
+    ap_core_limiter.increment_cause_counter(CATEGORY)
     return result
 end
 
@@ -68,6 +74,9 @@ local function _on_actor_item_use(trace, item, section)
 
     if not cfg.cause_wounded_enabled then return { code = RESULT.FAILED_RULES } end
     if not HEALING_ITEMS[section] then return { code = RESULT.FAILED_RULES, reason = REASON.NOT_HEALING } end
+    if not ap_core_limiter.check_cause_rate_limit(CATEGORY, cfg[CAP_KEY]) then
+        return { code = RESULT.FAILED_RULES, reason = REASON.BUDGET_EXHAUSTED }
+    end
 
     local actor = db.actor
     if not actor then return { code = RESULT.FAILED_RULES, reason = REASON.NO_ACTOR } end
@@ -90,6 +99,7 @@ local function _on_actor_item_use(trace, item, section)
         ap_core_debug.debug("%s [tid=%d path=%s] player item=%s [%.2fms]",
             LOG, trace.id, trace.path, section, prof:get_ms())
     end
+    ap_core_limiter.increment_cause_counter(CATEGORY)
     return result
 end
 

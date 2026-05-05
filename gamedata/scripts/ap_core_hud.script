@@ -1,7 +1,6 @@
 --- ap_core_hud: PDA map markers, pipeline statistics, HUD overlay
 --- Counters collect when statistics overlay is on OR log level is DEBUG. HUD displays when overlay is on.
 local pairs, string_format, tostring = pairs, string.format, tostring
-local table_concat = table.concat
 local clock, RegisterScriptCallback = os.clock, RegisterScriptCallback
 
 local CALLBACK = ap_core_const.CALLBACK
@@ -23,55 +22,82 @@ local VALIDATE_MARKERS_SEC = 20
 local _last_validate_at = 0
 
 -- Marker render-state, owned exclusively by HUD. Keyed by squad_id.
--- { cons_id = number, remove_at = number|nil }
--- cons_id: broker monotonic id of the entry last rendered. Cache miss when entry refreshed.
+-- { consequence = string, remove_at = number|nil }
+-- consequence: enum string of the consequence currently rendered. Cache miss when label changes.
 -- remove_at: set when the squad enters linger; nil otherwise.
 local _marker_state = {}
 
--- Build "Name (Faction)" or just "Faction" if no name.
--- For mutants, name slot receives species_display (mutants have no character names).
-local function _format_party(name_or_species, faction_display)
-    local primary = (name_or_species and name_or_species ~= "") and name_or_species or nil
-    if primary then return primary .. " (" .. (faction_display or "?") .. ")" end
-    return faction_display or "?"
+-- Identity-marker source registered by ext (e.g. tracker registers alpha squads).
+-- HUD never imports ext; ext registers its squad-id list provider here.
+-- Empty default keeps validate/apply safe before any registration.
+local _identity_source_fn = function() return {} end
+
+-- Subject-line resolver registered by ext. Takes squad userdata, returns display string
+-- ("Name (Faction)", "<species> (<faction>)", or bare faction). HUD calls this; the
+-- resolver lives in ext where the faction/species display tables are defined.
+local _subject_resolver_fn = function(_squad) return "?" end
+
+--- Register an identity-marker source (squad-id list provider). Called by ext at on_game_start.
+--- Single source slot for now; called once per source. Last writer wins on duplicate registration.
+function register_identity_source(fn)
+    _identity_source_fn = fn or _identity_source_fn
+    ap_core_debug.info("[SQUAD] register_identity_source")
 end
 
-local function _mark_squad(entry)
-    local state = _marker_state[entry.squad_id]
-    if state and state.cons_id == entry.cons_id then return end
-    local info = ap_core_const.CONSEQUENCE_INFO[entry.consequence]
+--- Register the subject-line resolver. Called by ext at on_game_start.
+--- The resolver computes "<name|species_display> (<faction_display>)" or bare faction string.
+function register_subject_resolver(fn)
+    _subject_resolver_fn = fn or _subject_resolver_fn
+    ap_core_debug.info("[SQUAD] register_subject_resolver")
+end
+
+-- Mark a squad with the action label of its current consequence. Cache hits short-circuit
+-- when the squad's consequence hasn't changed since the last render. On miss, resolves squad
+-- via xobject.se and delegates subject string to the registered resolver.
+local function _mark(squad_id, consequence)
+    local state = _marker_state[squad_id]
+    if state and state.consequence == consequence then return end
+    local info = ap_core_const.CONSEQUENCE_INFO[consequence]
     local key = info and info.action_key
     local action = key and game.translate_string(key)
-    if not action or action == key or action == "" then action = entry.consequence end
-
-    local subject = _format_party(entry.subject_name or entry.subject_species_display, entry.subject_faction_display)
-    local lines = { action, "Subject: " .. subject }
-    if entry.other_squad_id then
-        local other = _format_party(entry.other_name or entry.other_species_display, entry.other_faction_display)
-        lines[#lines + 1] = "Other: " .. other
-    end
-    local full_label = table_concat(lines, "\\n")
-
-    xpda.mark_squad(entry.squad_id, { label = full_label, marker_type = ap_core_const.MARKER_ACTIVE })
-    _marker_state[entry.squad_id] = { cons_id = entry.cons_id }
-    ap_core_debug.debug("[SQUAD] mark: squad=%d label=%s", entry.squad_id, full_label)
+    if not action or action == key or action == "" then action = consequence end
+    local squad = xobject.se(squad_id)
+    if not squad then return end
+    local subject = _subject_resolver_fn(squad)
+    local label = action .. "\\n" .. "Subject: " .. (subject or "?")
+    xpda.mark_squad(squad_id, { label = label, marker_type = ap_core_const.MARKER_ACTIVE })
+    _marker_state[squad_id] = { consequence = consequence }
+    ap_core_debug.debug("[SQUAD] mark: squad=%d consequence=%s label=%s", squad_id, consequence, label)
 end
 
+-- Inline two-loop. Scripted first; identity source fills empty slots. Scripted-wins
+-- precedence falls out of fill order — no scratch set, no source field.
 local function _apply_markers()
-    local records = ap_core_broker.get_records({ assigned = true })
-    for i = 1, #records do _mark_squad(records[i]) end
+    local scripted = ap_core_broker.get_scripted_ids()
+    for squad_id, data in pairs(scripted) do
+        if data.on_arrive then _mark(squad_id, data.on_arrive) end
+    end
+    local identities = _identity_source_fn()
+    for i = 1, #identities do
+        local squad_id = identities[i]
+        if not scripted[squad_id] then
+            _mark(squad_id, ap_core_const.CONSEQUENCE.ALPHA_PROMOTE)
+        end
+    end
 end
 
+-- A squad is live while it appears in either register; otherwise start linger, expire, unmark.
 local function _validate_markers()
     local now = clock()
+    local scripted = ap_core_broker.get_scripted_ids()
+    local identity_set = {}
+    local identities = _identity_source_fn()
+    for i = 1, #identities do identity_set[identities[i]] = true end
     for squad_id, state in pairs(_marker_state) do
-        local entry = ap_core_broker.get_record({ squad_id = squad_id, assigned = true })
-        local se = entry and xobject.se(squad_id)
-        local should_linger = not entry or not se or not se.scripted_target
-        if should_linger and not state.remove_at then
+        local live = scripted[squad_id] or identity_set[squad_id]
+        if not live and not state.remove_at then
             state.remove_at = now + ap_core_const.MARKER_LINGER_SEC
-            local reason = (not entry) and "evicted" or (not se and "dead" or "unscripted")
-            ap_core_debug.debug("[SQUAD] mark_linger: squad=%d reason=%s", squad_id, reason)
+            ap_core_debug.debug("[SQUAD] mark_linger: squad=%d", squad_id)
         end
         if state.remove_at and now >= state.remove_at then
             xpda.unmark_squad(squad_id)
@@ -101,7 +127,6 @@ local function _on_server_entity_on_unregister(se_obj)
         xpda.unmark_squad(id)
         _marker_state[id] = nil
     end
-    ap_core_broker.clear_record(id)
 end
 
 

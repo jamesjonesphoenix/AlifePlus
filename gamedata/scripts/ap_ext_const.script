@@ -1,7 +1,20 @@
---- ap_ext_const: Alignment categories, personality traits, item lists
+--- ap_ext_const: Alignment categories, personality traits, item lists, cause-category enum
 --- Alignment = hard filter (can/cannot do a consequence). Personality = chance (how likely).
 --- src: GSC AI design Ai.doc:65-76 (тип характера), monstry.doc:4 (creature groups)
 --- Faction values from pure Anomaly squad_descr_*.ltx
+
+--- Cause category classification (behavioral axis, parallel to CAUSE_TYPE).
+--- What kind of squad behavior the cause represents. Drives the per-category rate-limit
+--- counter key and MCM organization. Each ext cause file declares its category at register
+--- time and self-gates against its `cause_max_<category>` MCM cap via ap_core_limiter.
+--- Future parallel axes (attack/flee, expansive/contracting) get their own enums — never
+--- overload CAUSE_CATEGORY.
+CAUSE_CATEGORY = {
+    REACTIONS     = "category:reactions",
+    NEEDS         = "category:needs",
+    INSTINCTS     = "category:instincts",
+    OPPORTUNITIES = "category:opportunities",
+}
 
 --- Human alignment categories (GSC moral axis: Principled/Self-serving/Unprincipled)
 --- Principled = follows rules, organized, hierarchical
@@ -227,15 +240,6 @@ ALPHA_LOOT = {
     karlik      = { "mutant_part_controller_glass" },
 }
 
-
---- Sibling count -> XML id for localized count word (`#count#` slot in cause-broadcast templates).
-NEWS_COUNT_KEY = {
-    [2] = "st_ap_news_count_two",
-    [3] = "st_ap_news_count_three",
-    [4] = "st_ap_news_count_four",
-    [5] = "st_ap_news_count_five",
-    many = "st_ap_news_count_many",
-}
 
 --- Mutant engine faction -> XML display key. Resolved via game.translate_string at compose time.
 --- Engine factions have no user-facing localization; AP provides its own via `st_ap_news_mutant_*` keys.

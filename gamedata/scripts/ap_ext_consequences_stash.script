@@ -4,7 +4,7 @@ local CAUSE = ap_core_const.CAUSE
 local RESULT = ap_core_const.RESULT
 local REASON = ap_core_const.REASON
 local CONSEQUENCE = ap_core_const.CONSEQUENCE
-local CAUSE_CATEGORY = ap_core_const.CAUSE_CATEGORY
+local CAUSE_CATEGORY = ap_ext_const.CAUSE_CATEGORY
 local PHASE = ap_core_const.CONSEQUENCE_PHASE
 local PRE_RELEASE_GULAG = ap_core_const.PRE_RELEASE_GULAG
 local TRACE = ap_core_const.TRACE
@@ -115,8 +115,8 @@ local function _make_handler(entry)
             if res.code ~= RESULT.SUCCESS then
                 return { code = RESULT.FAILED_ACTION, reason = res.reason or REASON.MOVE_FAILED }
             end
-            ap_ext_news.record_event(squad, event_data.cause, entry.consequence, {
-                cause_id = event_data._cause_id, smart = smart, level_id = event_data.level_id,
+            ap_ext_news.add(squad, event_data.cause, entry.consequence, {
+                smart = smart, level_id = event_data.level_id,
             })
             return { code = RESULT.SUCCESS, id = squad.id, dst_id = smart.id, stash_id = event_data.stash_id, community = event_data.community }
         end)

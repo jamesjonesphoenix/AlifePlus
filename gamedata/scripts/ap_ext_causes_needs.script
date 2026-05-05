@@ -5,7 +5,9 @@ local math_random, math_floor = math.random, math.floor
 local table_sort = table.sort
 local CAUSE = ap_core_const.CAUSE
 local CAUSE_TYPE = ap_core_const.CAUSE_TYPE
-local CAUSE_CATEGORY = ap_core_const.CAUSE_CATEGORY
+local CAUSE_CATEGORY = ap_ext_const.CAUSE_CATEGORY
+local CATEGORY = CAUSE_CATEGORY.NEEDS
+local CAP_KEY = "cause_max_needs"
 local RESULT = ap_core_const.RESULT
 local REASON = ap_core_const.REASON
 local RANGE_RADIO = ap_core_const.RANGE_RADIO
@@ -170,6 +172,9 @@ local function _on_smart(trace, squad)
 
     local level_id = xlevel.get_level_id(squad)
     if not level_id then return { code = RESULT.FAILED_RULES, reason = REASON.NO_LEVEL_ID } end
+    if not ap_core_limiter.check_cause_rate_limit(CATEGORY, cfg[CAP_KEY]) then
+        return { code = RESULT.FAILED_RULES, reason = REASON.BUDGET_EXHAUSTED }
+    end
 
     local now = xtime.game_sec()
     local dto = ap_ext_tracker.get_stalker_needs(squad.id)
@@ -193,6 +198,7 @@ local function _on_smart(trace, squad)
         ap_core_debug.debug("%s [tid=%d path=%s] sq=%d need=%s drive=%.2f [%.2fms]",
             LOG_BY_CAUSE[result.cause], trace.id, trace.path, squad.id, overdue[won_idx].need.need, overdue[won_idx].drive, prof:get_ms())
     end
+    ap_core_limiter.increment_cause_counter(CATEGORY)
     return result
 end
 

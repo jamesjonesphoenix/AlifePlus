@@ -150,6 +150,23 @@ function get_alphas()
     return result
 end
 
+--- Resolve alive alphas to their squad ids for HUD marker rendering
+--- Skips alphas whose squad is gone (xsquad.get_squad_by_member returns nil). Multiple alphas in one squad collapse to one entry.
+--- @safety SAFE - nil-guarded on each member resolution; no engine calls beyond xsquad bridge
+--- @cost O(n) alphas | 1 luabind medium per alpha (xsquad.get_squad_by_member: alife_object xr_map find)
+--- @return table Array of unique squad ids
+function get_alpha_marker_squads()
+    local seen, list = {}, {}
+    for npc_id in pairs(_ap_alphas) do
+        local squad = xsquad.get_squad_by_member(npc_id)
+        if squad and not seen[squad.id] then
+            seen[squad.id] = true
+            list[#list + 1] = squad.id
+        end
+    end
+    return list
+end
+
 
 --- Unregister entity from all tracking (on death or unregister)
 local function _unregister_entity(id)
@@ -287,6 +304,8 @@ function on_game_start()
     RegisterScriptCallback(CALLBACK.SAVE_STATE, _on_save_state)
     RegisterScriptCallback(CALLBACK.LOAD_STATE, _on_load_state)
     RegisterScriptCallback(CALLBACK.SQUAD_ON_NPC_DEATH, _on_squad_npc_death)
+
+    ap_core_hud.register_identity_source(ap_ext_tracker.get_alpha_marker_squads)
 
     ap_core_debug.info("AlifePlus v%s (xlibs v%s)", _ap_deps.get_version(), xlibs.get_version())
     ap_core_debug.info("[TRACKER] Initialized")

@@ -19,10 +19,6 @@ local _radiant_callbacks = {}
 --- Radiant handlers (collapsed from all radiant registrations into one flat table)
 local _radiant_handlers = {}
 
---- Monotonic cause sequence. Shared by all consequences dispatched from the same cause publish.
---- Session-lifetime. Resets on on_game_start.
-local _cause_seq = 0
-
 --- Callbacks that are always on the player's map (actor/npc game_objects only exist online)
 local _always_on_map = {
     [CALLBACK.ACTOR_ON_ITEM_USE] = true,
@@ -162,10 +158,7 @@ end
 local function _try_publish(on_map, result, trace, category, cause_type)
     result._trace = trace
     result.cause_type = cause_type
-    _cause_seq = _cause_seq + 1
-    result._cause_id = _cause_seq
     ap_core_util.event_publish(result.cause, result)
-    ap_core_limiter.increment_cause_counter(category)
     if stats_collecting() then stats.inc_causes(cause_type) end
     ap_core_debug.debug("[PRODUCER] PUBLISHED cause=%s category=%s sq=%s on_map=%s level=%s",
         result.cause, category, result.squad_id, on_map, result.level_id)
@@ -183,18 +176,11 @@ local function _eval_reactive_handlers(handlers, on_map, ...)
     -- across loop iterations. Allocation is ~50us/sec in dense combat; acceptable cost
     -- for reactive pipeline fan-out.
     local args = {...}
-    local sc = stats_collecting()
     for i = 1, #handlers do
         local entry = handlers[i]
-        if not ap_core_limiter.check_cause_rate_limit(entry.category) then
-            ap_core_debug.debug("[PRODUCER.REACTIVE] CATEGORY_RATE_BLOCKED category=%s", entry.category)
-            if sc then stats.inc_rate(false) end
-            goto continue
-        end
         local trace = ap_core_debug.trace()
         local result = entry.handler(trace, unpack(args))
         if result and result.cause then _try_publish(on_map, result, trace, entry.category, entry.cause_type) end
-        ::continue::
     end
 end
 
@@ -205,7 +191,7 @@ local math_random = math.random
 
 --- Cascade through radiant generators in random order. Stop on first publish.
 --- Per-cause check budget is reset here and consumed inside generators per cause attempt.
---- Rate-blocked entries are skipped (they never ran any cause attempt).
+--- Predicates self-gate against their per-category cause-rate budget; producer doesn't.
 local function _eval_radiant_cascade(on_map, squad)
     _check_budget:reset()
     local cascade_size = #_cascade_buf
@@ -213,21 +199,14 @@ local function _eval_radiant_cascade(on_map, squad)
         local j = math_random(i)
         if j ~= i then _cascade_buf[i], _cascade_buf[j] = _cascade_buf[j], _cascade_buf[i] end
     end
-    local sc = stats_collecting()
     for i = 1, cascade_size do
         local entry = _cascade_buf[i]
-        if not ap_core_limiter.check_cause_rate_limit(entry.category) then
-            ap_core_debug.debug("[PRODUCER.RADIANT] CATEGORY_RATE_BLOCKED category=%s sq=%s", entry.category, squad.id)
-            if sc then stats.inc_rate(true) end
-            goto continue
-        end
         local trace = ap_core_debug.trace()
         local result = entry.handler(trace, squad)
         if result and result.cause then
             _try_publish(on_map, result, trace, entry.category, entry.cause_type)
             break
         end
-        ::continue::
     end
 end
 
@@ -371,7 +350,6 @@ function on_game_start()
     _next_pacer1 = 0
     _next_pacer2 = 0
     _reactive_event_limiter = nil
-    _cause_seq = 0
     RegisterScriptCallback(CALLBACK.ACTOR_ON_FIRST_UPDATE, _on_first_update)
     ap_core_debug.info("[PRODUCER] Initialized")
 end

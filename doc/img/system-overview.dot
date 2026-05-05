@@ -58,7 +58,7 @@ digraph system_overview {
 
             xg1 [label="PACER (token bucket)"]
             xg2 [label="RATIO (Bresenham)"]
-            xg3 [label="EVAL (sliding window)"]
+            xg3 [label="EVAL (per-handler)"]
 
             xg1 -> xg2
             xg2 -> xg3

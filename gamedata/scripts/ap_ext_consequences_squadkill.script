@@ -90,8 +90,7 @@ local function _handler_revenge(event_data)
         if #moved == 0 then return { code = RESULT.FAILED_ACTION, reason = REASON.MOVE_FAILED } end
 
         for i = 1, #moved do
-            ap_ext_news.record_event(moved[i], CAUSE.SQUADKILL, CONSEQUENCE.SQUADKILL_REVENGE, {
-                cause_id = event_data._cause_id,
+            ap_ext_news.add(moved[i], CAUSE.SQUADKILL, CONSEQUENCE.SQUADKILL_REVENGE, {
                 other_squad = target_squad,
                 smart = dst_smart, level_id = level_id,
             })
@@ -142,8 +141,7 @@ local function _handler_flee(event_data)
         end)
         if #moved == 0 then return { code = RESULT.FAILED_ACTION, reason = last_reason or REASON.MOVE_FAILED } end
         for i = 1, #moved do
-            ap_ext_news.record_event(moved[i], CAUSE.SQUADKILL, CONSEQUENCE.SQUADKILL_FLEE, {
-                cause_id = event_data._cause_id,
+            ap_ext_news.add(moved[i], CAUSE.SQUADKILL, CONSEQUENCE.SQUADKILL_FLEE, {
                 other_squad = event_data.killer_squad,
                 smart = base, level_id = level_id,
             })
