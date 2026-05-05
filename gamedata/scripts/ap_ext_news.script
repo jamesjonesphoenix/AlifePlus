@@ -299,22 +299,22 @@ end
 -- Routes through dynamic_news_manager.PushToChannel when initialized; falls back to
 -- xpda.send during the ~27s cold-start window. Engine-side drops (enable_news, NewsToggle,
 -- is_pda_charged, counter cap) are not duplicated here.
-local function _dispatch(picked, msg)
-    local dnm = dynamic_news_manager and dynamic_news_manager.get_dynamic_news
-                and dynamic_news_manager.get_dynamic_news() or nil
-    if dnm and dnm.PushToChannel then
-        dnm:PushToChannel(picked.channel, {
-            Mg = msg, Se = picked.name, Ic = picked.icon,
-            Snd = "news", It = "npc",
-        })
-        ap_core_debug.debug("[PDA.NEWS] queued sender=%s channel=%s msg=%s",
-            picked.name, picked.channel, msg)
-        return "queued"
-    end
-    xpda.send(picked.name, msg, picked.icon)
-    ap_core_debug.debug("[PDA.NEWS] sent sender=%s channel=%s path=fallback msg=%s",
-        picked.name, picked.channel, msg)
-    return "fallback"
+local function _dispatch(trace, picked, msg)
+    return ap_core_debug.observe(trace, "news:dispatch", function()
+        local dnm = dynamic_news_manager and dynamic_news_manager.get_dynamic_news
+                    and dynamic_news_manager.get_dynamic_news() or nil
+        if dnm and dnm.PushToChannel then
+            dnm:PushToChannel(picked.channel, {
+                Mg = msg, Se = picked.name, Ic = picked.icon,
+                Snd = "news", It = "npc",
+            })
+            return { code = TRACE.OK, path = "queued",
+                sender = picked.name, channel = picked.channel, msg = msg }
+        end
+        xpda.send(picked.name, msg, picked.icon)
+        return { code = TRACE.OK, path = "fallback",
+            sender = picked.name, channel = picked.channel, msg = msg }
+    end)
 end
 
 -- Pick the per-consequence template pool for the focal entry.
@@ -323,7 +323,7 @@ local function _pick_template(entry)
     return _templates_by_consequence[cons_name], cons_name
 end
 
-local function _compose_tick_impl()
+local function _compose_tick_impl(trace)
     local current_locale = _detect_locale()
     if current_locale ~= _locale then
         _locale = current_locale
@@ -335,46 +335,39 @@ local function _compose_tick_impl()
                 and dynamic_news_manager.get_dynamic_news() or nil
     local channel_status = dnm and dnm.channel_status or nil
     if not channel_status then return { code = TRACE.NONE } end
-    local entries = _collect_eligible()
+    local entries = ap_core_debug.observe(trace, "news:collect", function()
+        return _collect_eligible()
+    end)
     if #entries == 0 then return { code = TRACE.NONE } end
     local entry = entries[math_random(#entries)]
     local pool, cons_name = _pick_template(entry)
     if not pool or #pool == 0 then
-        ap_core_debug.debug("[PDA.NEWS] no_templates cons=%s", cons_name or "?")
         _reported_news_ids:set(entry.news_id, true)
-        return { code = TRACE.NO_TEMPLATES }
+        return { code = TRACE.NO_TEMPLATES, cons = cons_name or "?" }
     end
     local slots = _slots_for(entry)
     local filtered = _filter_variants(pool, slots)
     local template = filtered[math_random(#filtered)]
     local msg = _clean_output(_substitute(template, slots))
-    if not msg then
-        ap_core_debug.debug("[PDA.NEWS] no_msg cons=%s", cons_name or "?")
-        return { code = TRACE.NO_MSG }
-    end
+    if not msg then return { code = TRACE.NO_MSG, cons = cons_name or "?" } end
     local actor_comm = get_actor_true_community()
-    local picked = _pick_speaker(actor_comm, cfg.news_scope, channel_status)
+    local picked = ap_core_debug.observe(trace, "news:pick_speaker", function()
+        return _pick_speaker(actor_comm, cfg.news_scope, channel_status)
+    end)
     if not picked then
-        ap_core_debug.debug("[PDA.NEWS] no_speaker scope=%s actor_comm=%s channels=%s",
-            cfg.news_scope, actor_comm or "?", _format_channels(channel_status))
-        return { code = TRACE.NO_SENDER }
+        return { code = TRACE.NO_SENDER, scope = cfg.news_scope,
+            actor_comm = actor_comm or "?", channels = _format_channels(channel_status) }
     end
-    _dispatch(picked, msg)
+    _dispatch(trace, picked, msg)
     _reported_news_ids:set(entry.news_id, true)
     return { code = TRACE.SENT, sender = picked.name }
 end
 
---- compose_tick: outer wrapper. Times the inner pipeline with xprofiler when log_level
---- >= DEBUG; emits [PDA.NEWS.COMPOSE] line per tick with end-to-end milliseconds.
+--- compose_tick: news pipeline tick. Wraps end-to-end compose in observe so it
+--- nests in the trace tree with the rest of the pipeline.
 function compose_tick()
     if not cfg.news_enabled then return { code = TRACE.NONE } end
-    local prof = xprofiler.new_if(ap_core_debug.enabled())
-    prof:start()
-    local result = _compose_tick_impl()
-    prof:stop()
-    ap_core_debug.debug("[PDA.NEWS.COMPOSE] code=%s [%.2fms]",
-        result.code or "?", prof:get_ms())
-    return result
+    return ap_core_debug.observe(nil, "news:compose", _compose_tick_impl)
 end
 
 local function _next_delay()
