@@ -204,7 +204,7 @@ Rules:
 ## A-Life Rules
 
 - **ID-based** - Track by server ID, not game_object (ephemeral)
-- **Synchronous payload only** - Server userdata in cause payloads is valid only for the synchronous dispatch chain (producer -> consumer -> consequence handler -> record_event). Anything invoked on a later tick (xlice/CreateTimeEvent jobs, on_arrive callbacks, deferred scanners) references entities by server ID and re-resolves via `xobject.se(id)` / `alife_object(id)`.
+- **Synchronous payload only** - Server userdata in cause payloads is valid only for the synchronous dispatch chain (producer -> consumer -> consequence handler -> `ap_ext_news.add`). Anything invoked on a later tick (xlice/CreateTimeEvent jobs, on_arrive callbacks, deferred scanners) references entities by server ID and re-resolves via `xobject.se(id)` / `alife_object(id)`.
 - **Squad-based** - Squads are atomic units, NPCs are members
 - **Bias not command** - scripted_target is suggestion, not force
 - **Same-level** - Operations constrained to current level
@@ -289,7 +289,7 @@ All events MUST include `level_id` from where the event occurred.
 
 **Consequence responsibility:**
 - Use `event_data.level_id` for all location-based operations
-- Pass `level_id` to `ap_ext_news.record_event(squad, cause, consequence, { level_id = ... })` so the journal captures it
+- Pass `level_id` to `ap_ext_news.add(squad, cause, consequence, { level_id = ... })` so the news entry captures it
 
 Never use `get_actor_level_id()` as fallback. The player may be on a different level.
 

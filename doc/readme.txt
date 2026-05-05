@@ -316,10 +316,9 @@ News: Information from the Zone
   News is information the simulation runs on: where to go, where to avoid, what is fresh, who is active, what is the threat.
   The PDA broadcasts a window into the same stream NPCs already act on, so you can read the Zone the way the squads in it do.
 
-  News is composite, chained, and emergent.
-  Composite: both reactive halves of one event fire together (investigation and scavenge on the same massacre) and surface as a single line.
-  Chained: one consequence feeds the next across time (a stash hit becomes a massacre becomes an investigation becomes a chase), and each step is its own report tied to what came before.
-  Emergent: none of it is scripted. The news is whatever the simulation produced.
+  News is emergent: none of it is scripted. Each consequence rolls a chance to publish; on hit, the event is appended to a session queue with the names, factions, species, and locations captured at that moment.
+  The PDA composer drains the queue on a randomized interval and picks one entry to broadcast as a radio gossip line.
+  What you read on the PDA is whatever the simulation produced and gossip caught.
 
   Every message names what happened.
   You always know whether you are hearing about a massacre, a chase, a base loss, an alpha rising, a scavenge run, an infestation, or a stash hit.

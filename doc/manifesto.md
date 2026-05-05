@@ -106,9 +106,9 @@ If the witness died before sending it, the news never happened.
 > Dmitriy Iassenev, Game Developer (2008) [1]
 
 AlifePlus implements this explicitly.
-Consequences record events to a journal (ring buffer, session-only, ids only).
-The composer reads the journal, groups siblings by `cause_id`, and renders either a per-consequence template or a per-cause composite from localized XML pools.
-Display data (factions, names, species, locations) is resolved lazily at compose time from the live server-entity registry, so an entry survives the loss of its participants and still renders from whatever is still resolvable.
+Each consequence rolls a chance and, on hit, appends an entry to a session FIFO (ring buffer, session-only, monotonic news id).
+Display strings (factions, names, species) are eager-captured at write time, so an entry renders cleanly even after its participants are gone.
+The composer drains the FIFO on a randomized interval, picks a per-consequence template from a localized XML pool, and dispatches.
 Event-connected stalkers are preferred as senders: a same-faction witness first, a friendly stalker second.
 When no witness is available, the tick is wasted and no message goes out.
 
