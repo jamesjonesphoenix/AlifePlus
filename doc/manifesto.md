@@ -259,7 +259,7 @@ Any stable heartbeat the engine provides can feed the gate chain.
 
 When a cause publishes an event, multiple consequences may subscribe to it.
 A massacre can trigger both scavengers converging and the victim's faction investigating.
-A squad kill can trigger both revenge pursuit and retreat to base.
+A wounded character can trigger both predator hunt and same-faction help.
 The dispatch order determines which consequence gets the first chance to claim a squad.
 
 The engine uses priority-based routing for simulation targeting.
@@ -321,12 +321,12 @@ Massacre sites are where all of these systems were meant to intersect: combat pr
 
 ---
 
-### Squad Kill: Revenge, Flee
+### Squad Kill: Revenge
 
-When the last member of a squad dies, same-faction squads pursue the killer and nearby squads of the victim's faction fall back to the nearest base.
+When the last member of a squad dies, same-faction squads pursue the killer.
 
 AlifePlus fires the squadkill cause on total squad wipeout.
-Two consequences dispatch: revenge sends same-faction squads after the killer through real movement, and flee routes nearby squads to the nearest friendly base through the engine's own precondition routing (`sim_board`).
+The revenge consequence dispatches same-faction squads after the killer through real movement.
 
 X-Ray adjusts faction goodwill on kills, scaled by victim rank (`relation_registry_actions`).
 It tracks who killed whom and shifts attitudes between factions.
