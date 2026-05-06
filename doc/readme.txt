@@ -36,7 +36,7 @@ What you'll notice:
 Reactive responses:
 - Squads reroute after nearby combat deaths.
 - Scavengers and investigators converge on massacre sites.
-- Allies retaliate or retreat after a squad wipe.
+- Allies retaliate after a squad wipe.
 - Predators close in on wounded targets.
 - Same-faction allies rush to help the wounded.
 - Outlaws hunt whoever picked up an artefact.
@@ -228,7 +228,6 @@ Reactions
 
   SquadKill
     - Revenge - Same-faction squads pursue the killer as it moves.
-    - Flee - Nearby squads of the victim's faction fall back to the nearest base.
 
   BaseKill
     - Support - Nearby friendly squads rush to reinforce the base under attack.
