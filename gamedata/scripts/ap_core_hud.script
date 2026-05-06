@@ -65,7 +65,7 @@ local function _mark(squad_id, consequence)
     local subject = _subject_resolver_fn(squad)
     local label = action .. "\\n" .. "Subject: " .. (subject or "?")
     xpda.mark_squad(squad_id, { label = label, marker_type = ap_core_const.MARKER_ACTIVE })
-    _marker_state[squad_id] = { consequence = consequence }
+    _marker_state[squad_id] = { consequence = consequence, persistent = info and info.persistent }
     ap_core_debug.debug("[SQUAD] mark: squad=%d consequence=%s label=%s", squad_id, consequence, label)
 end
 
@@ -94,7 +94,7 @@ local function _validate_markers()
     for i = 1, #identities do identity_set[identities[i]] = true end
     for squad_id, state in pairs(_marker_state) do
         local live = scripted[squad_id] or identity_set[squad_id]
-        if not live and not state.remove_at then
+        if not live and not state.remove_at and not state.persistent then
             state.remove_at = now + ap_core_const.MARKER_LINGER_SEC
             ap_core_debug.debug("[SQUAD] mark_linger: squad=%d", squad_id)
         end
@@ -561,6 +561,7 @@ local function _on_first_update()
     _marker_state = {}
     _last_validate_at = 0
     if cfg.map_markers then
+        RemoveTimeEvent(MARKER_TIMER_EV, UPDATE_MARKERS)
         CreateTimeEvent(MARKER_TIMER_EV, UPDATE_MARKERS, UPDATE_MARKERS_SEC, _update_markers)
         ap_core_debug.debug("[SQUAD] marker timer created (map_markers=true)")
     end

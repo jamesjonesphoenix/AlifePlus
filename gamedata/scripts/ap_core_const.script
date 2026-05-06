@@ -319,7 +319,7 @@ CONSEQUENCE = {
 ---             e.g. "Chasing Alpha Killer", "Investigating a Massacre Site".
 --- Both resolved via game.translate_string at render time.
 CONSEQUENCE_INFO = {
-    [CONSEQUENCE.ALPHA_PROMOTE]        = { name_key = "st_ap_consequence_alpha_promote",        action_key = "st_ap_action_alpha_promote" },
+    [CONSEQUENCE.ALPHA_PROMOTE]        = { name_key = "st_ap_consequence_alpha_promote",        action_key = "st_ap_action_alpha_promote", persistent = true },
     [CONSEQUENCE.ALPHAKILL_TARGETED]   = { name_key = "st_ap_consequence_alphakill_targeted",   action_key = "st_ap_action_alphakill_targeted" },
     [CONSEQUENCE.MASSACRE_SCAVENGE]    = { name_key = "st_ap_consequence_massacre_scavenge",    action_key = "st_ap_action_massacre_scavenge" },
     [CONSEQUENCE.MASSACRE_INVESTIGATE] = { name_key = "st_ap_consequence_massacre_investigate", action_key = "st_ap_action_massacre_investigate" },

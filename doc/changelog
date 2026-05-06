@@ -69,6 +69,8 @@ next
     Fixed: harvest_haunt and wounded_hunt no longer dispatch mutant squads with broken commander state into species-restricted consequences. Only resolved aberrant species reach harvest_haunt; only resolved predator and aberrant species reach wounded_hunt.
     Fixed: alpha kill events (cause:alphakill) no longer fire when the killer is a protected story NPC, trader, or named character. Aligns with the protection rule already applied to the alpha, wounded, and harvest causes.
     Fixed: squadkill_revenge consequence dead for NPC-vs-NPC kills since 1.5.0. Cause publisher now ships killer_squad_id; the revenge gate no longer rejects every non-player kill with NO_KILLER_SQUAD.
+    Fixed: map markers stuck on the engine map after squads were unscripted. _on_first_update now removes any stale marker timer before recreating it, so re-entry on level transition or save reload no longer breaks the recurring update chain.
+    Fixed: alpha_promote markers vanished 60s after the alpha's last AP scripting cycle. Per-consequence persistent flag restored on CONSEQUENCE_INFO; persistent markers skip linger and clear only on entity unregister.
   Localization:
     Removed: pair-composite news templates (25 ids per locale). News now uses per-consequence templates only.
     Removed: news count words (st_ap_news_count_two/three/four/five/many, 5 ids per locale). Vestigial #count# slot dropped.
