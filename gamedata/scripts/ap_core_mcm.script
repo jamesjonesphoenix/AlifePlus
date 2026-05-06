@@ -551,11 +551,11 @@ local function _desc(txt)
 end
 
 local function _tag(txt)
-    return { id = "tag", type = "desc", text = txt, clr = {255, 180, 170, 130} }
+    return { id = "tag", type = "desc", text = txt, clr = {180, 150, 140, 110} }
 end
 
 local function _tag_plain(txt)
-    return { id = "tag", type = "desc", text = txt }
+    return { id = "tag", type = "desc", text = txt, clr = {180, 150, 140, 110} }
 end
 
 local function _check(key)
