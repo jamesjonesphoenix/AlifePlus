@@ -37,33 +37,33 @@ local _alignment_conquer_mutant = xtable.merge(
 local _personality_conquer = { PERSONALITY.TERRITORY, PERSONALITY.AGGRESSION }
 local _personality_infest  = { PERSONALITY.TERRITORY, PERSONALITY.SURVIVAL }
 
-local function _not_base(smart)
-    return not xsmart.is_base(smart) and not xsmart.has_trader_job(smart)
+local function _is_wild_smart(smart)
+    return not xsmart.is_base(smart) and not xsmart.has_stalker_jobs(smart, xsmart.JOB_TYPE_TRADER)
 end
 
 local function _build_conquer_filter()
     return function(smart)
         if not xsmart.is_smart_empty(smart) then return false end
-        if not _not_base(smart) then return false end
+        if not _is_wild_smart(smart) then return false end
         return true
     end
 end
 
 local function _make_lair_filter(player_id)
     return function(smart)
-        return xsmart.is_lair(smart) and _not_base(smart) and xsmart.accepts_mutant(smart, player_id)
+        return xsmart.is_lair(smart) and _is_wild_smart(smart) and xsmart.accepts_mutant(smart, player_id)
     end
 end
 
 local function _make_surge_filter(player_id)
     return function(smart)
-        return xsmart.has_surge_shelter(smart) and _not_base(smart) and xsmart.accepts_mutant(smart, player_id)
+        return xsmart.has_surge_shelter(smart) and _is_wild_smart(smart) and xsmart.accepts_mutant(smart, player_id)
     end
 end
 
 local function _make_lair_or_surge_filter(player_id)
     return function(smart)
-        return (xsmart.is_lair(smart) or xsmart.has_surge_shelter(smart)) and _not_base(smart) and xsmart.accepts_mutant(smart, player_id)
+        return (xsmart.is_lair(smart) or xsmart.has_surge_shelter(smart)) and _is_wild_smart(smart) and xsmart.accepts_mutant(smart, player_id)
     end
 end
 

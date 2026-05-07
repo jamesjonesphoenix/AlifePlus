@@ -66,6 +66,7 @@ next
     Added: v1.5.5 save migration releases scripted_target on all broker squads then drops the table. Required because the INFEST consequence rename leaves stale arrival keys.
   Fixed:
     Fixed: scripted squads froze idle for the full pre_release_gulag duration when arriving at a smart with no free job slots while visible to the actor. Arrival path in ap_core_broker now checks xsmart.has_jobs_for when smart is online + on actor's level; releases the squad on failure (release_no_jobs) instead of entering the wait state.
+    Fixed: stalker squad needs dispatches no longer target smarts whose stalker_jobs[] contains only generic_point and campfire_point stubs (level designer authored no walker / guard / sniper / etc. patrol paths). Seven needs filters (heal_shelter, shelter_indoor, money_harvest, money_hunt, job_outpost, job_explore, job_research) AND-compose xsmart.has_animated_stalker_jobs at scan-time; supply_trader uses xsmart.has_stalker_jobs(JOB_TYPE_TRADER). Pairs with the arrival-time has_jobs_for gate.
     Fixed: AREA_CONQUER handler crammed stalker and mutant logic in one function. They are now two distinct handlers.
     Fixed: news template pool for INFEST was orphaned after the cause rename. Templates now align with consequence:area_infest.
     Fixed: harvest_haunt and wounded_hunt no longer dispatch mutant squads with broken commander state into species-restricted consequences. Only resolved aberrant species reach harvest_haunt; only resolved predator and aberrant species reach wounded_hunt.
