@@ -44,10 +44,10 @@
     <text>Помощь раненым</text>
   </string>
   <string id="st_ap_consequence_area_conquer">
-    <text>Захват территории (люди)</text>
+    <text>Захват территории</text>
   </string>
   <string id="st_ap_consequence_area_swarm">
-    <text>Захват территории (мутанты)</text>
+    <text>Натиск мутантов</text>
   </string>
   <string id="st_ap_consequence_area_infest">
     <text>Заселение территории</text>
@@ -104,13 +104,13 @@
     <text>Поиск пищи</text>
   </string>
   <string id="st_ap_consequence_slumber_lair">
-    <text>Возвращение в логово</text>
+    <text>Сон в логове</text>
   </string>
   <string id="st_ap_consequence_slumber_field">
-    <text>Возвращение в логово</text>
+    <text>Сон в открытом поле</text>
   </string>
   <string id="st_ap_consequence_slumber_surge">
-    <text>Возвращение в логово</text>
+    <text>Укрытие от выброса</text>
   </string>
   <string id="st_ap_consequence_roam">
     <text>Исследование территории</text>
@@ -165,7 +165,7 @@
     <text>Захватывает территорию</text>
   </string>
   <string id="st_ap_action_area_swarm">
-    <text>Заявляет территорию</text>
+    <text>Заполоняет территорию</text>
   </string>
   <string id="st_ap_action_area_infest">
     <text>Заселяет территорию</text>
@@ -225,10 +225,10 @@
     <text>Возвращается в логово</text>
   </string>
   <string id="st_ap_action_slumber_field">
-    <text>Возвращается в логово</text>
+    <text>Устраивается на ночлег в поле</text>
   </string>
   <string id="st_ap_action_slumber_surge">
-    <text>Возвращается в логово</text>
+    <text>Прячется от выброса</text>
   </string>
   <string id="st_ap_action_roam">
     <text>Исследует территорию</text>
