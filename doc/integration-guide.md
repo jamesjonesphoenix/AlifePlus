@@ -411,7 +411,7 @@ Read-only static tables and enums that integrators reference directly. No regist
 | Symbol | Use |
 |--------|-----|
 | `CAUSE` | enum of cause event names (e.g. `CAUSE.MASSACRE` -> `"cause:massacre"`). Use as xbus event keys. |
-| `CONSEQUENCE` | enum of consequence keys (e.g. `CONSEQUENCE.MASSACRE_INVESTIGATE`). Match to `record.consequence`. |
+| `CONSEQUENCE` | enum of consequence keys (e.g. `CONSEQUENCE.MASSACRE_INVESTIGATE`). Pass to `script_squad` `opts.on_arrive`; read back from `ap_core_broker.get_scripted_ids()[squad_id].on_arrive`. |
 | `CONSEQUENCE_INFO` | per-consequence `{ name_key, action_key }`. `name_key` is the short caption ("Massacre Investigate"); `action_key` is the full action phrase ("Investigating a Massacre Site"). Both XML ids resolved via `game.translate_string`. |
 | `CONSEQUENCE_PHASE` | trace-only enum used by `observe()` for sub-phase paths (FIND_TARGETS, MOVE_SQUAD, ARRIVE, etc.). Integrators rarely need this; it shows up in DEBUG-level traces. |
 | `RESULT` | consequence handler return codes (SUCCESS, FAILED_RULES, FAILED_SCAN, FAILED_ACTION, DISABLED). |
