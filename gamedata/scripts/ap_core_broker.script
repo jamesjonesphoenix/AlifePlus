@@ -110,7 +110,7 @@ local function _log_proximity(source, squad, smart, data)
 end
 
 --- Script squad to move to smart terrain, register for arrival detection and gulag hold
---- Sets scripted_target via xsquad.control_squad, tracks in _ap_scripted_squads with TTL and arrival handler
+--- Sets scripted_target via xsquad.acquire_squad, tracks in _ap_scripted_squads with TTL and arrival handler
 --- @safety SAFE - nil-guarded, releases existing script before re-scripting
 --- @cost O(1) | 1 luabind (smart:name()), 0 on reject
 --- @param squad se_squad Squad server object
@@ -130,7 +130,7 @@ function script_squad(squad, smart, opts)
             squad.id, _ap_scripted_squads[squad.id].scripted_target)
         xsquad.release_squad(squad)
     end
-    if not xsquad.control_squad(squad, smart, opts.rush) then
+    if not xsquad.acquire_squad(squad, smart, opts.rush) then
         return { code = RESULT.FAILED_ACTION, reason = REASON.MOVE_FAILED, id = squad.id, dst = name }
     end
     _ap_scripted_squads[squad.id] = {

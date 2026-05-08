@@ -242,7 +242,7 @@ ModA controls squads for territorial warfare. AP controls squads for emergent be
 `scripted_target` is the squad control field. Setting it routes the squad to `specific_update` (direct A->B movement instead of simulation). `xsquad` provides three primitives:
 
 ```lua
-xsquad.control_squad(squad, smart, rush)   -- acquire: sets scripted_target, clears __lock
+xsquad.acquire_squad(squad, smart, rush)   -- acquire: sets scripted_target, clears __lock
 xsquad.release_squad(squad)                -- release: clears scripted_target + __lock
 xsquad.reassert_target(squad, target)      -- defend: restores scripted_target if overwritten
 ```
@@ -252,7 +252,7 @@ Both mods check `scripted_target` before claiming a squad. This is enough for ba
 ```lua
 -- ModA before scripting:
 if se_squad.scripted_target then return end  -- AP (or anyone) has this squad
-xsquad.control_squad(squad, smart)
+xsquad.acquire_squad(squad, smart)
 
 -- AP's PROTECTION gate already does this check automatically.
 -- No code change needed on AP's side.
