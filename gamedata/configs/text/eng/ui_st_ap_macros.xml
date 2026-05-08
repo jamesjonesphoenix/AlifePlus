@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<string_table>
+
+    <!-- ==== #ago# phrases ==== -->
+    <string id="st_ap_macros_ago_recent"><text>just now</text></string>
+    <string id="st_ap_macros_ago_hours"><text>a few hours ago</text></string>
+
+</string_table>

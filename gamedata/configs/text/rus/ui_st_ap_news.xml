@@ -1,12 +1,5 @@
 <?xml version="1.0" encoding="windows-1251"?>
 <string_table>
-  <!-- ==== #ago# phrases ==== -->
-  <string id="st_ap_news_ago_recent">
-    <text>только что</text>
-  </string>
-  <string id="st_ap_news_ago_hours">
-    <text>несколько часов назад</text>
-  </string>
   <!-- ==== mutant engine faction display plurals (capitalized for mid-sentence consistency) ==== -->
   <string id="st_ap_news_mutant_predatory_day">
     <text>Хищники</text>
@@ -111,7 +104,7 @@
     <text>Видел, как звено #subject_faction# вышло к #location# #ago# вытаскивать тела с места, где зачистили парни #other_faction#.</text>
   </string>
   <string id="st_ap_news_tpl_massacre_investigate_003">
-    <text>Я ходил с патрулём #subject_faction#, который вернулся к #location# #ago# опознавать своих мёртвых. Мы забрали жетоны и оставили тела там, где их бросили парни #other_faction#.</text>
+    <text>Я был неподалёку от #location# #ago#, когда патруль #subject_faction# пришёл опознавать своих мёртвых. Они забрали жетоны и оставили тела там, где их бросили парни #other_faction#.</text>
   </string>
   <string id="st_ap_news_tpl_massacre_investigate_004">
     <text>По следам у #location# видно, что парни #other_faction# ушли чисто после резни, а уже потом подошёл отряд #subject_faction# собирать своих.</text>
@@ -159,7 +152,7 @@
     <text>Видел, как звено #subject_faction# уходило на восток по следам парней #other_faction# #ago# после того, как у #location# полегли их братья.</text>
   </string>
   <string id="st_ap_news_tpl_squadkill_revenge_003">
-    <text>Я был с #subject_faction# у #location#, когда #ago# парни #other_faction# вырезали наше братское звено. Мстители, что пошли по их следу, обратно не вернулись.</text>
+    <text>Я был неподалёку от #location#, когда #ago# парни #other_faction# вырезали звено #subject_faction#. Мстители, что пошли по их следу, обратно не вернулись.</text>
   </string>
   <string id="st_ap_news_tpl_squadkill_revenge_004">
     <text>По следам у #location# видно, что у #subject_faction# полегло звено, а другая группа сразу ушла на восток по сапогам парней #other_faction#, пока тела не остыли.</text>
@@ -175,7 +168,7 @@
     <text>Видел, как звено #subject_faction# жало к #location# #ago#, чтобы выручить своих, что держали ворота против парней #other_faction#.</text>
   </string>
   <string id="st_ap_news_tpl_basekill_support_003">
-    <text>Я был с подмогой #subject_faction#, что пришла к #location# #ago#. Мы ударили по парням #other_faction# у ворот, но стену уже разнесли.</text>
+    <text>Я был неподалёку от #location# #ago#, когда подмога #subject_faction# пришла к воротам. Они ударили по #other_faction#, но стену уже разнесли.</text>
   </string>
   <string id="st_ap_news_tpl_basekill_support_004">
     <text>По следам у #location# видно, как #subject_faction# подняли вторую группу отбивать ворота у парней #other_faction# уже после того, как стена пала.</text>
@@ -191,7 +184,7 @@
     <text>Видел, как последние стволы #subject_faction# уходили от #location# #ago# раньше, чем туда зашли парни #other_faction# через проволоку.</text>
   </string>
   <string id="st_ap_news_tpl_basekill_flee_003">
-    <text>Я стоял на стене у #location#, когда её взяли парни #other_faction# #ago#. Мы ушли до падения ворот и ничего за собой не оставили.</text>
+    <text>Я проходил мимо #location# #ago#, когда стену взяли парни #other_faction#. #subject_faction# ушли до падения ворот и ничего за собой не оставили.</text>
   </string>
   <string id="st_ap_news_tpl_basekill_flee_004">
     <text>По следам у #location# видно, как #subject_faction# ушли с базы раньше, чем парни #other_faction# зашли туда и взяли ворота почти без боя.</text>
@@ -255,7 +248,7 @@
     <text>Видел, как медики #subject_faction# бежали к #location# #ago# после того, как раненый брат позвал их по рации.</text>
   </string>
   <string id="st_ap_news_tpl_wounded_help_003">
-    <text>Я был с медиками #subject_faction#, что бежали к #location# #ago#. Раненый брат истёк кровью раньше, чем мы успели его поднять.</text>
+    <text>Я проходил мимо #location# #ago#, когда медики #subject_faction# бежали к раненому брату. Он истёк кровью раньше, чем они успели его поднять.</text>
   </string>
   <string id="st_ap_news_tpl_wounded_help_004">
     <text>По следам у #location# видно, как медики #subject_faction# подошли к раненому брату, истекавшему в кустах.</text>

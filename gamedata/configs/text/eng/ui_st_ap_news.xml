@@ -1,10 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <string_table>
 
-    <!-- ==== #ago# phrases ==== -->
-    <string id="st_ap_news_ago_recent"><text>just now</text></string>
-    <string id="st_ap_news_ago_hours"><text>a few hours ago</text></string>
-
     <!-- ==== mutant engine faction display plurals (capitalized for mid-sentence consistency) ==== -->
     <string id="st_ap_news_mutant_predatory_day"><text>Predators</text></string>
     <string id="st_ap_news_mutant_predatory_night"><text>Night Predators</text></string>
@@ -50,7 +46,7 @@
     <!-- massacre_investigate (TWO-PARTY: subject = recovery crew, other = killer) -->
     <string id="st_ap_news_tpl_massacre_investigate_001"><text>Heard a #subject_faction# crew came up to recover their dead at #location# after #other_faction# left.</text></string>
     <string id="st_ap_news_tpl_massacre_investigate_002"><text>Saw a #subject_faction# crew walk into #location# #ago# to recover their dead from a #other_faction# wipe.</text></string>
-    <string id="st_ap_news_tpl_massacre_investigate_003"><text>I was with the #subject_faction# patrol that walked into #location# #ago# to ID our dead. We brought back tags and left the bodies.</text></string>
+    <string id="st_ap_news_tpl_massacre_investigate_003"><text>I was near #location# #ago# when a #subject_faction# patrol walked in to ID their dead. They brought back tags and left the bodies.</text></string>
     <string id="st_ap_news_tpl_massacre_investigate_004"><text>Tracks at #location# show #other_faction# left clean after a wipe and a #subject_faction# crew came up to recover the dead.</text></string>
     <string id="st_ap_news_tpl_massacre_investigate_005"><text>#subject_name# brought a #subject_faction# crew to #location# #ago# to recover the dead from a #other_faction# wipe.</text></string>
 
@@ -71,21 +67,21 @@
     <!-- squadkill_revenge (TWO-PARTY: subject = avenger, other = killer) -->
     <string id="st_ap_news_tpl_squadkill_revenge_001"><text>Heard a #subject_faction# crew left #location# #ago# hunting #other_faction# after a sister squad got cut down.</text></string>
     <string id="st_ap_news_tpl_squadkill_revenge_002"><text>Saw a #subject_faction# revenge crew cutting east on #other_faction# tracks #ago# after their sister squad fell at #location#.</text></string>
-    <string id="st_ap_news_tpl_squadkill_revenge_003"><text>I was with #subject_faction# at #location# when #other_faction# hit our sister squad #ago#. The revenge crew that went after them never came back.</text></string>
+    <string id="st_ap_news_tpl_squadkill_revenge_003"><text>I was near #location# when #other_faction# hit a #subject_faction# squad #ago#. The revenge crew that went after them never came back.</text></string>
     <string id="st_ap_news_tpl_squadkill_revenge_004"><text>Tracks at #location# show #subject_faction# left a wipe behind and ran east on #other_faction# boots before the bodies cooled.</text></string>
     <string id="st_ap_news_tpl_squadkill_revenge_005"><text>#subject_name# took a #subject_faction# revenge crew after #other_faction# from #location# #ago#.</text></string>
 
     <!-- basekill_support (TWO-PARTY: subject = backup arrives, other = attacker) -->
     <string id="st_ap_news_tpl_basekill_support_001"><text>Heard a #subject_faction# backup crew came up to retake #location# from #other_faction# #ago#.</text></string>
     <string id="st_ap_news_tpl_basekill_support_002"><text>Saw a #subject_faction# crew burning fuel toward #location# #ago# to back up the guys holding against #other_faction# at the gate.</text></string>
-    <string id="st_ap_news_tpl_basekill_support_003"><text>I was with the #subject_faction# crew that came up to back up #location# #ago#. We hit #other_faction# at the gate but the wall was already down.</text></string>
+    <string id="st_ap_news_tpl_basekill_support_003"><text>I was near #location# #ago# when a #subject_faction# crew came up to back up the gate. They hit #other_faction# but the wall was already down.</text></string>
     <string id="st_ap_news_tpl_basekill_support_004"><text>Tracks at #location# show #subject_faction# brought another crew up to retake the gate from #other_faction# after the wall fell.</text></string>
     <string id="st_ap_news_tpl_basekill_support_005"><text>#subject_name# led #subject_faction# backup against #other_faction# at #location# #ago# but the wall came down anyway.</text></string>
 
     <!-- basekill_flee (TWO-PARTY: subject = defender, other = attacker took base) -->
     <string id="st_ap_news_tpl_basekill_flee_001"><text>Heard #subject_faction# pulled out of #location# #ago#. #other_faction# hold the gate now.</text></string>
     <string id="st_ap_news_tpl_basekill_flee_002"><text>Saw the last #subject_faction# guns walking out of #location# #ago# before #other_faction# came in through the wire.</text></string>
-    <string id="st_ap_news_tpl_basekill_flee_003"><text>I was on the #location# wall when #other_faction# took it #ago#. We pulled out before the gate fell and burned the records on the way.</text></string>
+    <string id="st_ap_news_tpl_basekill_flee_003"><text>I crossed #location# #ago# right as #other_faction# took the wall. #subject_faction# pulled out before the gate fell and burned the records on the way.</text></string>
     <string id="st_ap_news_tpl_basekill_flee_004"><text>Tracks at #location# show #subject_faction# walked out before #other_faction# came in and took the gate without a real fight.</text></string>
     <string id="st_ap_news_tpl_basekill_flee_005"><text>#subject_name# led the last #subject_faction# guns out of #location# #ago# before #other_faction# took the gate.</text></string>
 
@@ -113,7 +109,7 @@
     <!-- wounded_help (TWO-PARTY: subject = medic, other = bleeding squad) -->
     <string id="st_ap_news_tpl_wounded_help_001"><text>Heard a #subject_faction# medic crew rolled out of #location# #ago# for a wounded brother.</text></string>
     <string id="st_ap_news_tpl_wounded_help_002"><text>Saw a #subject_faction# medic crew running for #location# #ago# after a wounded brother called in over the radio.</text></string>
-    <string id="st_ap_news_tpl_wounded_help_003"><text>I was with the #subject_faction# medic crew that ran for #location# #ago#. The wounded brother bled out before we could pull him.</text></string>
+    <string id="st_ap_news_tpl_wounded_help_003"><text>I crossed #location# #ago# when a #subject_faction# medic crew ran for a wounded brother. He bled out before they could pull him.</text></string>
     <string id="st_ap_news_tpl_wounded_help_004"><text>Tracks at #location# show a #subject_faction# medic crew came up to a wounded brother bleeding in the brush.</text></string>
     <string id="st_ap_news_tpl_wounded_help_005"><text>#subject_name# led a #subject_faction# medic crew to a wounded brother at #location# #ago#.</text></string>
 

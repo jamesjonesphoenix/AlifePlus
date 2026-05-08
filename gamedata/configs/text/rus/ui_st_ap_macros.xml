@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+  <!-- ==== #ago# phrases ==== -->
+  <string id="st_ap_macros_ago_recent">
+    <text>только что</text>
+  </string>
+  <string id="st_ap_macros_ago_hours">
+    <text>несколько часов назад</text>
+  </string>
+</string_table>

@@ -129,7 +129,7 @@ local function _ago_text(game_hours_then)
     if not game_hours_then then return "" end
     local delta = math_floor(xtime.game_sec() / 3600) - game_hours_then
     if delta < 0 then return "" end
-    return _xml(delta < 2 and "st_ap_news_ago_recent" or "st_ap_news_ago_hours")
+    return _xml(delta < 2 and "st_ap_macros_ago_recent" or "st_ap_macros_ago_hours")
 end
 
 -- Resolve slots for one side of a news entry from pre-translated display fields.
