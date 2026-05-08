@@ -189,9 +189,17 @@ end
 
 -- Per-cause attempt for one CAUSES entry under an overdue drive. Returns a published-payload
 -- result on SUCCESS, nil otherwise. observe() wraps _try_cause so every attempt logs.
+-- period_mismatch drives are walked only at DEBUG (see _find_overdue_drives); each cause emits
+-- a failed_rules:wrong_period observe line so dormant/active drops are no longer silent.
 -- opts: { species, overdue, entry, drive }
 local function _try_one_drive_cause(trace, squad, level_id, opts)
     if opts.entry.drive ~= opts.drive then return nil end
+    if opts.overdue.period_mismatch then
+        ap_core_debug.observe(trace, opts.entry.cause, function()
+            return { code = RESULT.FAILED_RULES, reason = REASON.WRONG_PERIOD }
+        end)
+        return nil
+    end
     local cause_result = ap_core_debug.observe(trace, opts.entry.cause, _try_cause, squad, level_id, opts.species, opts.entry)
     if not cause_result or cause_result.code ~= RESULT.SUCCESS then return nil end
     return _make_result(squad, level_id, opts.overdue, opts.entry, cause_result.smart, opts.species)
@@ -210,11 +218,17 @@ end
 
 local function _find_overdue_drives(dto, now, species)
     local is_active = ap_ext_util.is_active_period(species)
+    local debug_on = ap_core_debug.enabled()
     local out = {}
     for i = 1, #INSTINCTS do
         local inst = INSTINCTS[i]
-        if inst.active_period and not is_active then goto continue end
-        if inst.dormant_period and is_active then goto continue end
+        local period_mismatch = (inst.active_period and not is_active)
+            or (inst.dormant_period and is_active)
+        if period_mismatch then
+            if not debug_on then goto continue end
+            out[#out + 1] = { instinct = inst, drive = 0, period_mismatch = true }
+            goto continue
+        end
         if inst.max_tier_key == "scatter" then
             local tier = _food_chain_tier[species]
             if not tier or tier > 2 then goto continue end

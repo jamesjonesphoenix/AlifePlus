@@ -30,13 +30,13 @@ local _alignment_ecolog = { ecolog = true }
 local NEEDS = {
     { need = "shelter", field = "last_shelter_at", weight = 5.0, dormant_period = true,
       threshold_key = "cause_shelter_threshold" },
-    { need = "heal",    field = "last_heal_at",    weight = 4.0, active_period = true,
+    { need = "heal",    field = "last_heal_at",    weight = 4.0,
       threshold_key = "cause_heal_threshold" },
-    { need = "hunger",  field = "last_hunger_at",  weight = 3.0, active_period = true,
+    { need = "hunger",  field = "last_hunger_at",  weight = 3.0,
       threshold_key = "cause_hunger_threshold" },
     { need = "sleep",   field = "last_sleep_at",   weight = 2.5, dormant_period = true,
       threshold_key = "cause_sleep_threshold" },
-    { need = "rest",    field = "last_rest_at",    weight = 2.0, dormant_period = true,
+    { need = "rest",    field = "last_rest_at",    weight = 2.0,
       threshold_key = "cause_rest_threshold" },
     { need = "supply",  field = "last_supply_at",  weight = 1.5, active_period = true,
       threshold_key = "cause_supply_threshold" },
@@ -44,7 +44,7 @@ local NEEDS = {
       threshold_key = "cause_money_threshold" },
     { need = "job",     field = "last_job_at",     weight = 1.0, active_period = true,
       threshold_key = "cause_job_threshold" },
-    { need = "social",  field = "last_social_at",  weight = 0.8, active_period = true,
+    { need = "social",  field = "last_social_at",  weight = 0.8,
       threshold_key = "cause_social_threshold" },
 }
 
@@ -71,11 +71,17 @@ end
 
 local function _find_overdue_needs(dto, now, identity)
     local is_active = ap_ext_util.is_active_period(identity)
+    local debug_on = ap_core_debug.enabled()
     local out = {}
     for i = 1, #NEEDS do
         local need = NEEDS[i]
-        if need.active_period and not is_active then goto continue end
-        if need.dormant_period and is_active then goto continue end
+        local period_mismatch = (need.active_period and not is_active)
+            or (need.dormant_period and is_active)
+        if period_mismatch then
+            if not debug_on then goto continue end
+            out[#out + 1] = { need = need, drive = 0, period_mismatch = true }
+            goto continue
+        end
 
         local elapsed = now - dto[need.field]
         local threshold = cfg[need.threshold_key] * HOURS_TO_SECONDS
@@ -141,8 +147,16 @@ end
 
 -- Per-cause attempt for one CAUSES entry under an overdue need. Returns a published-payload
 -- result on SUCCESS, nil otherwise. observe() wraps _try_cause so every attempt logs.
+-- period_mismatch needs are walked only at DEBUG (see _find_overdue_needs); each cause emits
+-- a failed_rules:wrong_period observe line so dormant/active drops are no longer silent.
 local function _try_one_need_cause(trace, squad, level_id, overdue_entry, entry, need_name)
     if entry.need ~= need_name then return nil end
+    if overdue_entry.period_mismatch then
+        ap_core_debug.observe(trace, entry.cause, function()
+            return { code = RESULT.FAILED_RULES, reason = REASON.WRONG_PERIOD }
+        end)
+        return nil
+    end
     local cause_result = ap_core_debug.observe(trace, entry.cause, _try_cause, squad, level_id, entry)
     if not cause_result or cause_result.code ~= RESULT.SUCCESS then return nil end
     return _make_result(squad, level_id, overdue_entry, entry, cause_result.smart)

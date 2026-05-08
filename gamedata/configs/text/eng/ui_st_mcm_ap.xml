@@ -514,10 +514,10 @@
     </string>
 
     <!-- Per-cause tags (14 sub-causes) -->
-    <string id="ui_mcm_ap_causes_needs_hunger_campfire_tag"><text>Cause: Hunger Campfire Available\nDesc: Hungry squad heads to a campfire to eat.\nRules: radio range; active period; any stalker; personality(survival); campfire; non-hostile; Hull</text></string>
+    <string id="ui_mcm_ap_causes_needs_hunger_campfire_tag"><text>Cause: Hunger Campfire Available\nDesc: Hungry squad heads to a campfire to eat.\nRules: radio range; any stalker; personality(survival); campfire; non-hostile; Hull</text></string>
     <string id="ui_mcm_ap_causes_needs_sleep_campfire_tag"><text>Cause: Sleep Campfire Available\nDesc: Tired squad beds down at a campfire.\nRules: radio range; dormant period; any stalker; personality(survival); campfire; non-hostile; Hull</text></string>
-    <string id="ui_mcm_ap_causes_needs_rest_campfire_tag"><text>Cause: Rest Campfire Available\nDesc: Worn squad takes a halt at a campfire.\nRules: radio range; dormant period; any stalker; personality(survival); campfire; non-hostile; Hull</text></string>
-    <string id="ui_mcm_ap_causes_needs_heal_shelter_tag"><text>Cause: Heal Shelter Available\nDesc: Wounded squad seeks a surge shelter.\nRules: radio range; active period; any stalker; personality(territory, survival); surge shelter; non-hostile; Hull</text></string>
+    <string id="ui_mcm_ap_causes_needs_rest_campfire_tag"><text>Cause: Rest Campfire Available\nDesc: Worn squad takes a halt at a campfire.\nRules: radio range; any stalker; personality(survival); campfire; non-hostile; Hull</text></string>
+    <string id="ui_mcm_ap_causes_needs_heal_shelter_tag"><text>Cause: Heal Shelter Available\nDesc: Wounded squad seeks a surge shelter.\nRules: radio range; any stalker; personality(territory, survival); surge shelter; non-hostile; Hull</text></string>
     <string id="ui_mcm_ap_causes_needs_shelter_indoor_tag"><text>Cause: Shelter Indoor Available\nDesc: Squad takes an indoor surge shelter.\nRules: radio range; dormant period; any stalker; personality(territory, discipline); surge shelter; non-hostile; Hull</text></string>
     <string id="ui_mcm_ap_causes_needs_shelter_outdoor_tag"><text>Cause: Shelter Outdoor Available\nDesc: Squad takes a campfire as outdoor shelter.\nRules: radio range; dormant period; any stalker; personality(perception); campfire; non-hostile; Hull</text></string>
     <string id="ui_mcm_ap_causes_needs_supply_trader_tag"><text>Cause: Supply Trader Available\nDesc: Squad heads to a trader to restock.\nRules: radio range; active period; any stalker; personality(greed, relation); trader; non-hostile; Hull</text></string>
@@ -526,8 +526,8 @@
     <string id="ui_mcm_ap_causes_needs_job_outpost_tag"><text>Cause: Job Outpost Available\nDesc: Squad mans a remote post on watch.\nRules: radio range; active period; principled stalkers; personality(territory, discipline); not at base; not at lair; non-hostile; Hull</text></string>
     <string id="ui_mcm_ap_causes_needs_job_explore_tag"><text>Cause: Job Explore Available\nDesc: Squad scouts an unclaimed smart.\nRules: radio range; active period; self-serving stalkers; personality(perception, territory); unclaimed; Hull</text></string>
     <string id="ui_mcm_ap_causes_needs_job_research_tag"><text>Cause: Job Research Available\nDesc: Ecologist squad samples an anomaly field.\nRules: radio range; active period; ecologists; personality(perception, discipline); anomaly; non-hostile; Hull</text></string>
-    <string id="ui_mcm_ap_causes_needs_social_campfire_tag"><text>Cause: Social Campfire Available\nDesc: Squad gathers at a campfire to drink.\nRules: radio range; active period; any stalker; personality(relation); campfire; non-hostile; Hull</text></string>
-    <string id="ui_mcm_ap_causes_needs_social_base_tag"><text>Cause: Social Base Available\nDesc: Squad returns to base for downtime.\nRules: radio range; active period; principled stalkers; personality(relation, territory); base; non-hostile; Hull</text></string>
+    <string id="ui_mcm_ap_causes_needs_social_campfire_tag"><text>Cause: Social Campfire Available\nDesc: Squad gathers at a campfire to drink.\nRules: radio range; any stalker; personality(relation); campfire; non-hostile; Hull</text></string>
+    <string id="ui_mcm_ap_causes_needs_social_base_tag"><text>Cause: Social Base Available\nDesc: Squad returns to base for downtime.\nRules: radio range; principled stalkers; personality(relation, territory); base; non-hostile; Hull</text></string>
     <string id="ui_mcm_ap_causes_needs_cause_hunger_threshold">
         <text>Hunger threshold</text>
     </string>
