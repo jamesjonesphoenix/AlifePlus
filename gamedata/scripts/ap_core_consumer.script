@@ -1,6 +1,6 @@
 --- ap_core_consumer: Routes cause events to consequence handlers via shuffle
 local pairs, RegisterScriptCallback = pairs, RegisterScriptCallback
-local math_random = math.random
+local math_random, table_remove = math.random, table.remove
 
 local RESULT = ap_core_const.RESULT
 local CALLBACK = ap_core_const.CALLBACK
@@ -55,7 +55,7 @@ end
 local function _remove_named_entry(entries, name)
     if not entries then return end
     for i = #entries, 1, -1 do
-        if entries[i].name == name then table.remove(entries, i); return end
+        if entries[i].name == name then table_remove(entries, i); return end
     end
 end
 
@@ -129,15 +129,15 @@ local function _process(event_type, event_data)
     local sc = stats_collecting()
     -- In-place Fisher-Yates on _registry[event_type]. Order between events is permuted; every
     -- entry still gets considered. Avoids per-event allocation. Mirrors ap_core_producer's _cascade_buf shuffle.
-    local n = #consequences
-    for i = n, 2, -1 do
+    local count = #consequences
+    for i = count, 2, -1 do
         local j = math_random(i)
         if j ~= i then consequences[i], consequences[j] = consequences[j], consequences[i] end
     end
     local cap = ap_core_const.REACTIVE_MAX_CONSEQUENCES_PER_CAUSE
     local ran_count = 0
 
-    for i = 1, n do
+    for i = 1, count do
         local stop, ran = _dispatch_entry(consequences[i], event_type, event_data, is_radiant, sc)
         if stop then break end
         if not ran or is_radiant then goto continue end
