@@ -95,6 +95,19 @@ CALLBACK = {
 --- Pipeline-mechanism axis: how the producer schedules predicate evaluation.
 CAUSE_TYPE = { RADIANT = "radiant", REACTIVE = "reactive" }
 
+--- Cause category classification (behavioral axis, parallel to CAUSE_TYPE).
+--- What kind of squad behavior the cause represents. Drives the per-category rate-limit
+--- counter key and MCM organization. Each cause declares its category at register time and
+--- self-gates against its `cause_max_<category>` MCM cap via ap_core_limiter.
+--- Future parallel axes (attack/flee, expansive/contracting) get their own enums — never
+--- overload CAUSE_CATEGORY. ap_api forces foreign causes to pick from this set.
+CAUSE_CATEGORY = {
+    REACTIONS     = "category:reactions",
+    NEEDS         = "category:needs",
+    INSTINCTS     = "category:instincts",
+    OPPORTUNITIES = "category:opportunities",
+}
+
 --- Radiant cause callbacks (all radiant causes register on these)
 RADIANT_CALLBACKS = {
     CALLBACK.SQUAD_ON_UPDATE,

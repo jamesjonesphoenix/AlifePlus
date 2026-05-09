@@ -6,6 +6,7 @@ local RESULT = ap_core_const.RESULT
 local CALLBACK = ap_core_const.CALLBACK
 
 local _registry = {}
+local _cause_for = {}
 local _subscribed = false
 local _subscribe_event
 
@@ -51,11 +52,20 @@ function register(name, config, handler)
     end
 
     entries[#entries + 1] = entry
+    _cause_for[name] = event
     if _subscribed and #entries == 1 then
         _subscribe_event(event)
     end
     ap_core_debug.info("[CONSUMER] registered: %s event=%s", name, event)
     return true
+end
+
+--- Get the cause event a consequence subscribes to.
+--- 1:1 mapping built at register time. Returns nil if consequence not registered.
+--- @param consequence string Consequence registration name
+--- @return string|nil Cause string (e.g. "cause:massacre"), or nil
+function cause_of(consequence)
+    return _cause_for[consequence]
 end
 
 local _DISABLED = { code = RESULT.DISABLED }

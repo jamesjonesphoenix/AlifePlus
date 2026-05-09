@@ -38,6 +38,7 @@ next - "Maintenance"
     Removed: per-cause and per-consequence personality min/max sliders. Replaced by a single global clamp applied to every personality roll.
   Compatibility:
     Added: save migration releases scripted squads whose on-arrive consequence no longer exists. Self-healing: zero orphans on a clean load makes the next pass a no-op.
+    Added: ap_core_compat erepb shim. Aliases ap_core_broker.get_scripted_ids to get_scripted_squads and synthesizes a minimal get_record({squad_id, ...}) returning {consequence = ...} for the warfare integrator's pre-rename call shape.
   Fixed:
     Fixed: mutant area swarm publishes correctly. The cause was looking up its species table by faction key; aggressive mutant squads now claim empty smarts on arrival as designed. Dead since 1.5.0.
     Fixed: scripted squads release cleanly when an authored animation precondition flips during the pre-arrival hold (surge transition, day-to-night for sleepers, zombie state, trader running out of items). The arrival check verifies live engine job allocation and re-runs during the hold rather than waiting out the full duration on a stale destination.
@@ -62,7 +63,7 @@ next - "Maintenance"
     Added: ap_core_hud.register_identity_source(fn), register_subject_resolver(fn). Ext-registered at on_game_start; core holds zero ext imports.
     Added: ap_ext_tracker.get_alpha_marker_squads() - squad ids hosting alphas, for the HUD identity source.
     Added: ap_ext_util.get_faction_display(faction), get_species_display(species). Shared HUD/news translation path.
-    Added: CAUSE_CATEGORY enum in ap_ext_const (REACTIONS, NEEDS, INSTINCTS, OPPORTUNITIES). Each cause declares its category for rate-limit grouping.
+    Added: CAUSE_CATEGORY enum in ap_core_const (REACTIONS, NEEDS, INSTINCTS, OPPORTUNITIES). Each cause declares its category for rate-limit grouping.
     Added: HARVEST_CALLBACKS, WOUNDED_CALLBACKS in ap_core_const. Cause registers once per family member with the same predicate.
     Added: REACTIVE_MAX_CONSEQUENCES_PER_CAUSE in ap_core_const. Consumer-enforced cap; safety net for future families.
     Added: ap_core_debug.bracket(constant). Log-label helper from CAUSE / CONSEQUENCE / TRACE constants; renames propagate.
@@ -78,6 +79,7 @@ next - "Maintenance"
     Removed: cause:alphakill payload fields name, alpha_level, kills. Resolve via xcreature.get_name and ap_ext_tracker.get_alpha_level.
     Renamed: ap_core_utils -> ap_core_util. Singular form, matching ap_ext_util.
     Renamed: payload field total_deaths / death_count -> kill_count on cause:massacre and cause:basekill.
+    Added: ap_api module. Public API facade for foreign mod integration. 12 functions covering ownership (register_owner, unregister_owner, get_owner), scripted-squad state (get_scripted_squads, release_squad, script_squad, script_actor_target), display text (get_text), and cause/consequence registration (get_cause, register_radiant_cause, register_reactive_cause, register_consequence). Backed by new ap_core_broker.unregister_owner / release_squad and ap_core_consumer.cause_of. Foreign mods integrate through ap_api; ap_core_* modules are internal and not part of the contract. See doc/integration-guide.md.
   Internal:
     Changed: news pipeline owns its session FIFO. Activity record removed from broker. Each consequence rolls a chance to publish; on hit, the entry is appended with display strings captured at write time.
     Changed: per-cause RULES and SCAN trace lines emit one log line per attempt at DEBUG. New REASON codes (DISABLED, ON_COOLDOWN, NO_ELIGIBLE_SQUAD, WRONG_PERIOD, BUDGET_EXHAUSTED) distinguish post-filter rejects from scan-empty.

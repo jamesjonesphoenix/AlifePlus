@@ -38,6 +38,22 @@ function register_owner(name, filter_fn)
     ap_core_debug.info("[SQUAD] register_owner: %s", name)
 end
 
+--- Remove a squad ownership filter by name. No-op if not registered.
+--- @safety SAFE - pure Lua array scan + table.remove
+--- @cost O(n) owners (typically 2-3) | 0 luabind
+--- @param name string Owner name
+--- @return boolean true if removed, false if not found
+function unregister_owner(name)
+    for i = 1, #_owners do
+        if _owners[i].name == name then
+            table.remove(_owners, i)
+            ap_core_debug.info("[SQUAD] unregister_owner: %s", name)
+            return true
+        end
+    end
+    return false
+end
+
 --- Query squad ownership. Returns owner name or nil.
 --- Respects allow_external_ownership MCM toggle.
 --- @safety SAFE - pure Lua, filter functions are registered by callers
@@ -179,6 +195,15 @@ end
 --- Get AP scripted squad table (read-only reference, do not modify)
 function get_scripted_squads()
     return _ap_scripted_squads
+end
+
+--- Release a squad from AP scripted control by id. Public wrapper around _unscript_squad.
+--- @safety SAFE - nil-guarded, releases engine target if entity is live
+--- @cost O(1) | 1 luabind (xobject.se) + 1 luabind (xsquad.release_squad), 0 if entity gone
+--- @param squad_id number Squad id
+--- @return boolean true if released, false if not currently scripted
+function release_squad(squad_id)
+    return _unscript_squad(squad_id)
 end
 
 --- Register an arrival handler by key (called from consumer on_game_start)

@@ -1,20 +1,7 @@
---- ap_ext_const: Alignment categories, personality traits, item lists, cause-category enum
+--- ap_ext_const: Alignment categories, personality traits, item lists
 --- Alignment = hard filter (can/cannot do a consequence). Personality = chance (how likely).
 --- src: GSC AI design Ai.doc:65-76 (тип характера), monstry.doc:4 (creature groups)
 --- Faction values from pure Anomaly squad_descr_*.ltx
-
---- Cause category classification (behavioral axis, parallel to CAUSE_TYPE).
---- What kind of squad behavior the cause represents. Drives the per-category rate-limit
---- counter key and MCM organization. Each ext cause file declares its category at register
---- time and self-gates against its `cause_max_<category>` MCM cap via ap_core_limiter.
---- Future parallel axes (attack/flee, expansive/contracting) get their own enums — never
---- overload CAUSE_CATEGORY.
-CAUSE_CATEGORY = {
-    REACTIONS     = "category:reactions",
-    NEEDS         = "category:needs",
-    INSTINCTS     = "category:instincts",
-    OPPORTUNITIES = "category:opportunities",
-}
 
 --- Human alignment categories (GSC moral axis: Principled/Self-serving/Unprincipled)
 --- Principled = follows rules, organized, hierarchical

@@ -119,11 +119,26 @@ local function _on_load_state(m_data)
     _v155_release_orphan_arrivals(m_data)
 end
 
+--- erepb (warfare integrator) compat: preserve old broker call shape.
+--- get_scripted_ids was renamed to get_scripted_squads; get_record family was removed.
+--- Existing erepb code reads only record.consequence; the synthesized record is minimal.
+local function _wire_erepb_broker_shim()
+    ap_core_broker.get_scripted_ids = ap_core_broker.get_scripted_squads
+
+    function ap_core_broker.get_record(query)
+        if type(query) ~= "table" or type(query.squad_id) ~= "number" then return nil end
+        local entry = ap_core_broker.get_scripted_squads()[query.squad_id]
+        if not entry then return nil end
+        return { consequence = entry.consequence }
+    end
+end
+
 function on_game_start()
     RegisterScriptCallback(CALLBACK.LOAD_STATE, _on_load_state)
 
     ap_core_broker.register_owner("warfare", function(squad)
         return squad.registered_with_warfare == true
     end)
+    _wire_erepb_broker_shim()
     ap_core_debug.info("[COMPAT] Initialized")
 end

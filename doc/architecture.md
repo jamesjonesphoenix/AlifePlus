@@ -21,7 +21,7 @@ Built on xlibs. _ap_deps asserts xlibs presence and version on load. See convent
 - Consequence: a handler subscribed to a cause; runs the action and side effects.
 - Cause generator: function that picks and emits one cause per call, or none. One generator per family. Files named ap_ext_cause_<family>.script for single-cause, ap_ext_causes_<family>.script for multi-cause.
 - Cause type: RADIANT (squad-tick driven, 1:1 with consequence) or REACTIVE (engine-event driven, 1:N with consequences). Defined in ap_core_const.CAUSE_TYPE.
-- Cause category: REACTIONS, NEEDS, INSTINCTS, OPPORTUNITIES. Behavioral axis parallel to cause type. Drives per-category rate-limit grouping and MCM organization. Defined in ap_ext_const.CAUSE_CATEGORY.
+- Cause category: REACTIONS, NEEDS, INSTINCTS, OPPORTUNITIES. Behavioral axis parallel to cause type. Drives per-category rate-limit grouping and MCM organization. Defined in ap_core_const.CAUSE_CATEGORY.
 - RULES: business checks that need no world scan. Toggle, alignment, species, personality, payload field, threshold. Cheap. Always cheapest-first.
 - SCAN: world lookup. find_smart, find_squads, find_stashes. Two flavors: destination SCAN (locates a target smart) and responder SCAN (locates responder squads).
 - ACTION: the consequence's effect. script_squad / script_actor_target, state mutation, news add, on_arrive callback.
@@ -44,7 +44,7 @@ Two layers. Core is the framework. Ext is the domain. Core never imports ext; al
 | File | Role |
 |------|------|
 | _ap_deps | Dependency gate: assert xlibs installed and version-compatible |
-| ap_core_const | Enums and timing constants: CALLBACK, CAUSE_TYPE, RESULT, REASON, TRACE, RANGE_*. CAUSE_CATEGORY lives in ap_ext_const, not here |
+| ap_core_const | Enums and timing constants: CALLBACK, CAUSE_TYPE, CAUSE_CATEGORY, RESULT, REASON, TRACE, RANGE_*. |
 | ap_core_mcm | MCM defaults, cfg snapshot, UI builder, on_option_change |
 | ap_core_debug | Logger, observe() tracing, bracket helper, result builders. Zero overhead below DEBUG |
 | ap_core_util | xbus pub/sub wrappers, find_smart / find_squads with protection filters |

@@ -5,7 +5,7 @@
 local table_sort, pairs = table.sort, pairs
 local CAUSE = ap_core_const.CAUSE
 local CAUSE_TYPE = ap_core_const.CAUSE_TYPE
-local CAUSE_CATEGORY = ap_ext_const.CAUSE_CATEGORY
+local CAUSE_CATEGORY = ap_core_const.CAUSE_CATEGORY
 local CATEGORY = CAUSE_CATEGORY.INSTINCTS
 local CAP_KEY = "cause_max_instincts"
 local SCAN_KEY = "scan_radiant"

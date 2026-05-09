@@ -1,0 +1,188 @@
+--- ap_api: Public AlifePlus API surface for external integrators.
+local pairs = pairs
+
+-- Foreign causes must declare one of AP's standard categories so they share AP's
+-- per-category rate-limit caps and MCM organization. Built lazily (CAUSE_CATEGORY
+-- is only guaranteed populated after ap_core_const has loaded).
+local _CATEGORIES = nil
+local function _is_valid_category(category)
+    if not _CATEGORIES then
+        local CC = ap_core_const.CAUSE_CATEGORY
+        _CATEGORIES = { [CC.REACTIONS] = true, [CC.NEEDS] = true,
+                        [CC.INSTINCTS] = true, [CC.OPPORTUNITIES] = true }
+    end
+    return _CATEGORIES[category] == true
+end
+
+
+-- ============================================================================
+-- Ownership
+-- ============================================================================
+
+--- Register a squad ownership filter. Owned squads are excluded from AP routing.
+--- Replaces existing filter on name match.
+--- @param name string Owner name (e.g. "warfare")
+--- @param fn function(squad) -> boolean True if this mod owns the squad
+function register_owner(name, fn) return ap_core_broker.register_owner(name, fn) end
+
+--- Remove a squad ownership filter. No-op if not registered.
+--- @param name string Owner name
+--- @return boolean true if removed, false if not found
+function unregister_owner(name) return ap_core_broker.unregister_owner(name) end
+
+--- Query squad ownership.
+--- @param squad userdata Squad server object
+--- @return string|nil Owner name, or nil if unowned
+function get_owner(squad) return ap_core_broker.get_owner(squad) end
+
+
+-- ============================================================================
+-- Scripted-squad state
+-- ============================================================================
+
+--- Returns a shallow copy of the AP-scripted squads table (keyed by squad id).
+--- Outer table is fresh per call; entry tables are shared with broker state.
+--- Treat entry fields as read-only. Each entry carries:
+---   scripted_target, target_smart_id, tracked_at, consequence, on_arrive,
+---   on_arrive_args, pre_release_gulag, arrived (optional), release_at (optional).
+--- The `consequence` field identifies what the squad is doing today
+--- (1 action per consequence). on_arrive is broker-internal arrival dispatch.
+function get_scripted_squads()
+    local out = {}
+    for k, v in pairs(ap_core_broker.get_scripted_squads()) do out[k] = v end
+    return out
+end
+
+--- Release a squad from AP scripted control by id. Returns false if the squad
+--- isn't currently scripted by AP.
+--- @param squad_id number
+--- @return boolean
+function release_squad(squad_id) return ap_core_broker.release_squad(squad_id) end
+
+--- Script a squad to a smart terrain with full AP lifecycle (PDA marker, TTL,
+--- release-hold, target reassertion).
+--- @param squad userdata Squad server object
+--- @param smart userdata Smart terrain server object
+--- @param opts table { consequence, rush, on_arrive, on_arrive_args, pre_release_gulag }
+---   consequence: required; CONSEQUENCE.X identity of the action (read back via
+---     get_scripted_squads()[id].consequence).
+---   on_arrive: optional; same value as consequence when registering an arrival
+---     handler with register_consequence.
+--- @return table { code = RESULT.X, id, dst, dst_id }
+function script_squad(squad, smart, opts) return ap_core_broker.script_squad(squad, smart, opts) end
+
+--- Script a squad to pursue the player directly (no arrival detection).
+--- @param squad userdata Squad server object
+--- @param opts table|nil { consequence }
+--- @return table { code = RESULT.X, id, dst, dst_id }
+function script_actor_target(squad, opts) return ap_core_broker.script_actor_target(squad, opts) end
+
+
+-- ============================================================================
+-- Display text
+-- ============================================================================
+
+--- Resolve a consequence key to its localized action phrase.
+--- e.g. CONSEQUENCE.MASSACRE_INVESTIGATE -> "Investigating a Massacre Site".
+--- Returns nil for unknown keys or when localization didn't resolve (string id
+--- returned verbatim).
+--- @param key string Consequence key
+--- @return string|nil
+function get_text(key)
+    local info = ap_core_const.CONSEQUENCE_INFO[key]
+    if not info then return nil end
+    local action_key = info.action_key
+    if not action_key then return nil end
+    local text = game.translate_string(action_key)
+    if not text or text == action_key or text == "" then return nil end
+    return text
+end
+
+
+-- ============================================================================
+-- Cause / consequence registration
+-- ============================================================================
+
+--- Get the cause string a consequence subscribes to.
+--- @param consequence string Consequence registration name
+--- @return string|nil Cause string (e.g. "cause:massacre"), or nil if unregistered
+function get_cause(consequence) return ap_core_consumer.cause_of(consequence) end
+
+--- Register a radiant cause predicate. Auto-iterates RADIANT_CALLBACKS so the
+--- predicate fires on every radiant tick. Predicate receives one squad and
+--- returns either a publishing payload {cause, squad_id, level_id, ...} on
+--- match, a {code = RESULT.FAILED_*, reason} table on reject, or nil.
+---
+--- Budget gating: integrators self-gate against their per-category cause budget
+--- inside the predicate via ap_core_limiter.check_cause_rate_limit and
+--- increment_cause_counter, mirroring the existing ext-cause pattern.
+---
+--- @param category string Must be one of ap_core_const.CAUSE_CATEGORY values
+--- @param predicate function(squad) -> table|nil
+--- @return boolean true if registered, false if category invalid
+function register_radiant_cause(category, predicate)
+    if not _is_valid_category(category) then
+        ap_core_debug.err("[AP_API] register_radiant_cause: invalid category=%s; use ap_core_const.CAUSE_CATEGORY.X", tostring(category))
+        return false
+    end
+    local callbacks = ap_core_const.RADIANT_CALLBACKS
+    for i = 1, #callbacks do
+        local cb = callbacks[i]
+        ap_core_producer.register({
+            callback = cb,
+            cause_type = ap_core_const.CAUSE_TYPE.RADIANT,
+            category = category,
+            name = "ext_radiant_" .. tostring(category) .. "_" .. tostring(cb),
+        }, predicate)
+    end
+    return true
+end
+
+--- Register a reactive cause predicate for one engine callback.
+--- Predicate signature matches the engine callback's args. Returns either a
+--- publishing payload {cause, squad_id, level_id, ...} on match, a
+--- {code = RESULT.FAILED_*, reason} table on reject, or nil.
+---
+--- @param callback string CALLBACK enum value
+--- @param category string Must be one of ap_core_const.CAUSE_CATEGORY values
+--- @param predicate function(...) -> table|nil
+--- @return boolean true if registered, false if category invalid
+function register_reactive_cause(callback, category, predicate)
+    if not _is_valid_category(category) then
+        ap_core_debug.err("[AP_API] register_reactive_cause: invalid category=%s; use ap_core_const.CAUSE_CATEGORY.X", tostring(category))
+        return false
+    end
+    ap_core_producer.register({
+        callback = callback,
+        cause_type = ap_core_const.CAUSE_TYPE.REACTIVE,
+        category = category,
+        name = "ext_reactive_" .. tostring(category) .. "_" .. tostring(callback),
+    }, predicate)
+    return true
+end
+
+--- Register a consequence handler.
+--- @param name string Consequence registration name (also the arrival dispatch key)
+--- @param opts table { cause, condition?, on_arrive_fn? }
+---   cause: required; cause string the handler subscribes to (e.g. CAUSE.MASSACRE)
+---   condition: optional gate; returns false to skip dispatch entirely
+---   on_arrive_fn: optional function(squad, on_arrive_args) called when a squad
+---     scripted by this consequence reaches its smart
+--- @param handler function(event_data) -> { code = RESULT.X, ... }
+--- @return boolean Success
+function register_consequence(name, opts, handler)
+    return ap_core_consumer.register(name, {
+        event = opts.cause,
+        condition = opts.condition,
+        on_arrive = opts.on_arrive_fn,
+    }, handler)
+end
+
+
+-- ============================================================================
+-- Init
+-- ============================================================================
+
+function on_game_start()
+    ap_core_debug.info("[AP_API] Initialized")
+end
