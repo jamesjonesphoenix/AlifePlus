@@ -12,13 +12,13 @@ For the abstract pipeline rules and category model, see `architecture.md`. This 
 
 | Category | Cause | Description | Xray event | RULES | SCAN | ACTION |
 |---|---|---|---|---|---|---|
-| Reactions | massacre | Deaths pile up at a smart that is not a base. | squad_on_npc_death | alignment_human victim; kill_count >= threshold; at smart; not is_base | — | publish cause:massacre |
-| Reactions | squadkill | A squad's last member dies away from base. | squad_on_npc_death | alignment_human victim; last member dead; not is_base | — | publish cause:squadkill |
-| Reactions | basekill | Deaths pile up at a faction base. | squad_on_npc_death | alignment_human victim; kill_count >= threshold; at is_base | — | publish cause:basekill |
-| Reactions | alpha | A mutant accumulates enough kills to level up as an alpha. | squad_on_npc_death | killer is mutant; killer not protected; projected kills cross new level | — | publish cause:alpha |
-| Reactions | alphakill | An alpha mutant dies. | squad_on_npc_death | victim is alpha; killer not protected; per-victim cooldown clear | — | publish cause:alphakill |
-| Reactions | wounded | An NPC or player uses a healing item. | WOUNDED_CALLBACKS | subject not protected; not is_base | — | publish cause:wounded |
-| Reactions | harvest | An NPC or player picks up an artefact. | HARVEST_CALLBACKS | IsArtefact(item); NPC taker not protected | — | publish cause:harvest |
+| Reactions | massacre | Deaths pile up at a smart that is not a base. | squad_on_npc_death | alignment_human victim; kill_count >= threshold; at smart; not is_base |  | publish cause:massacre |
+| Reactions | squadkill | A squad's last member dies away from base. | squad_on_npc_death | alignment_human victim; last member dead; not is_base |  | publish cause:squadkill |
+| Reactions | basekill | Deaths pile up at a faction base. | squad_on_npc_death | alignment_human victim; kill_count >= threshold; at is_base |  | publish cause:basekill |
+| Reactions | alpha | A mutant accumulates enough kills to level up as an alpha. | squad_on_npc_death | killer is mutant; killer not protected; projected kills cross new level |  | publish cause:alpha |
+| Reactions | alphakill | An alpha mutant dies. | squad_on_npc_death | victim is alpha; killer not protected; per-victim cooldown clear |  | publish cause:alphakill |
+| Reactions | wounded | An NPC or player uses a healing item. | WOUNDED_CALLBACKS | subject not protected; not is_base |  | publish cause:wounded |
+| Reactions | harvest | An NPC or player picks up an artefact. | HARVEST_CALLBACKS | IsArtefact(item); NPC taker not protected |  | publish cause:harvest |
 | Opportunities | stash_fill | Squad finds an empty stash and stocks it. | RADIANT_CALLBACKS | alignment_human; not at base; MVT(stash_fill); personality(greed, relation) | find_stashes in eye range (empty); find_smart for destination | publish cause:stash_fill |
 | Opportunities | stash_loot | Squad finds a non-empty stash and loots it. | RADIANT_CALLBACKS | alignment_loot; not at base; MVT(stash_loot); personality(greed, perception) | find_stashes in eye range (non-empty); find_smart for destination | publish cause:stash_loot |
 | Opportunities | stash_ambush | Outlaw squad finds a heavily-stocked stash and stakes it out. | RADIANT_CALLBACKS | alignment_outlaw; not at base; items_count >= ambush_min_items; MVT(stash_ambush); personality(greed, aggression) | find_stashes in eye range (non-empty); find_smart for destination | publish cause:stash_ambush |
@@ -59,36 +59,36 @@ For the abstract pipeline rules and category model, see `architecture.md`. This 
 | squadkill | squadkill_revenge | Unprincipled and outlaw squads pursue the killer. | victim faction in alignment_unprincipled + alignment_outlaw; personality(aggression, relation) | find_squads in radio range; factions = victim faction; max_squads, max_chases | per responder: script_squad chase to killer's smart (or script_actor_target if killer is the player); news.add |
 | basekill | basekill_support | Friendly squads rush to reinforce the base. | alignment_human minus renegade; personality(discipline, relation) | find_squads in radio range; factions = base faction; max_squads | per responder: script_squad to base; news.add |
 | basekill | basekill_flee | Non-principled squads at the attacked base evacuate to nearest base. | alignment_human minus principled; personality(inv_discipline, inv_territory) | find_smart for evacuation base; find_squads at the attacked base; max_squads | per responder: script_squad to evacuation base; news.add |
-| alpha | alpha_promote | Mutant becomes alpha; gains hit-power buffs and loot. | killer not protected; not at max_alphas | — | update_alpha; set hit power; news.add |
+| alpha | alpha_promote | Mutant becomes alpha; gains hit-power buffs and loot. | killer not protected; not at max_alphas |  | update_alpha; set hit power; news.add |
 | alphakill | alphakill_targeted | Same-species mutants on same level pursue the killer. | alignment_mutant; same-species filter (victim's species); personality(aggression) | find_smart near killer; find_squads in scent range; factions = alignment_mutant; species filter applied per responder; max_squads, max_chases | per responder: script_squad or script_actor_target chase; news.add |
 | wounded | wounded_hunt | Predator and aberrant mutants converge on the wounded. | alignment_mutant + alignment_mutant_predator + alignment_mutant_aberrant species filter; personality(aggression, perception) | find_smart near subject; find_squads in scent range; factions = alignment_mutant; max_squads; species filter applied per responder | per responder: script_squad to subject; news.add |
 | wounded | wounded_help | Non-outlaw same-faction squads rush to help the wounded. | alignment_human minus outlaw; personality(relation, discipline) | find_smart near subject; find_squads in radio range; factions = subject faction; max_squads | per responder: script_squad to subject; news.add |
 | harvest | harvest_rob | Outlaws pursue the artefact taker. | alignment_outlaw; personality(greed, aggression) | find_smart near taker; find_squads in radio range; factions = outlaw; max_squads, max_chases | per responder: script_actor_target chase taker; news.add |
 | harvest | harvest_haunt | Aberrant mutants converge on the artefact pickup site. | alignment_mutant + alignment_mutant_aberrant species filter; personality(perception, territory) | find_smart near pickup; find_squads in scent range; factions = alignment_mutant; max_squads; species filter applied per responder | per responder: script_squad to pickup; news.add |
-| stash_fill | stash_fill | Stalker walks to empty stash, hides supplies. | — | — | resolve squad+smart; script_squad; on_arrive: pick items, fill_stash; news.add |
-| stash_loot | stash_loot | Stalker walks to non-empty stash, loots. | — | — | resolve squad+smart; script_squad; on_arrive: loot_stash (skip if protected toolkits); news.add |
-| stash_ambush | stash_ambush | Stalker walks to non-empty stash, stakes out. | — | — | resolve squad+smart; script_squad; on_arrive: passive (DTO reset); news.add |
-| area_conquer | area_conquer | Stalker claims empty smart with additive shared spawn. | — | — | resolve squad+smart; script_squad; on_arrive: conquer_smart; news.add |
-| area_swarm | area_swarm | Mutant claims empty smart with additive shared spawn. | — | — | resolve squad+smart; script_squad; on_arrive: conquer_smart; news.add |
-| area_infest | area_infest | Mutant claims lair or surge shelter with exclusive spawn replacement. | — | — | resolve squad+smart; script_squad; on_arrive: infest_smart; news.add |
-| hunger_campfire | hunger_campfire | Stalker walks to campfire and consumes food item. | — | — | resolve squad+smart; script_squad; on_arrive: consume HUNGER section; news.add |
-| sleep_campfire | sleep_campfire | Stalker walks to campfire for the night. | — | — | resolve squad+smart; script_squad; on_arrive: passive (DTO reset); news.add |
-| rest_campfire | rest_campfire | Stalker walks to campfire and consumes rest item. | — | — | resolve squad+smart; script_squad; on_arrive: consume REST section; news.add |
-| heal_shelter | heal_shelter | Stalker walks to surge shelter and consumes medkit. | — | — | resolve squad+smart; script_squad; on_arrive: consume HEAL section; news.add |
-| shelter_indoor | shelter_indoor | Stalker walks to surge shelter. | — | — | resolve squad+smart; script_squad; on_arrive: passive (DTO reset); news.add |
-| shelter_outdoor | shelter_outdoor | Stalker walks to campfire as outdoor shelter. | — | — | resolve squad+smart; script_squad; on_arrive: passive (DTO reset); news.add |
-| supply_trader | supply_trader | Stalker walks to trader, exchanges artefact for supplies. | — | — | resolve squad+smart; script_squad; on_arrive: trade artefact; news.add |
-| money_harvest | money_harvest | Stalker walks to anomaly field for artefact harvest. | — | — | resolve squad+smart; script_squad; on_arrive: passive (DTO reset); news.add |
-| money_hunt | money_hunt | Stalker walks to mutant lair for hide hunt. | — | — | resolve squad+smart; script_squad; on_arrive: passive (DTO reset); news.add |
-| job_outpost | job_outpost | Stalker walks to non-base smart to guard. | — | — | resolve squad+smart; script_squad; on_arrive: consume GUARD section; news.add |
-| job_explore | job_explore | Stalker walks to unclaimed smart to explore. | — | — | resolve squad+smart; script_squad; on_arrive: passive (DTO reset); news.add |
-| job_research | job_research | Stalker walks to anomaly field to research. | — | — | resolve squad+smart; script_squad; on_arrive: passive (DTO reset); news.add |
-| social_campfire | social_campfire | Stalker walks to campfire to share stories. | — | — | resolve squad+smart; script_squad; on_arrive: consume SOCIAL section; news.add |
-| social_base | social_base | Principled stalker walks to faction base for downtime. | — | — | resolve squad+smart; script_squad; on_arrive: consume SOCIAL section; news.add |
-| feed | feed | Mutant pack moves to open territory to hunt or scavenge. | — | — | resolve squad+smart; script_squad; on_arrive: passive (DTO reset); news.add |
-| slumber_field | slumber_field | Cowardly mutant beds down in open territory. | — | — | resolve squad+smart; script_squad; on_arrive: passive (DTO reset); news.add |
-| slumber_lair | slumber_lair | Feral or predator returns to lair. | — | — | resolve squad+smart; script_squad; on_arrive: passive (DTO reset); news.add |
-| slumber_surge | slumber_surge | Aberrant or predator takes to surge shelter. | — | — | resolve squad+smart; script_squad; on_arrive: passive (DTO reset); news.add |
-| roam | roam | Mutant wanders to nearby territory or lair. | — | — | resolve squad+smart; script_squad; on_arrive: passive (DTO reset); news.add |
-| pack | pack | Feral or predator moves toward smart with same-faction squads. | — | — | resolve squad+smart; script_squad; on_arrive: passive (DTO reset); news.add |
-| scatter | scatter | Mutant flees from higher-tier predator to safe smart in eye range. | — | — | resolve squad+smart; script_squad; on_arrive: passive (DTO reset); news.add |
+| stash_fill | stash_fill | Stalker walks to empty stash, hides supplies. |  |  | resolve squad+smart; script_squad; on_arrive: pick items, fill_stash; news.add |
+| stash_loot | stash_loot | Stalker walks to non-empty stash, loots. |  |  | resolve squad+smart; script_squad; on_arrive: loot_stash (skip if protected toolkits); news.add |
+| stash_ambush | stash_ambush | Stalker walks to non-empty stash, stakes out. |  |  | resolve squad+smart; script_squad; on_arrive: passive (DTO reset); news.add |
+| area_conquer | area_conquer | Stalker claims empty smart with additive shared spawn. |  |  | resolve squad+smart; script_squad; on_arrive: conquer_smart; news.add |
+| area_swarm | area_swarm | Mutant claims empty smart with additive shared spawn. |  |  | resolve squad+smart; script_squad; on_arrive: conquer_smart; news.add |
+| area_infest | area_infest | Mutant claims lair or surge shelter with exclusive spawn replacement. |  |  | resolve squad+smart; script_squad; on_arrive: infest_smart; news.add |
+| hunger_campfire | hunger_campfire | Stalker walks to campfire and consumes food item. |  |  | resolve squad+smart; script_squad; on_arrive: consume HUNGER section; news.add |
+| sleep_campfire | sleep_campfire | Stalker walks to campfire for the night. |  |  | resolve squad+smart; script_squad; on_arrive: passive (DTO reset); news.add |
+| rest_campfire | rest_campfire | Stalker walks to campfire and consumes rest item. |  |  | resolve squad+smart; script_squad; on_arrive: consume REST section; news.add |
+| heal_shelter | heal_shelter | Stalker walks to surge shelter and consumes medkit. |  |  | resolve squad+smart; script_squad; on_arrive: consume HEAL section; news.add |
+| shelter_indoor | shelter_indoor | Stalker walks to surge shelter. |  |  | resolve squad+smart; script_squad; on_arrive: passive (DTO reset); news.add |
+| shelter_outdoor | shelter_outdoor | Stalker walks to campfire as outdoor shelter. |  |  | resolve squad+smart; script_squad; on_arrive: passive (DTO reset); news.add |
+| supply_trader | supply_trader | Stalker walks to trader, exchanges artefact for supplies. |  |  | resolve squad+smart; script_squad; on_arrive: trade artefact; news.add |
+| money_harvest | money_harvest | Stalker walks to anomaly field for artefact harvest. |  |  | resolve squad+smart; script_squad; on_arrive: passive (DTO reset); news.add |
+| money_hunt | money_hunt | Stalker walks to mutant lair for hide hunt. |  |  | resolve squad+smart; script_squad; on_arrive: passive (DTO reset); news.add |
+| job_outpost | job_outpost | Stalker walks to non-base smart to guard. |  |  | resolve squad+smart; script_squad; on_arrive: consume GUARD section; news.add |
+| job_explore | job_explore | Stalker walks to unclaimed smart to explore. |  |  | resolve squad+smart; script_squad; on_arrive: passive (DTO reset); news.add |
+| job_research | job_research | Stalker walks to anomaly field to research. |  |  | resolve squad+smart; script_squad; on_arrive: passive (DTO reset); news.add |
+| social_campfire | social_campfire | Stalker walks to campfire to share stories. |  |  | resolve squad+smart; script_squad; on_arrive: consume SOCIAL section; news.add |
+| social_base | social_base | Principled stalker walks to faction base for downtime. |  |  | resolve squad+smart; script_squad; on_arrive: consume SOCIAL section; news.add |
+| feed | feed | Mutant pack moves to open territory to hunt or scavenge. |  |  | resolve squad+smart; script_squad; on_arrive: passive (DTO reset); news.add |
+| slumber_field | slumber_field | Cowardly mutant beds down in open territory. |  |  | resolve squad+smart; script_squad; on_arrive: passive (DTO reset); news.add |
+| slumber_lair | slumber_lair | Feral or predator returns to lair. |  |  | resolve squad+smart; script_squad; on_arrive: passive (DTO reset); news.add |
+| slumber_surge | slumber_surge | Aberrant or predator takes to surge shelter. |  |  | resolve squad+smart; script_squad; on_arrive: passive (DTO reset); news.add |
+| roam | roam | Mutant wanders to nearby territory or lair. |  |  | resolve squad+smart; script_squad; on_arrive: passive (DTO reset); news.add |
+| pack | pack | Feral or predator moves toward smart with same-faction squads. |  |  | resolve squad+smart; script_squad; on_arrive: passive (DTO reset); news.add |
+| scatter | scatter | Mutant flees from higher-tier predator to safe smart in eye range. |  |  | resolve squad+smart; script_squad; on_arrive: passive (DTO reset); news.add |

@@ -612,26 +612,26 @@ Burer "zhivet tol'ko v mrachnykh, temnykh podzemyel'yakh" (lives only in dark du
 
 **Explore** moves the squad to a different territory or lair.
 Cowardly, feral, and predator species explore.
-Aberrant species do not explore -- they are lair-bound.
+Aberrant species do not explore; they are lair-bound.
 GSC documented this sedentary nature explicitly: poltergeist "na otkrytykh mestakh ne vstrechayetsya" (never found in open areas) (monstry.doc).
 Burer never leaves its dungeon.
 Controller "predpochitayet zasady v zdaniyakh" (prefers ambushes in buildings) (monstry.doc).
 Species that never leave their lair have no reason to wander.
 
 **Socialize** draws the squad toward smart terrains where same-faction squads are present.
-Cowardly and feral species socialize -- they are pack and herd animals.
+Cowardly and feral species socialize; they are pack and herd animals.
 Boar is "staynoye zhivotnoye" (herd animal) with leader morale mechanics (monstry.doc).
-Dogs are "agressivny, protivnika okruzhayut" (aggressive, surround the enemy) -- pack tactics imply social structure (monstry.doc).
+Dogs are "agressivny, protivnika okruzhayut" (aggressive, surround the enemy); pack tactics imply social structure (monstry.doc).
 Flesh form "staya" (pack) and flee together (monstry.doc).
-Predator and aberrant species do not socialize -- they are solitary hunters and lair defenders.
+Predator and aberrant species do not socialize; they are solitary hunters and lair defenders.
 Bloodsucker ambushes from cover alone.
-Chimera "pryachetsya, obkhodit so spiny" (hides, flanks from behind) -- solitary ambush predator (monstry.doc).
+Chimera "pryachetsya, obkhodit so spiny" (hides, flanks from behind); solitary ambush predator (monstry.doc).
 
 The engine already models the complete feeding state machine.
 `eStateEat` defines approach, inspect, drag, eat, and rest substates (`state_defs.h`).
 `CorpseMan` tracks nearby corpses in memory.
 `hungry()` returns true after 20 seconds without food.
-AlifePlus does not simulate eating -- it puts predators in proximity with prey through shared territory.
+AlifePlus does not simulate eating; it puts predators in proximity with prey through shared territory.
 The engine handles combat and corpse consumption when they meet.
 
 GSC designed creatures with species-specific feeding behaviors.
@@ -653,7 +653,7 @@ During their active period, creatures feed, explore, work, and socialize.
 During their dormant period, they seek shelter and sleep.
 
 Stalkers are diurnal: active during the day (05:00-20:00), dormant at night.
-Nocturnal mutant species -- bloodsuckers, lurkers, chimeras, zombies, fractures -- are active at night (20:00-05:00) and sleep during the day.
+Nocturnal mutant species; bloodsuckers, lurkers, chimeras, zombies, fractures; are active at night (20:00-05:00) and sleep during the day.
 All other species are diurnal.
 
 The engine already encodes this distinction in its faction system.
@@ -732,7 +732,7 @@ The faction called `monster_vegetarian` contains boar and flesh, both of which G
 
 The engine confirms this.
 Every creature shares the same `can_eat()` function (`monster_state_manager_inline.h:53`).
-Every state manager -- boar, flesh, dog, snork, tushkano, cat, chimera, controller, burer, fracture, bloodsucker, gigant, zombie -- registers `eStateEat` with identical corpse-detection logic.
+Every state manager; boar, flesh, dog, snork, tushkano, cat, chimera, controller, burer, fracture, bloodsucker, gigant, zombie; registers `eStateEat` with identical corpse-detection logic.
 There is no diet parameter, no food-type filter, no herbivore flag.
 The only creature with eat disabled is poltergeist (`poltergeist_state_manager.cpp:75`, commented out).
 There are no herbivores in the Zone.
@@ -758,7 +758,7 @@ Tushkano, rat, and karlik round out the bottom of the food chain.
 Feral species run in packs, defend their own, and avenge fallen members.
 Boar is "staynoye zhivotnoye" (herd animal) with leader morale mechanics (monstry.doc).
 Dogs are "agressivny, protivnika okruzhayut" (aggressive, surround the enemy) (monstry.doc).
-Gigant has "povadki buyvola" (buffalo-like behavior) -- brute force, not psychic (monstry.doc).
+Gigant has "povadki buyvola" (buffalo-like behavior); brute force, not psychic (monstry.doc).
 Pseudodog, snork, and cat complete the group.
 
 Predators hunt alone, ambush from cover, and pursue wounded prey.
@@ -809,11 +809,11 @@ The decision is a function of who you are, not a coin flip.
 > "A character's personality determines what they prioritize as more valuable: money or reputation points (including negative reputation points)."
 > [8]
 
-The EFC (Evaluated Function Container) lookup tables in the original design archives prove this was not abstract. GSC built concrete probability matrices: `EnemyDetectProbability` is a 10x5 table indexed by `EnemyDetectability` and `PersonalEyeRange`. `EnemyRetreatProbability` crosses `EnemyDetectability` with `PersonalIntelligence`. `Expediency` crosses four axes into a single action probability. These are not descriptions of intent -- they are filled tables with numeric values that a running simulation would evaluate per tick.
+The EFC (Evaluated Function Container) lookup tables in the original design archives prove this was not abstract. GSC built concrete probability matrices: `EnemyDetectProbability` is a 10x5 table indexed by `EnemyDetectability` and `PersonalEyeRange`. `EnemyRetreatProbability` crosses `EnemyDetectability` with `PersonalIntelligence`. `Expediency` crosses four axes into a single action probability. These are not descriptions of intent; they are filled tables with numeric values that a running simulation would evaluate per tick.
 
 AlifePlus implements personality as a probability layer that runs after alignment.
 Seven traits per stalker faction, five per mutant species, each tracing directly to GSC's EFC variable names: `PersonalAggressiveness` -> aggression, `PersonalGreed` -> greed, `PersonalIntelligence` -> discipline, `PersonalEyeRange` -> perception, `PersonalRelation` -> relation.
-Two additional traits -- territory (from `CMonsterHome` territory system) and survival (biological needs drive) -- complete the set.
+Two additional traits; territory (from `CMonsterHome` territory system) and survival (biological needs drive); complete the set.
 Stalker factions and mutant species share the same gate function and the same roll mechanic.
 The decision is probabilistic given the identity and the event, but only within the set of actions alignment permits.
 
@@ -821,7 +821,7 @@ Each trait value is a direct probability (0.0-1.0) grounded in GSC lore. Trait v
 
 Survival is a flat band (0.40-0.60) across all factions and species. Eating and sleeping are universal biological drives, not faction differentiators. The interesting personality differences come from the other traits.
 
-Inverted traits (`INV_`) express behaviors driven by the absence of a quality. Fleeing a base attack is gated by `INV_DISCIPLINE` and `INV_TERRITORY` -- low discipline and low territorial attachment make flight more likely. The check resolves `1 - base_value` before averaging.
+Inverted traits (`INV_`) express behaviors driven by the absence of a quality. Fleeing a base attack is gated by `INV_DISCIPLINE` and `INV_TERRITORY`; low discipline and low territorial attachment make flight more likely. The check resolves `1 - base_value` before averaging.
 
 For stalkers, personality keys on faction community.
 For mutants, personality keys on species resolved through `xcreature.get_mutant_species`.
@@ -834,13 +834,13 @@ Greed gates stash loot, stash fill, money harvest, supply runs, and harvest robb
 Perception gates massacre investigation, exploration, research, money harvest, and mutant feeding.
 Territory gates area conquest, shelter, outpost duty, and exploration.
 Relation gates squad revenge, massacre investigation, base support, wounded help, social behavior, and supply trading.
-Discipline gates base support, shelter, outpost duty, research, and healing -- and its inverse gates fleeing.
+Discipline gates base support, shelter, outpost duty, research, and healing; and its inverse gates fleeing.
 
 ---
 
 ## Range: Awareness and Reach
 
-GSC's `PersonalEyeRange` was a per-entity attribute that determined how far a stalker could perceive threats. It fed directly into `EnemyDetectProbability`: a stalker with high EyeRange detected enemies that others missed [8]. The range was not a game mechanic exposed to the player -- it was an internal simulation parameter that made each entity's awareness feel distinct.
+GSC's `PersonalEyeRange` was a per-entity attribute that determined how far a stalker could perceive threats. It fed directly into `EnemyDetectProbability`: a stalker with high EyeRange detected enemies that others missed [8]. The range was not a game mechanic exposed to the player; it was an internal simulation parameter that made each entity's awareness feel distinct.
 
 AlifePlus extends this into two range tiers that govern how far consequences search for targets:
 

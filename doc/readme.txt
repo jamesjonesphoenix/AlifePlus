@@ -349,7 +349,7 @@ Architecture: Purely reactive.
 
 The framework holds no scheduler. There is no clock, no polling loop, no per-frame work. Every evaluation is the direct consequence of an engine event the framework subscribed to; when no event fires, nothing runs.
 
-- Radiant pipeline subscribes to squad-state events (squad updates, smart-terrain transitions, game-vertex changes). Each event passes a multi-gate chain — pacer, protection, ratio, budget — that admits a small handful per minute. Admitted events feed a cascade that shuffles registered radiant causes and stops on the first publish.
+- Radiant pipeline subscribes to squad-state events (squad updates, smart-terrain transitions, game-vertex changes). Each event passes a multi-gate chain (pacer, protection, ratio, budget) that admits a small handful per minute. Admitted events feed a cascade that shuffles registered radiant causes and stops on the first publish.
 - Reactive pipeline subscribes to engine events that already encode "something happened": deaths, hits, item use, anomaly contact. Each registered cause evaluates independently; a single event can publish to many consequences.
 - No base-script edits. No engine patches. Only runtime callbacks and hooks.
 - The simulation layer is the engine's own. Squads route through the simulation board; the engine's job system, action planner, and scheme bindings produce all behavior at the destination.

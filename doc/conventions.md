@@ -16,7 +16,7 @@ The naming rule splits by pipeline. Radiant pairs are 1:1 and share the noun. Re
 cause:<noun>  ↔  consequence:<noun>
 ```
 
-Per the radiant rule that cause and consequence share the noun (see `architecture.md` Rules). The 1:1 bond is visible in the name. No invented synonyms to make a "cause noun" sound different from a "consequence verb" — they are the same concept under two scopes (the trigger state and the action).
+Per the radiant rule that cause and consequence share the noun (see `architecture.md` Rules). The 1:1 bond is visible in the name. No invented synonyms to make a "cause noun" sound different from a "consequence verb"; they are the same concept under two scopes (the trigger state and the action).
 
 | Family | Pattern | Examples |
 |--------|---------|----------|
@@ -48,9 +48,9 @@ CONSEQUENCE = CAUSE + VERB
 |----------|---------|----------|
 | Cause const | `CAUSE.{NAME}` | `CAUSE.MASSACRE`, `CAUSE.AREA_CONQUER`, `CAUSE.HUNGER_CAMPFIRE`, `CAUSE.SLUMBER_LAIR` |
 | Cause value | `"cause:{name}"` | `"cause:massacre"`, `"cause:area_conquer"`, `"cause:hunger_campfire"`, `"cause:slumber_lair"` |
-| Consequence const (radiant) | `CONSEQUENCE.{NAME}` — same noun as the cause | `CONSEQUENCE.AREA_CONQUER`, `CONSEQUENCE.HUNGER_CAMPFIRE`, `CONSEQUENCE.SLUMBER_LAIR` |
+| Consequence const (radiant) | `CONSEQUENCE.{NAME}`; same noun as the cause | `CONSEQUENCE.AREA_CONQUER`, `CONSEQUENCE.HUNGER_CAMPFIRE`, `CONSEQUENCE.SLUMBER_LAIR` |
 | Consequence const (reactive) | `CONSEQUENCE.{CAUSE}_{VERB}` | `CONSEQUENCE.MASSACRE_SCAVENGE`, `CONSEQUENCE.WOUNDED_HUNT` |
-| Consequence value (radiant) | `"consequence:{name}"` — same noun as the cause | `"consequence:area_conquer"`, `"consequence:hunger_campfire"`, `"consequence:slumber_lair"` |
+| Consequence value (radiant) | `"consequence:{name}"`; same noun as the cause | `"consequence:area_conquer"`, `"consequence:hunger_campfire"`, `"consequence:slumber_lair"` |
 | Consequence value (reactive) | `"consequence:{cause}_{verb}"` | `"consequence:massacre_scavenge"` |
 | Action ID | `action:{verb}` | `action:find_targets`, `action:move_squad` |
 | Lock (cause) | `lock:cause:{name}` | `lock:cause:massacre` |
@@ -63,9 +63,9 @@ CONSEQUENCE = CAUSE + VERB
 | MCM distributor | `distributor_{setting}` | `distributor_max_xray_events` |
 | MCM cause window | `cause_window_{setting}` | `cause_window_max_events` |
 | MCM consequence window | `consequence_window_{setting}` | `consequence_window_max_events` |
-| Script file (cause, single) | `ap_ext_cause_{family}.script` — generator publishes exactly one cause | `ap_ext_cause_massacre.script`, `ap_ext_cause_alpha.script` |
-| Script file (cause, multi) | `ap_ext_causes_{family}.script` — generator publishes multiple causes | `ap_ext_causes_area.script`, `ap_ext_causes_stash.script`, `ap_ext_causes_needs.script`, `ap_ext_causes_instincts.script` |
-| Script file (consequence) | `ap_ext_consequences_{family}.script` — holds every consequence subscribed to causes in the family. Internal shape (CONFIGS factory or hand-written N) doesn't affect the file name. | `ap_ext_consequences_alpha.script` (1 handler), `ap_ext_consequences_wounded.script` (2 handlers), `ap_ext_consequences_needs.script` (14 handlers) |
+| Script file (cause, single) | `ap_ext_cause_{family}.script`; generator publishes exactly one cause | `ap_ext_cause_massacre.script`, `ap_ext_cause_alpha.script` |
+| Script file (cause, multi) | `ap_ext_causes_{family}.script`; generator publishes multiple causes | `ap_ext_causes_area.script`, `ap_ext_causes_stash.script`, `ap_ext_causes_needs.script`, `ap_ext_causes_instincts.script` |
+| Script file (consequence) | `ap_ext_consequences_{family}.script`; holds every consequence subscribed to causes in the family. Internal shape (CONFIGS factory or hand-written N) doesn't affect the file name. | `ap_ext_consequences_alpha.script` (1 handler), `ap_ext_consequences_wounded.script` (2 handlers), `ap_ext_consequences_needs.script` (14 handlers) |
 | Community list | `community_{role}` | `community_stalker`, `community_predator` |
 | Log prefix (cause) | `CAUSE.{NAME}` | `CAUSE.MASSACRE` |
 | Log prefix (consequence) | `CONSEQUENCE.{NAME}` | `CONSEQUENCE.MASSACRE_SCAVENGE` |
@@ -85,20 +85,20 @@ Each answer is a separate first-class cause paired 1:1 with its own consequence 
 
 Two tables in the generator file:
 
-- **NEEDS / INSTINCTS** (one entry per drive) — Hull weight, threshold cfg key, period gating, DTO field name.
-- **CAUSES** (one entry per answer) — cause const, short name (cfg key suffix), parent drive name, alignment subset, personality, filter, optional `find_opts` builder.
+- **NEEDS / INSTINCTS** (one entry per drive); Hull weight, threshold cfg key, period gating, DTO field name.
+- **CAUSES** (one entry per answer); cause const, short name (cfg key suffix), parent drive name, alignment subset, personality, filter, optional `find_opts` builder.
 
 Picker flow: score every drive via Hull, sort overdue list by drive descending, walk overdue drives top-down. For each drive, walk CAUSES with matching parent drive, run RULES + SCAN per cause; first that publishes wins. Cap is enforced by the producer (RADIANT_MAX_CHECKS_PER_TICK).
 
 cfg key layout:
-- `cause_<drive>_threshold` — Hull threshold, one cfg key per drive (shared by every answer under that drive)
-- `cause_<answer>_enabled` — per-cause enable, one cfg key per answer. For single-answer drives the answer name equals the drive name (`feed`, `roam`, `pack`, `scatter`), so the cfg key reads as `cause_<drive>_enabled` but it is conceptually per-answer.
-- `consequence_<answer>_enabled` — consequence enable
-- `consequence_<answer>_rush` — rush option
+- `cause_<drive>_threshold`; Hull threshold, one cfg key per drive (shared by every answer under that drive)
+- `cause_<answer>_enabled`; per-cause enable, one cfg key per answer. For single-answer drives the answer name equals the drive name (`feed`, `roam`, `pack`, `scatter`), so the cfg key reads as `cause_<drive>_enabled` but it is conceptually per-answer.
+- `consequence_<answer>_enabled`; consequence enable
+- `consequence_<answer>_rush`; rush option
 
 Personality clamp is global, not per-cause. `PERSONALITY_FLOOR` / `PERSONALITY_CEILING` in `ap_ext_const` apply uniformly to every cause and consequence personality roll. No per-cause min/max cfg keys.
 
-When to use: a drive that has multiple alternative satisfactions (mutant slumber → field/lair/surge by species; future fear drive → flee/hide/freeze). Don't use for single-answer drives where the answer name would equal the drive name (`scatter` is one answer to scatter drive — no split needed; cfg keys collapse).
+When to use: a drive that has multiple alternative satisfactions (mutant slumber → field/lair/surge by species; future fear drive → flee/hide/freeze). Don't use for single-answer drives where the answer name would equal the drive name (`scatter` is one answer to scatter drive; no split needed; cfg keys collapse).
 
 When NOT to use: state classifiers where the picker selects exactly one branch by inspecting world state (stash empty/full/trap pattern). Those use a state-by-state KEYS_BY_CAUSE picker, not Hull cascade.
 
@@ -299,7 +299,7 @@ Never use `get_actor_level_id()` as fallback. The player may be on a different l
 
 ### Tag widget
 
-Each MCM cause section uses one tag widget (`_tag()`, faded khaki) per per-cause block. No umbrella tag at the family level — multi-cause families (area, stash, needs, instincts) render each sub-cause as a self-contained tag with a divider between them. The slide banner at the top of the page provides the family identity.
+Each MCM cause section uses one tag widget (`_tag()`, faded khaki) per per-cause block. No umbrella tag at the family level; multi-cause families (area, stash, needs, instincts) render each sub-cause as a self-contained tag with a divider between them. The slide banner at the top of the page provides the family identity.
 
 ### Line order inside the tag
 
@@ -319,7 +319,7 @@ Range and Period are intrinsic properties of the cause, separated from filter ru
 Semicolon-separated, always in this order:
 
 1. `alignment_<set>`
-2. `personality(<TRAIT>, <TRAIT>)` — adjacent to alignment
+2. `personality(<TRAIT>, <TRAIT>)`; adjacent to alignment
 3. world-state predicate (`not at base`, `stash non-empty`, `items >= min`, etc.)
 4. threshold mechanism (`Hull(<drive>)` or `MVT(<cause>)`)
 
@@ -335,11 +335,11 @@ The `Cause:` line uses display-name form: title-case, space-separated (`Stash Lo
 
 For radiant causes only, the display name carries the suffix ` Available` on the `Cause:` line (e.g. `Cause: Stash Loot Available`, `Cause: Hunger Campfire Available`). This disambiguates the cause from its 1:1 consequence which shares the same noun internally per the radiant rule that cause and consequence share the noun. Reactive causes do not need the suffix because their causes and consequences already differ in name (massacre vs massacre_investigate, etc.). The consequence display name stays bare (`Stash Loot`, not `Stash Loot Available`).
 
-`MVT`, `Hull`, `personality(<trait>, <trait>)` are formal architecture vocabulary used in MCM tags. Inside a per-cause section the cause/drive name is already clear from context, so `MVT` and `Hull` are written bare — no parenthesized inner name. Personality keeps its traits because they vary across causes in the same family. When a parenthesized inner name IS needed (multi-answer drive header that names the shared drive, or cross-section reference), use the display-name form: `MVT(Area Conquer)` not `MVT(area_conquer)`. Single-word inner names that read as ordinary English (`Hull(hunger)`, `personality(territory, aggression)`) stay lowercase. Code enum constants (`CAUSE.STASH_LOOT`, `PERSONALITY.TERRITORY`) stay uppercase as Lua identifiers.
+`MVT`, `Hull`, `personality(<trait>, <trait>)` are formal architecture vocabulary used in MCM tags. Inside a per-cause section the cause/drive name is already clear from context, so `MVT` and `Hull` are written bare; no parenthesized inner name. Personality keeps its traits because they vary across causes in the same family. When a parenthesized inner name IS needed (multi-answer drive header that names the shared drive, or cross-section reference), use the display-name form: `MVT(Area Conquer)` not `MVT(area_conquer)`. Single-word inner names that read as ordinary English (`Hull(hunger)`, `personality(territory, aggression)`) stay lowercase. Code enum constants (`CAUSE.STASH_LOOT`, `PERSONALITY.TERRITORY`) stay uppercase as Lua identifiers.
 
 ### No identifiers in MCM
 
-Never put underscore-joined programmer identifiers (`area_conquer`, `stash_loot`, `cause_area_infest_threshold`) in user-facing MCM text — slider labels, descriptions, tag bodies. Use the display-name form (`Area Conquer`, `Stash Loot`) inside formal vocabulary, and plain English everywhere else. The cfg-key (`cause_area_conquer_threshold`) lives in code only; the user sees `MVT(Area Conquer)`.
+Never put underscore-joined programmer identifiers (`area_conquer`, `stash_loot`, `cause_area_infest_threshold`) in user-facing MCM text; slider labels, descriptions, tag bodies. Use the display-name form (`Area Conquer`, `Stash Loot`) inside formal vocabulary, and plain English everywhere else. The cfg-key (`cause_area_conquer_threshold`) lives in code only; the user sees `MVT(Area Conquer)`.
 
 `alignment_<set>` is internal vocabulary for technical docs (architecture.md, this file, integration-guide.md) only. User-facing MCM text uses plain English instead:
 
