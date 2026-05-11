@@ -7,4 +7,64 @@
   <string id="st_ap_macros_ago_hours">
     <text>несколько часов назад</text>
   </string>
+  <string id="st_ap_macros_species_bloodsucker">
+    <text>кровососы</text>
+  </string>
+  <string id="st_ap_macros_species_boar">
+    <text>кабаны</text>
+  </string>
+  <string id="st_ap_macros_species_burer">
+    <text>бюреры</text>
+  </string>
+  <string id="st_ap_macros_species_chimera">
+    <text>химеры</text>
+  </string>
+  <string id="st_ap_macros_species_controller">
+    <text>контролёры</text>
+  </string>
+  <string id="st_ap_macros_species_dog">
+    <text>слепые псы</text>
+  </string>
+  <string id="st_ap_macros_species_flesh">
+    <text>плоти</text>
+  </string>
+  <string id="st_ap_macros_species_gigant">
+    <text>гиганты</text>
+  </string>
+  <string id="st_ap_macros_species_psy_dog">
+    <text>пси-псы</text>
+  </string>
+  <string id="st_ap_macros_species_pseudodog">
+    <text>псевдопсы</text>
+  </string>
+  <string id="st_ap_macros_species_snork">
+    <text>снорки</text>
+  </string>
+  <string id="st_ap_macros_species_tushkano">
+    <text>тушканы</text>
+  </string>
+  <string id="st_ap_macros_species_cat">
+    <text>коты</text>
+  </string>
+  <string id="st_ap_macros_species_fracture">
+    <text>изломы</text>
+  </string>
+  <string id="st_ap_macros_species_zombie">
+    <text>зомби</text>
+  </string>
+  <string id="st_ap_macros_species_poltergeist">
+    <text>полтергейсты</text>
+  </string>
+  <string id="st_ap_macros_species_rat">
+    <text>крысы</text>
+  </string>
+  <string id="st_ap_macros_species_karlik">
+    <text>карлики</text>
+  </string>
+  <string id="st_ap_macros_species_psysucker">
+    <text>псисосы</text>
+  </string>
+  <string id="st_ap_macros_species_lurker">
+    <text>лурки</text>
+  </string>
 </string_table>

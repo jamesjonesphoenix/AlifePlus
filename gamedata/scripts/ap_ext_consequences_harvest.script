@@ -28,11 +28,10 @@ local _personality_haunt = { PERSONALITY.PERCEPTION, PERSONALITY.TERRITORY }
 local _move_actor_chasers = ap_ext_common.move_actor_chasers
 
 local _move_smart_rob = ap_ext_common.make_move_smart_chasers(
-    CONSEQUENCE.HARVEST_ROB, ACTION.HARVEST_ROB, "consequence_harvest_rob_rush", PRE_RELEASE_GULAG.HARVEST_ROB)
+    CONSEQUENCE.HARVEST_ROB, "consequence_harvest_rob_rush", PRE_RELEASE_GULAG.HARVEST_ROB)
 
 local _on_arrive_rob = ap_ext_common.make_on_arrive({
     consequence_key = CONSEQUENCE.HARVEST_ROB,
-    action_key = ACTION.HARVEST_ROB,
     rush_cfg_key = "consequence_harvest_rob_rush",
     gulag_value = PRE_RELEASE_GULAG.HARVEST_ROB,
     max_chases_cfg_key = "consequence_harvest_rob_max_chases",
@@ -74,7 +73,7 @@ local function _handler_rob(event_data)
         local dst_smart = nil
         ap_core_debug.observe(trace, PHASE.MOVE_SQUAD, function()
             if taker_is_player then
-                _move_actor_chasers(CONSEQUENCE.HARVEST_ROB, ACTION.HARVEST_ROB, robbers, moved)
+                _move_actor_chasers(robbers, moved)
             else
                 dst_smart = ap_core_util.find_smart(target_squad.position, {
                     level_id = level_id, max_distance = ap_core_const.RANGE_RADIO,
@@ -88,7 +87,8 @@ local function _handler_rob(event_data)
         if #moved == 0 then return { code = RESULT.FAILED_ACTION, reason = REASON.MOVE_FAILED } end
 
         for i = 1, #moved do
-            ap_ext_news.add(moved[i], CAUSE.HARVEST, CONSEQUENCE.HARVEST_ROB, {
+            ap_core_broker.add_record(moved[i], CAUSE.HARVEST, CONSEQUENCE.HARVEST_ROB, {
+                action_key = ACTION.HARVEST_ROB,
                 other_squad = target_squad,
                 smart = dst_smart, level_id = level_id,
             })
@@ -121,7 +121,7 @@ local function _handler_haunt(event_data)
 
         local squads = {}
         for _, squad in ipairs(candidates) do
-            local species = ap_ext_util.get_species(squad.id)
+            local species = xcreature.get_mutant_species(squad.id)
             if not species or not _species_haunt[species] then goto continue end
             if not ap_ext_util.check_personality(_personality_haunt, species, { name = CONSEQUENCE.HARVEST_HAUNT }) then goto continue end
             squads[#squads + 1] = squad
@@ -133,14 +133,15 @@ local function _handler_haunt(event_data)
         local last_reason
         ap_core_debug.observe(trace, PHASE.MOVE_SQUAD, function()
             for _, squad in ipairs(squads) do
-                local res = ap_core_broker.script_squad(squad, target_smart, { consequence = CONSEQUENCE.HARVEST_HAUNT, action = ACTION.HARVEST_HAUNT, rush = cfg.consequence_harvest_haunt_rush })
+                local res = ap_core_broker.script_squad(squad, target_smart, { rush = cfg.consequence_harvest_haunt_rush })
                 if res.code == RESULT.SUCCESS then moved[#moved + 1] = squad else last_reason = res.reason end
             end
             return ap_core_debug.result_squads(moved, { dst_id = target_smart.id, rejected = #squads - #moved })
         end)
         if #moved == 0 then return { code = RESULT.FAILED_ACTION, reason = last_reason or REASON.MOVE_FAILED } end
         for i = 1, #moved do
-            ap_ext_news.add(moved[i], CAUSE.HARVEST, CONSEQUENCE.HARVEST_HAUNT, {
+            ap_core_broker.add_record(moved[i], CAUSE.HARVEST, CONSEQUENCE.HARVEST_HAUNT, {
+                action_key = ACTION.HARVEST_HAUNT,
                 other_squad = event_data.taker_squad,
                 smart = target_smart, level_id = level_id,
             })

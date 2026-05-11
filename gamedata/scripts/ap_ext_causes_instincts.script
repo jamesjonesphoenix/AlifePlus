@@ -109,7 +109,7 @@ local function _has_nearby_threat(trace, pos, level_id, squad_id, threats)
         exclude_squad_id = squad_id,
     })
     for i = 1, #nearby do
-        local sp = ap_ext_util.get_species(nearby[i].id)
+        local sp = xcreature.get_mutant_species(nearby[i].id)
         if sp and threats[sp] then return true end
     end
     return false
@@ -122,7 +122,7 @@ local function _build_scatter_filter(threats, player_id)
         local squads = xsmart.get_smart_squads(smart.id)
         if not squads then return true end
         for sq_id in pairs(squads) do
-            local sp = ap_ext_util.get_species(sq_id)
+            local sp = xcreature.get_mutant_species(sq_id)
             if sp and threats[sp] then return false end
         end
         return true
@@ -263,7 +263,7 @@ local function _on_smart(trace, squad)
     if not squad then return { code = RESULT.FAILED_RULES, reason = REASON.NIL_ARGS } end
     if not _alignment_mutant[squad.player_id] then return { code = RESULT.FAILED_RULES, reason = REASON.WRONG_ALIGNMENT, community = squad.player_id } end
 
-    local species = ap_ext_util.get_species(squad.id)
+    local species = xcreature.get_mutant_species(squad.id)
     if not species then return { code = RESULT.FAILED_RULES, reason = REASON.WRONG_ALIGNMENT, community = squad.player_id } end
 
     if not level.present() then return { code = RESULT.FAILED_RULES, reason = REASON.NO_LEVEL_ID } end

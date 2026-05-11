@@ -1,4 +1,7 @@
 --- ap_ext_news: news composer + per-consequence templates in ui_st_ap_news.xml.
+--- Pure consumer: reads ap_core_broker.get_records, picks an unreported entry on the actor's
+--- level, picks a per-consequence template, substitutes slots, dispatches via
+--- dynamic_news_manager.PushToChannel. No write path.
 
 local IsStalker, get_object_story_id = IsStalker, get_object_story_id
 local pairs, tostring = pairs, tostring
@@ -8,14 +11,18 @@ local table_concat = table.concat
 local game_translate_string = game.translate_string
 local xobject_se = xobject.se
 
-local TRACE, CONSEQUENCE = ap_core_const.TRACE, ap_core_const.CONSEQUENCE
+local TRACE, CONSEQUENCE, REASON = ap_core_const.TRACE, ap_core_const.CONSEQUENCE, ap_core_const.REASON
 local alignment_human = ap_ext_const.alignment_human
 
 local cfg = ap_core_mcm.cfg
 local COMPOSER_TIMER_EV = "ap_ext_news"
 local COMPOSE_TICK = "compose_tick"
 
-local FIFO_CAPACITY = 256
+local OP_COMPOSE       = "news:compose"
+local OP_COLLECT       = "news:collect"
+local OP_PICK_SPEAKER  = "news:pick_speaker"
+local OP_DISPATCH      = "news:dispatch"
+
 local DEDUP_CAPACITY = 512
 local MAX_TEMPLATE_VARIANTS = 20
 
@@ -23,9 +30,7 @@ local SCOPE_OWN, SCOPE_ALLIES, SCOPE_WORLD = "own", "allies", "world"
 
 local _templates_by_consequence = {}
 local _locale = nil
-local _news_seq = 0
-local _news_fifo = nil
-local _reported_news_ids = nil
+local _reported_cons_ids = nil
 
 -- Load a numbered template pool: walk prefix_001..N until miss/empty
 local function _load_pool(prefix)
@@ -64,64 +69,6 @@ local function _detect_locale()
     return "eng"
 end
 
--- Capture one side's display facts. Returns 5 nils for nil squad.
-local function _capture_side(squad)
-    if not squad then return nil, nil, nil, nil, nil end
-    local faction = squad.player_id
-    local species = xcreature.get_mutant_species(squad)
-    local faction_d = ap_ext_util.get_faction_display(faction)
-    local name = xsquad.get_commander_name(squad)
-    local species_d = ap_ext_util.get_species_display(species)
-    return faction, faction_d, name, species, species_d
-end
-
---- Append a consequence to the news FIFO. Eager-captures display strings so dead/unregistered
---- squads remain renderable. Smart/level/time stay lazy. Private; called by add() and add_unfiltered().
---- @cost O(1) | ~6 luabind per side + 4 game.translate_string for display strings
-local function _append(subject_squad, cause, consequence, opts)
-    if not subject_squad or not subject_squad.id then return end
-    opts = opts or {}
-    local other = opts.other_squad
-    local s_fac, s_facd, s_name, s_spec, s_specd = _capture_side(subject_squad)
-    local o_fac, o_facd, o_name, o_spec, o_specd = _capture_side(other)
-    _news_seq = _news_seq + 1
-    _news_fifo:set(_news_seq, {
-        news_id                 = _news_seq,
-        squad_id                = subject_squad.id,
-        other_squad_id          = other and other.id or nil,
-        cause                   = cause,
-        consequence             = consequence,
-        smart_id                = opts.smart and opts.smart.id or nil,
-        level_id                = opts.level_id,
-        game_hours              = math_floor(xtime.game_sec() / 3600),
-        subject_faction         = s_fac,
-        subject_faction_display = s_facd,
-        subject_name            = s_name,
-        subject_species         = s_spec,
-        subject_species_display = s_specd,
-        other_faction           = o_fac,
-        other_faction_display   = o_facd,
-        other_name              = o_name,
-        other_species           = o_spec,
-        other_species_display   = o_specd,
-    })
-end
-
---- Append a consequence to the news FIFO. Production path: rolls news_chance before appending.
---- On chance miss the entry is dropped silently; on hit, eager-captures display strings and writes one FIFO entry.
---- @cost O(1) | 0 luabind on chance miss; ~6 luabind per side + 4 game.translate_string on hit
-function add(subject_squad, cause, consequence, opts)
-    if math_random(100) > cfg.news_chance then return end
-    _append(subject_squad, cause, consequence, opts)
-end
-
---- Append a consequence to the news FIFO bypassing news_chance.
---- Debug-only path used by the news_demo seeder; production callers go through add().
---- @cost O(1) | ~6 luabind per side + 4 game.translate_string
-function add_unfiltered(subject_squad, cause, consequence, opts)
-    _append(subject_squad, cause, consequence, opts)
-end
-
 -- Hours-since descriptor for #ago#: resolved inline from XML. Empty only when game_hours_then
 -- is missing (data gap). delta=0 (same game-hour) renders as the recent string so templates
 -- never lose staleness info or collapse "since/from #ago#" to bare prepositions.
@@ -132,11 +79,13 @@ local function _ago_text(game_hours_then)
     return _xml(delta < 2 and "st_ap_macros_ago_recent" or "st_ap_macros_ago_hours")
 end
 
--- Resolve slots for one side of a news entry from pre-translated display fields.
+-- Resolve slots for one side of a news entry. Translates XML keys at compose time.
 local function _side_slots(entry, prefix)
-    local faction = entry[prefix .. "_faction_display"] or ""
+    local faction_key = entry[prefix .. "_faction_key"]
+    local species_key = entry[prefix .. "_species_key"]
+    local faction = faction_key and _xml(faction_key) or ""
+    local species = species_key and _xml(species_key) or ""
     local name = entry[prefix .. "_name"] or ""
-    local species = entry[prefix .. "_species_display"] or ""
     return faction, name, species
 end
 
@@ -184,24 +133,34 @@ local function _substitute(template, slots)
     return result
 end
 
--- Filter variants by required-data availability. Falls back to the full set if filter empties.
+-- Slot placeholder -> slot name. Variant rejected if it references a placeholder whose slot is empty.
+local _SLOT_CHECKS = {
+    { "#subject_name#",    "subject_name" },
+    { "#subject_species#", "subject_species" },
+    { "#other_faction#",   "other_faction" },
+    { "#other_name#",      "other_name" },
+    { "#other_species#",   "other_species" },
+    { "#level#",           "level" },
+    { "#ago#",             "ago" },
+    { "#location#",        "location" },
+}
+
+-- True if variant references a placeholder whose corresponding slot is empty.
+local function _has_missing_slot(v, slots)
+    for j = 1, #_SLOT_CHECKS do
+        local check = _SLOT_CHECKS[j]
+        if string_find(v, check[1], 1, true) and slots[check[2]] == "" then return true end
+    end
+    return false
+end
+
+-- Filter variants by required-data availability.
 local function _filter_variants(variants, slots)
     local ok = {}
     for i = 1, #variants do
         local v = variants[i]
-        local need_sname = string_find(v, "#subject_name#", 1, true)    and slots.subject_name == ""
-        local need_sspec = string_find(v, "#subject_species#", 1, true) and slots.subject_species == ""
-        local need_ofac  = string_find(v, "#other_faction#", 1, true)   and slots.other_faction == ""
-        local need_oname = string_find(v, "#other_name#", 1, true)      and slots.other_name == ""
-        local need_ospec = string_find(v, "#other_species#", 1, true)   and slots.other_species == ""
-        local need_level = string_find(v, "#level#", 1, true)           and slots.level == ""
-        local need_ago   = string_find(v, "#ago#", 1, true)             and slots.ago == ""
-        local need_loc   = string_find(v, "#location#", 1, true)        and slots.location == ""
-        if not (need_sname or need_sspec or need_ofac or need_oname or need_ospec or need_level or need_ago or need_loc) then
-            ok[#ok + 1] = v
-        end
+        if not _has_missing_slot(v, slots) then ok[#ok + 1] = v end
     end
-    if #ok == 0 then return variants end
     return ok
 end
 
@@ -209,17 +168,19 @@ end
 -- Returns array; caller picks one at random for gossip-style variety.
 local function _collect_eligible()
     local entries = {}
+    local recs = ap_core_broker.get_records()
     local now_gh = math_floor(xtime.game_sec() / 3600)
     local max_age = cfg.news_max_age_game_hours
     local cur_level = xlevel.get_actor_level_id()
-    _news_fifo:each(function(entry)
-        if entry.news_id and not _reported_news_ids:has(entry.news_id)
+    for i = 1, #recs do
+        local entry = recs[i]
+        if entry.cons_id and not _reported_cons_ids:has(entry.cons_id)
             and entry.level_id and entry.level_id == cur_level
             and entry.game_hours and (now_gh - entry.game_hours) <= max_age
         then
             entries[#entries + 1] = entry
         end
-    end)
+    end
     return entries
 end
 
@@ -300,7 +261,7 @@ end
 -- xpda.send during the ~27s cold-start window. Engine-side drops (enable_news, NewsToggle,
 -- is_pda_charged, counter cap) are not duplicated here.
 local function _dispatch(trace, picked, msg)
-    return ap_core_debug.observe(trace, "news:dispatch", function()
+    return ap_core_debug.observe(trace, OP_DISPATCH, function()
         local dnm = dynamic_news_manager and dynamic_news_manager.get_dynamic_news
                     and dynamic_news_manager.get_dynamic_news() or nil
         if dnm and dnm.PushToChannel then
@@ -319,7 +280,7 @@ end
 
 -- Pick the per-consequence template pool for the focal entry.
 local function _pick_template(entry)
-    local cons_name = entry.consequence:match("^consequence:(.+)") or ""
+    local cons_name = entry.consequence_key:match("^consequence:(.+)") or ""
     return _templates_by_consequence[cons_name], cons_name
 end
 
@@ -335,23 +296,27 @@ local function _compose_tick_impl(trace)
                 and dynamic_news_manager.get_dynamic_news() or nil
     local channel_status = dnm and dnm.channel_status or nil
     if not channel_status then return { code = TRACE.NONE } end
-    local entries = ap_core_debug.observe(trace, "news:collect", function()
+    local entries = ap_core_debug.observe(trace, OP_COLLECT, function()
         return _collect_eligible()
     end)
     if #entries == 0 then return { code = TRACE.NONE } end
     local entry = entries[math_random(#entries)]
     local pool, cons_name = _pick_template(entry)
     if not pool or #pool == 0 then
-        _reported_news_ids:set(entry.news_id, true)
+        _reported_cons_ids:set(entry.cons_id, true)
         return { code = TRACE.NO_TEMPLATES, cons = cons_name or "?" }
     end
     local slots = _slots_for(entry)
     local filtered = _filter_variants(pool, slots)
+    if #filtered == 0 then
+        _reported_cons_ids:set(entry.cons_id, true)
+        return { code = TRACE.NO_MSG, cons = cons_name or "?", reason = REASON.ALL_FILTERED }
+    end
     local template = filtered[math_random(#filtered)]
     local msg = _clean_output(_substitute(template, slots))
     if not msg then return { code = TRACE.NO_MSG, cons = cons_name or "?" } end
     local actor_comm = get_actor_true_community()
-    local picked = ap_core_debug.observe(trace, "news:pick_speaker", function()
+    local picked = ap_core_debug.observe(trace, OP_PICK_SPEAKER, function()
         return _pick_speaker(actor_comm, cfg.news_scope, channel_status)
     end)
     if not picked then
@@ -359,7 +324,7 @@ local function _compose_tick_impl(trace)
             actor_comm = actor_comm or "?", channels = _format_channels(channel_status) }
     end
     _dispatch(trace, picked, msg)
-    _reported_news_ids:set(entry.news_id, true)
+    _reported_cons_ids:set(entry.cons_id, true)
     return { code = TRACE.SENT, sender = picked.name }
 end
 
@@ -367,7 +332,7 @@ end
 --- nests in the trace tree with the rest of the pipeline.
 function compose_tick()
     if not cfg.news_enabled then return { code = TRACE.NONE } end
-    return ap_core_debug.observe(nil, "news:compose", _compose_tick_impl)
+    return ap_core_debug.observe(nil, OP_COMPOSE, _compose_tick_impl)
 end
 
 local function _next_delay()
@@ -384,8 +349,6 @@ end
 
 function on_game_start()
     _locale = nil
-    _news_seq = 0
-    _news_fifo = xttltable.create_fifo_cache({ capacity = FIFO_CAPACITY })
-    _reported_news_ids = xttltable.create_fifo_cache({ capacity = DEDUP_CAPACITY })
+    _reported_cons_ids = xttltable.create_fifo_cache({ capacity = DEDUP_CAPACITY })
     CreateTimeEvent(COMPOSER_TIMER_EV, COMPOSE_TICK, 30, _on_compose_timer)
 end

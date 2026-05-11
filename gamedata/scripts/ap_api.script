@@ -53,10 +53,10 @@ end
 --- Returns a shallow-copied snapshot of the AP-scripted squads table (keyed by squad id).
 --- Both the outer table and each inner entry are fresh per call -- callers can read or
 --- mutate freely without affecting broker state. Each entry carries:
----   scripted_target, target_smart_id, tracked_at, consequence, action, on_arrive,
----   on_arrive_args, pre_release_gulag, arrived (optional), release_at (optional).
---- The `consequence` field identifies what the squad is doing today
---- (1 action per consequence). on_arrive is broker-internal arrival dispatch.
+---   scripted_target, target_smart_id, tracked_at, on_arrive, on_arrive_args,
+---   pre_release_gulag, arrived (optional), release_at (optional).
+--- Entry holds control state only; consequence/action/cause/identity belong to the activity
+--- record (see get_record / get_records).
 --- Prefer get_scripted_squad(id) for single-entry lookups (one entry copy, not the whole map).
 function get_scripted_squads()
     local out = {}
@@ -72,6 +72,36 @@ function get_scripted_squad(squad_id)
     return _copy_entry(ap_core_broker.get_scripted_squads()[squad_id])
 end
 
+--- Most-recent activity record matching opts (AND logic on field equality).
+--- Fast path { squad_id, assigned = true } reads the live index in O(1).
+--- General path scans matching entries and returns the one with the highest cons_id.
+--- @param opts table Filter fields. Required.
+--- @return table|nil
+function get_record(opts) return ap_core_broker.get_record(opts) end
+
+--- All activity records matching opts (AND logic on field equality).
+--- assigned=true reads the live index; else full FIFO scan.
+--- @param opts table|nil Filter fields.
+--- @return table Array of matching entries
+function get_records(opts) return ap_core_broker.get_records(opts) end
+
+--- Append an activity record after a successful script_squad / script_actor_target.
+--- Broker captures display keys from the squad userdata so reads stay valid after the squad
+--- despawns. Drives HUD markers, news compose, and external tooltip queries; foreign
+--- integrators must call this for their consequences to render.
+--- @param subject_squad userdata Squad server object the consequence acted on
+--- @param cause_key string CAUSE.X enum value (also a localization id)
+--- @param consequence_key string CONSEQUENCE.X enum value (also a localization id)
+--- @param opts table|nil { action_key, other_squad, smart, level_id, cause_id }
+---   action_key  - ACTION.X enum value (player-facing label, localization id)
+---   other_squad - optional second-party squad userdata
+---   smart       - destination smart server object (id stored, resolved lazily)
+---   level_id    - level the event happened on
+---   cause_id    - optional correlator for sibling consequences
+function add_record(subject_squad, cause_key, consequence_key, opts)
+    return ap_core_broker.add_record(subject_squad, cause_key, consequence_key, opts)
+end
+
 --- Release a squad from AP scripted control by id. Returns false if the squad
 --- isn't currently scripted by AP.
 --- @param squad_id number
@@ -79,24 +109,21 @@ end
 function release_squad(squad_id) return ap_core_broker.release_squad(squad_id) end
 
 --- Script a squad to a smart terrain with full AP lifecycle (PDA marker, TTL,
---- release-hold, target reassertion).
+--- release-hold, target reassertion). Marker rendering and player-facing labelling come
+--- from the activity record; integrators should call ap_api.add_record after
+--- script_squad success to populate it.
 --- @param squad userdata Squad server object
 --- @param smart userdata Smart terrain server object
---- @param opts table { consequence, action, rush, on_arrive, on_arrive_args, pre_release_gulag }
----   consequence: required; CONSEQUENCE.X enum value (which consequence dispatched the squad).
----   action:      required; ACTION.X enum value (player-facing label; resolved via get_text).
----   on_arrive:   optional; same value as consequence when registering an arrival handler
----                with register_consequence.
+--- @param opts table|nil { rush, on_arrive, on_arrive_args, pre_release_gulag }
+---   on_arrive: optional; same value as consequence when registering an arrival handler
+---              with register_consequence.
 --- @return table { code = RESULT.X, id, dst, dst_id }
 function script_squad(squad, smart, opts) return ap_core_broker.script_squad(squad, smart, opts) end
 
 --- Script a squad to pursue the player directly (no arrival detection).
 --- @param squad userdata Squad server object
---- @param opts table { consequence, action }
----   consequence: required; CONSEQUENCE.X enum value.
----   action:      required; ACTION.X enum value.
 --- @return table { code = RESULT.X, id, dst, dst_id }
-function script_actor_target(squad, opts) return ap_core_broker.script_actor_target(squad, opts) end
+function script_actor_target(squad) return ap_core_broker.script_actor_target(squad) end
 
 
 -- ============================================================================

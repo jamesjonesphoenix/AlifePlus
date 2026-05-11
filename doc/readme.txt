@@ -1,7 +1,7 @@
 AlifePlus: Emergent A-Life for STALKER Anomaly, by Damian
 - Version: 1.5.5 (xlibs 1.5.0)
 - Manifesto: https://github.com/damiansirbu-stalker/AlifePlus/blob/main/doc/manifesto.md
-- Integration guide: https://github.com/damiansirbu-stalker/AlifePlus/blob/main/doc/integration-guide.md
+- Integration guide: https://github.com/damiansirbu-stalker/AlifePlus/blob/main/doc/integration.md
 - Changelog: https://github.com/damiansirbu-stalker/AlifePlus/blob/main/doc/changelog
 - Russian / На русском: https://github.com/damiansirbu-stalker/AlifePlus/blob/main/doc/readme_ru.txt
 - Bugs, suggestions: https://github.com/damiansirbu-stalker/AlifePlus/issues
@@ -165,7 +165,7 @@ The framework handles the rest.
 Other mods integrate at any level without conflict.
 AlifePlus uses only engine-native mechanisms (the engine's scripted-target slot, the simulation board, the engine job system).
 Any mod that respects the engine's own APIs will not conflict.
-See integration-guide.md on the project site for examples, API reference, and a concrete two-mod collaboration scenario.
+See integration.md on the project site for examples, API reference, and a concrete two-mod collaboration scenario.
 
 ---
 
@@ -389,7 +389,7 @@ Compatibility & Safety:
 - AlifePlus does not need third-party "bridge" or "synergy" patches.
 - Mods that adopt the AP framework through the official API are supported.
 - Unauthorized patches that claim compatibility are not endorsed and will cause instability and save corruption.
-- See integration-guide.md on the project site for API reference and examples.
+- See integration.md on the project site for API reference and examples.
 
 ---
 

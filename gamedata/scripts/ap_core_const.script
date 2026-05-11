@@ -283,6 +283,7 @@ REASON = {
     FRIENDLY_FACTION  = "friendly_faction",
     LOW_PERSONALITY   = "low_personality",
     STALKER_EXCLUDED  = "stalker_excluded",
+    ALL_FILTERED      = "all_filtered",
 }
 
 --- Consequence identifiers (trace operations + rate-limit keys)
@@ -328,10 +329,9 @@ CONSEQUENCE = {
     SCATTER = "consequence:scatter",
 }
 
---- Action identifiers (player-facing label resolved via game.translate_string).
---- One action per consequence today; same suffix as the consequence enum.
---- Consequence handlers pass both `consequence = CONSEQUENCE.X` and `action = ACTION.X`
---- to script_squad opts. The broker stores both on the _ap_scripted_squads record.
+--- Action identifiers (player-facing label, localization id).
+--- Consequence handlers pass action = ACTION.X to ap_core_broker.add_record; the activity
+--- record stores it as action_key, and HUD/news/external translate via game.translate_string.
 --- Localized strings live in gamedata/configs/text/<lang>/ui_st_ap_macros.xml.
 ACTION = {
     ALPHA_PROMOTE        = "action:alpha_promote",
@@ -373,12 +373,6 @@ ACTION = {
     ROAM                 = "action:roam",
     PACK                 = "action:pack",
     SCATTER              = "action:scatter",
-}
-
---- Consequences whose marker remains visible after the squad finishes the scripted hold.
---- Today only ALPHA_PROMOTE: the alpha identity persists on the squad as long as the alpha lives.
-CONSEQUENCE_PERSISTENT = {
-    [CONSEQUENCE.ALPHA_PROMOTE] = true,
 }
 
 --- Phase names for xtrace path (ap_core_debug.observe). Internal trace ops within a consequence handler.

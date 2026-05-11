@@ -54,8 +54,6 @@ local function _handler_investigate(event_data)
         ap_core_debug.observe(trace, PHASE.MOVE_SQUAD, function()
             for _, squad in ipairs(squads) do
                 local res = ap_core_broker.script_squad(squad, smart, {
-                    consequence = CONSEQUENCE.MASSACRE_INVESTIGATE,
-                    action = ACTION.MASSACRE_INVESTIGATE,
                     rush = cfg.consequence_massacre_investigate_rush,
                     pre_release_gulag = PRE_RELEASE_GULAG.MASSACRE_INVESTIGATE,
                 })
@@ -65,7 +63,8 @@ local function _handler_investigate(event_data)
         end)
         if #moved == 0 then return { code = RESULT.FAILED_ACTION, reason = last_reason or REASON.MOVE_FAILED } end
         for i = 1, #moved do
-            ap_ext_news.add(moved[i], CAUSE.MASSACRE, CONSEQUENCE.MASSACRE_INVESTIGATE, {
+            ap_core_broker.add_record(moved[i], CAUSE.MASSACRE, CONSEQUENCE.MASSACRE_INVESTIGATE, {
+                action_key = ACTION.MASSACRE_INVESTIGATE,
                 other_squad = event_data.killer_squad,
                 smart = smart, level_id = level_id,
             })
@@ -88,7 +87,7 @@ local function _handler_scavenge(event_data)
         if #candidates == 0 then return { code = RESULT.FAILED_SCAN, reason = REASON.NO_SQUAD } end
         local squads = {}
         for _, squad in ipairs(candidates) do
-            local species = ap_ext_util.get_species(squad.id)
+            local species = xcreature.get_mutant_species(squad.id)
             if not species or not _species_scavenge[species] then goto continue end
             if not ap_ext_util.check_personality(_personality_scavenge, species, { name = CONSEQUENCE.MASSACRE_SCAVENGE }) then goto continue end
             squads[#squads + 1] = squad
@@ -101,8 +100,6 @@ local function _handler_scavenge(event_data)
         ap_core_debug.observe(trace, PHASE.MOVE_SQUAD, function()
             for _, squad in ipairs(squads) do
                 local res = ap_core_broker.script_squad(squad, smart, {
-                    consequence = CONSEQUENCE.MASSACRE_SCAVENGE,
-                    action = ACTION.MASSACRE_SCAVENGE,
                     rush = cfg.consequence_massacre_scavenge_rush,
                     pre_release_gulag = PRE_RELEASE_GULAG.MASSACRE_SCAVENGE,
                 })
@@ -112,7 +109,8 @@ local function _handler_scavenge(event_data)
         end)
         if #moved == 0 then return { code = RESULT.FAILED_ACTION, reason = last_reason or REASON.MOVE_FAILED } end
         for i = 1, #moved do
-            ap_ext_news.add(moved[i], CAUSE.MASSACRE, CONSEQUENCE.MASSACRE_SCAVENGE, {
+            ap_core_broker.add_record(moved[i], CAUSE.MASSACRE, CONSEQUENCE.MASSACRE_SCAVENGE, {
+                action_key = ACTION.MASSACRE_SCAVENGE,
                 other_squad = event_data.victim_squad,
                 smart = smart, level_id = level_id,
             })
@@ -146,8 +144,6 @@ local function _handler_loot(event_data)
         ap_core_debug.observe(trace, PHASE.MOVE_SQUAD, function()
             for _, squad in ipairs(squads) do
                 local res = ap_core_broker.script_squad(squad, smart, {
-                    consequence = CONSEQUENCE.MASSACRE_LOOT,
-                    action = ACTION.MASSACRE_LOOT,
                     rush = cfg.consequence_massacre_loot_rush,
                     pre_release_gulag = PRE_RELEASE_GULAG.MASSACRE_LOOT,
                 })
@@ -157,7 +153,8 @@ local function _handler_loot(event_data)
         end)
         if #moved == 0 then return { code = RESULT.FAILED_ACTION, reason = last_reason or REASON.MOVE_FAILED } end
         for i = 1, #moved do
-            ap_ext_news.add(moved[i], CAUSE.MASSACRE, CONSEQUENCE.MASSACRE_LOOT, {
+            ap_core_broker.add_record(moved[i], CAUSE.MASSACRE, CONSEQUENCE.MASSACRE_LOOT, {
+                action_key = ACTION.MASSACRE_LOOT,
                 other_squad = event_data.victim_squad,
                 smart = smart, level_id = level_id,
             })

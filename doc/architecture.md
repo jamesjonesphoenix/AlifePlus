@@ -51,8 +51,8 @@ Two layers. Core is the framework. Ext is the domain. Core never imports ext; al
 | ap_core_limiter | Rate-limit primitives: per-key cause counter, per-consequence token bucket, global radiant TTL counter |
 | ap_core_producer | Event Pipeline: radiant + reactive gate chains, cause generator cascade, xbus publish |
 | ap_core_consumer | Dispatch Pipeline: xbus subscribe, consequence iteration, result codes, rate gating |
-| ap_core_broker | Squad lifecycle: protection, ownership registry, scripting, 20s scan, arrival, release |
-| ap_core_hud | PDA map markers, pipeline statistics overlay, identity-source / subject-resolver registries |
+| ap_core_broker | Squad lifecycle: protection, ownership registry, scripting, 20s scan, arrival, release; activity record (FIFO of dispatched consequences with denormalized display facts) |
+| ap_core_hud | PDA map markers (rendered from activity records), pipeline statistics overlay |
 | ap_core_compat | Save data cleanup for version upgrades, default ownership proxy (warfare) |
 
 ### Ext: cause and consequence files
@@ -302,9 +302,36 @@ _update_scripted_squads runs every 20s via CreateTimeEvent. For each tracked squ
 4. Arrival. xsmart.is_arrived(squad, smart). On arrival: if smart is full and squad is online, fire arrival handler then unscript (overflow). Otherwise dispatch the registered on_arrive function, then check engine job assignment via xsmart.has_jobs_for: if smart is online + on actor's level and any member has no job, unscript (release_no_jobs); if smart is offline or off-level, AP cannot observe job state and enters the wait state by default. This is the runtime-allocation half of the dispatch-viability check. The cause-side filter is the scan-time half: xsmart.has_animated_stalker_jobs excludes stub-only smarts at find_smart time so the dispatch never happens on structurally barren targets; xsmart.has_jobs_for releases the squad if real slots ended up taken between dispatch and arrival.
 5. Wait. release_at = game_sec() + pre_release_gulag (default 300s). When game time exceeds release_at, unscript. Game time advances during sleep / time-skip and survives save/load.
 
+### Activity record
+
+ap_core_broker owns a 256-slot FIFO of dispatched consequences. Each record entry is one consequence dispatch on one squad. The substrate is shared by HUD markers, ap_ext_news compose, and external integrators (warfare).
+
+Write. ap_core_broker.add_record(subject_squad, cause_key, consequence_key, opts) is the single entry point; consequence handlers call it after script_squad / script_actor_target SUCCESS. add_record captures display keys via _capture_side for subject + optional other (engine community string for stalker / zombified-stalker squads → faction_key; "st_ap_macros_species_" + xcreature.get_mutant_species(squad) for mutant squads → species_key; xsquad.get_commander_name → name) and writes the entry. Squad-derived keys are eager so dead/unregistered squads remain renderable. Smart, level, and game-hour-at-write stay lazy ids resolved at render.
+
+Substrate. _ap_record (xttltable.fifo, capacity 256, on_evict callback) holds entries keyed by monotonic cons_id. _record_assigned[squad_id] indexes the live entry per squad. _record_seq is the cons_id counter. Writing a new entry for a squad flips the previous entry's assigned flag to false before assigning the new one. _on_record_evict nulls _record_assigned only if the evicted entry was the live one (a flipped predecessor leaves no index entry to clean).
+
+Lifecycle. broker registers SERVER_ENTITY_ON_UNREGISTER and clears the record's assigned flag on entity death. HUD has its own SERVER_ENTITY_ON_UNREGISTER for marker cleanup; the two callbacks fire independently. Records persist beyond unscripting (the squad may be released but the record stays for query) until either the squad dies (clear_record) or the FIFO evicts.
+
+Query API (ap_core_broker, mirrored on ap_api):
+
+| call | purpose |
+|------|---------|
+| record(subject_squad_id, cause, consequence, opts) | write entry, return cons_id |
+| get_record(opts) | most-recent entry matching filter (highest cons_id); { squad_id, assigned=true } hits the live index in O(1) |
+| get_records(opts) | all entries matching filter; assigned=true reads index, else full FIFO scan |
+| clear_record(squad_id) | flip assigned to false (called by SERVER_ENTITY_ON_UNREGISTER) |
+
+Entry schema (suffix convention: `_id` for ids, `_key` for translation keys, names are engine strings):
+- ids: `cons_id`, `squad_id`, `cause_id`, `other_squad_id`, `smart_id`, `level_id`
+- translation keys: `cause_key`, `consequence_key`, `action_key`, `subject_faction_key`, `subject_species_key`, `other_faction_key`, `other_species_key`
+- engine strings: `subject_name`, `other_name`
+- state/value: `assigned` (bool), `game_hours` (number)
+
+Translation keys are directly translatable via `game.translate_string`. Capture is engine-only: `xcreature.get_mutant_species(squad)` non-nil routes to `subject_species_key = "st_ap_macros_species_" .. species`; otherwise `subject_faction_key = squad.player_id` (vanilla XML covers stalker / zombified-stalker community strings). `subject_name = xsquad.get_commander_name(squad)`. Same rule for the optional other side.
+
 ### Save / load
 
-_ap_scripted_squads persists to m_data.ap_core_broker. Engine-side scripted_target persists natively across save/load (sim_squad_scripted STATE_Write / STATE_Read). Arrival handler functions are transient - they are re-registered every load via consumer.register opts (the consumer wires on_arrive opts to broker.register_arrival_handler). On load, squads marked as arrived get release_at = 0 (immediate release on next scan).
+_ap_scripted_squads + ap_record_entries (walked from FIFO via :each into a sequential array) + ap_record_seq persist to m_data.ap_core_broker. Engine-side scripted_target persists natively across save/load (sim_squad_scripted STATE_Write / STATE_Read). Arrival handler functions are transient - they are re-registered every load via consumer.register opts (the consumer wires on_arrive opts to broker.register_arrival_handler). On load, squads marked as arrived get release_at = 0 (immediate release on next scan); the FIFO rebuilds from the saved array via :set on each entry, and _record_assigned rebuilds from entries with assigned == true.
 
 ### Protection (ap_core_broker.is_protected)
 
@@ -330,19 +357,19 @@ xsquad.acquire_squad sets scripted_target on acquire; xsquad.release_squad clear
 
 ## HUD
 
-ap_core_hud consolidates all visual output: PDA map markers and pipeline statistics overlay. Reads from ap_core_broker.get_scripted_squads() and from registered identity sources. Owns no domain state.
+ap_core_hud consolidates all visual output: PDA map markers and pipeline statistics overlay. Reads from ap_core_broker activity records. Owns no domain state.
 
 ### Markers
 
-HUD owns the marker lifecycle end-to-end via a private _marker_state[squad_id] = { consequence, remove_at? } table. Marker timer fires every UPDATE_MARKERS_SEC = 10s (apply); validate runs on the same timer at VALIDATE_MARKERS_SEC = 20s cadence.
+HUD owns the marker lifecycle end-to-end via a private _marker_state[squad_id] = { cons_id, remove_at? } table. cons_id is the broker monotonic id of the entry last rendered (cache miss when a fresh entry is recorded for the same squad). Marker timer fires every UPDATE_MARKERS_SEC = 10s (apply); validate runs on the same timer at VALIDATE_MARKERS_SEC = 20s cadence.
 
-Apply pass. Iterates ap_core_broker.get_scripted_squads() for currently scripted squads, then iterates registered identity sources for non-scripted squads (alphas with no current consequence). For each squad, reads scripted.action (or ACTION.ALPHA_PROMOTE for identity-only squads) and translates it via game.translate_string. The action enum value is itself the localization id (e.g. "action:massacre_investigate" -> "Investigating a Massacre Site"). The marker label combines the action phrase with the consequence enum suffix as a bracketed tag. If the squad has no marker yet or its action/consequence changed, calls xpda.mark_squad and updates _marker_state.
+Apply pass. Iterates ap_core_broker.get_records({assigned=true}) and calls _mark_squad on each. _mark_squad short-circuits when state.cons_id matches; otherwise resolves the action label via game.translate_string(entry.action_key) (the ACTION enum value is itself the localization id, e.g. "action:massacre_investigate" -> "Investigating a Massacre Site"). The marker label is a multi-line block built inline from record fields: action / `Subject: <name | translated species> (translated faction)` / optional `Other: ...` line when entry.other_squad_id is non-nil. xpda.mark_squad is called and _marker_state[squad_id] caches the cons_id.
 
-Validate pass. Iterates _marker_state itself. For squads no longer live (not in get_scripted_squads() AND not in any identity source list), starts a MARKER_LINGER_SEC = 60s linger timer (state.remove_at). When the linger expires, unmarks via xpda.unmark_squad and drops the slot. Entity death triggers _on_server_entity_on_unregister which unmarks immediately, no linger.
+Validate pass. Iterates _marker_state itself. Three-stage chain per squad: get_record({squad_id, assigned=true}) -> xobject.se(squad_id) -> se.scripted_target. If any stage fails, starts a MARKER_LINGER_SEC = 60s linger timer (state.remove_at) with reason `evicted` (record gone), `dead` (server entity gone), or `unscripted` (squad no longer routed). When the linger expires, unmarks via xpda.unmark_squad and drops the slot. Entity death also triggers _on_server_entity_on_unregister (in HUD) which unmarks immediately, no linger.
 
-Identity sources (register_identity_source). Squad-id list providers registered by ext modules. Squads in any provider's returned list receive the consequence-specific marker (currently ALPHA_PROMOTE) when not currently scripted. Last writer wins on duplicate registration. Today: tracker registers get_alpha_marker_squads.
+Subject resolution. The record entry carries translation keys for both subject and other (`subject_faction_key`, `subject_species_key`, `subject_name`, plus the `other_*` mirror). HUD calls game.translate_string on each `_key` at render time and runs an inline `_format_party` helper to compose `<name | translated species> (translated faction)`. No ext import.
 
-Subject resolver (register_subject_resolver). Replaces the marker subject-line resolver, function(squad) -> string. Today: ap_ext_util.format_subject returns "<name|species_display> (<faction_display>)".
+ALPHA_PROMOTE flow. Alpha squads write a record via ap_ext_consequences_alpha (calls add_record with CAUSE.ALPHA / CONSEQUENCE.ALPHA_PROMOTE) but never call script_squad. Their record is `assigned=true` so apply renders the marker. validate sees `not se.scripted_target` and starts linger after the next 20s pass; the marker fades MARKER_LINGER_SEC after promotion. Re-promotion (new alpha record) resets the cycle.
 
 ### Statistics overlay
 
@@ -354,35 +381,34 @@ Pipeline counters: r for radiant, x for reactive. Track events, gate admissions,
 
 ap_ext_news transforms AP event telemetry into stalker radio chatter via per-consequence templates in ui_st_ap_news.xml. There is no grammar engine. Presentation layer with one-way dataflow: pipeline emits, news consumes, news never writes back to pipeline state.
 
-### Write path (ap_ext_news.add)
+### Write path (ap_core_broker.add_record)
 
-Consequence SUCCESS calls ap_ext_news.add(subject_squad, cause, consequence, opts). The function rolls cfg.news_chance (1-100, default 20) and drops silently on miss. On hit, _append captures: subject + (optional) other squad ids, smart_id, level_id, event-time game hour, plus eagerly-resolved squad-derived display facts for both sides (faction key + localized faction display, commander name, species + localized species plural). Smart and level remain lazy (their ids are session-stable; resolve at compose time via xobject.se + xlibs resolvers).
+Consequence SUCCESS calls ap_core_broker.add_record(subject_squad, cause_key, consequence_key, opts). _capture_side(subject) and _capture_side(other) read engine fields and produce three display keys per side: faction_key (community string for stalker / zombified-stalker, nil for mutant), species_key ("st_ap_macros_species_" + xcreature.get_mutant_species, nil for stalker), name (xsquad.get_commander_name, nil for mutant). Squad-derived keys are eager. Smart, level, and event-time game hour are stored verbatim from opts (smart resolved lazily at compose time via xobject.se + xlibs resolvers).
 
-ap_ext_news.add_unfiltered is the same as add but bypasses news_chance. Used by ap_ext_test for debug seeding.
-
-News owns its own session FIFO. There is no broker activity record.
+Every consequence dispatch produces one record. Pacing is the compose interval + dedup ring; news reads from the broker activity record.
 
 ### Drain path (compose tick)
 
 Composer tick fires on an MCM-randomized interval (defaults 30-100s via news_interval_min_sec / _max_sec, slider range 1-600). Each tick:
 
-1. Collect unreported entries on the player's current level whose age is within news_max_age_game_hours.
+1. Read broker.get_records() (full FIFO scan), filter to unreported entries (cons_id not in _reported_cons_ids ring) on the player's current level whose age is within news_max_age_game_hours.
 2. Pick one at random (gossip, not sequential log).
 3. Pick a per-consequence template from the pool (st_ap_news_tpl_<consequence>_NNN), filter variants by required slots, random pick.
 4. Substitute slots.
 5. Pick a speaker via _pick_speaker.
 6. Dispatch via dynamic_news_manager:PushToChannel (or xpda.send during the cold-start window).
+7. Mark cons_id in _reported_cons_ids (capacity 512, FIFO eviction). Same record never narrated twice.
 
 ### Slots
 
 | Slot | Source |
 |------|--------|
-| #subject_faction# | entry.subject_faction_display (resolved at add) |
-| #subject_name# | entry.subject_name (resolved at add) |
-| #subject_species# | entry.subject_species_display (resolved at add) |
-| #other_faction# | entry.other_faction_display (resolved at add) |
-| #other_name# | entry.other_name (resolved at add) |
-| #other_species# | entry.other_species_display (resolved at add) |
+| #subject_faction# | game.translate_string(entry.subject_faction_key) (compose-time) |
+| #subject_name# | entry.subject_name (engine string, captured at add_record) |
+| #subject_species# | game.translate_string(entry.subject_species_key) (compose-time) |
+| #other_faction# | game.translate_string(entry.other_faction_key) |
+| #other_name# | entry.other_name |
+| #other_species# | game.translate_string(entry.other_species_key) |
 | #location# | xlevel.get_smart_display_name(xobject.se(smart_id)) (lazy) |
 | #level# | xlevel.get_level_name(level_id) (lazy) |
 | #ago# | hours-since game_hours: empty (recent), _ago_recent, or _ago_hours |
@@ -406,7 +432,7 @@ When dynamic_news_manager.get_dynamic_news() returns nil (~27s window after game
 
 ### MCM
 
-news_enabled (bool master), news_chance (int 1-100, default 20; per-add filter), news_interval_min_sec / news_interval_max_sec (int 1-600), news_scope (own / allies / world; default allies), news_max_age_game_hours (int 1-72, default 12). The composer randomizes the next delay between min/max bounds after every tick.
+news_enabled (bool master), news_interval_min_sec / news_interval_max_sec (int 1-600), news_scope (own / allies / world; default allies), news_max_age_game_hours (int 1-72, default 12). The composer randomizes the next delay between min/max bounds after every tick.
 
 ### Trace codes (ap_core_const.TRACE)
 
@@ -414,18 +440,17 @@ NONE (disabled or no entries), NO_TEMPLATES, NO_MSG, NO_SENDER, SENT.
 
 ### Constants in ap_ext_const
 
-- MUTANT_FACTION_DISPLAY_KEY: engine mutant faction string -> localized XML display id ("predators", "night predators", etc.).
-- SPECIES_DISPLAY_KEY: xcreature species string -> localized XML display id ("bloodsuckers", "chimeras", etc.).
+(none for record display; capture is engine-direct in `ap_core_broker._capture_side`).
 
 ### Invariants
 
-- Squad-derived display facts captured eagerly at add time. Smart / level / time stay lazy. Death-resilient: dead or unregistered squads remain renderable from stored strings.
-- State is session-lifetime. FIFO resets on load. Template pools rebuild on locale change.
+- Squad-derived translation keys captured eagerly at add_record time. The engine value drives the slot: mutant squads get a species key (`st_ap_macros_species_<x>`), stalker / zombified-stalker squads get the raw community string (vanilla XML resolves). Smart / level / time stay lazy. Death-resilient: dead or unregistered squads remain renderable.
+- Storage is the broker activity record. _reported_cons_ids ring (512, FIFO) is session-lifetime; resets on load. Template pools rebuild on locale change.
 - Empty slots are nil-safe. Variant filter rejects, or slot substitutes to empty string and _clean_output collapses the gap.
 - Channel routing is speaker-driven: speaker's community = channel. No subject-faction channel mapping, no per-consequence routing rules.
 - Events pre-filtered to level.current() before random pick. Speaker pool db.OnlineStalkers (overwhelmingly the player's level).
 - Templates immutable. Per-tick slot table builds fresh and is discarded after one substitution.
-- Locale switches mid-session leave the FIFO holding strings in the previous locale until natural churn. Pragmatic accept.
+- Locale switches mid-session leave records holding strings in the previous locale until natural eviction. Pragmatic accept.
 
 ### Content
 
@@ -450,7 +475,7 @@ Domain state manager.
 
 DTO ownership: only the owning generator writes; any cause generator may read (Cross-DTO read pattern). Save/load: m_data.ap_ext_tracker holds killers and alphas only. The three DTOs (NEEDS, INSTINCTS, OPPORTUNITY) are session-only - they reset to empty fifo_caches (capacity 100 each) on game start and on load, populated lazily by cause generators on first squad reference.
 
-HUD identity-source bridge: tracker registers get_alpha_marker_squads (returns array of unique squad ids hosting alive alphas). HUD shows the ALPHA_PROMOTE marker on those squads when not currently scripted.
+ALPHA_PROMOTE marker integration is record-driven: ap_ext_consequences_alpha calls add_record with CONSEQUENCE.ALPHA_PROMOTE on the killer squad after a successful update_alpha. HUD picks the marker up via the standard get_records({assigned=true}) path and lingers it after promotion.
 
 ### Smart Mutator (ap_ext_smart_mutator)
 
@@ -583,7 +608,7 @@ Handler contract: takes the cause payload, returns a result code. Domain gates (
 
 Two shapes by cause type.
 
-Radiant: action-only. The cause generator delivered the squad and the destination smart in the payload. The handler routes the squad to the smart, registers the on-arrival action, calls ap_ext_news.add for news, returns SUCCESS. No alignment, no species, no personality, no find - those happened in the cause generator.
+Radiant: action-only. The cause generator delivered the squad and the destination smart in the payload. The handler routes the squad to the smart, registers the on-arrival action, calls ap_core_broker.add_record to write the activity record (HUD marker + news compose), returns SUCCESS. No alignment, no species, no personality, no find - those happened in the cause generator.
 
 Reactive RESPOND. Three phases: RULES (alignment, species, personality, payload validation) -> SCAN (find responder squads, optionally a destination smart) -> ACTION (per responder, route and record). At least one responder routed = SUCCESS. Examples: massacre_investigate, massacre_scavenge, basekill_support, basekill_flee, wounded_hunt, wounded_help, harvest_rob, harvest_haunt, squadkill_revenge, alphakill_targeted.
 
@@ -797,7 +822,7 @@ Five result codes: SUCCESS, FAILED_RULES, FAILED_SCAN, FAILED_ACTION, DISABLED. 
 
 ## Integration API
 
-AlifePlus exposes three levels of integration for external mods. See integration-guide.md for full examples and code templates.
+AlifePlus exposes three levels of integration for external mods. See integration.md for full examples and code templates.
 
 ![Integration Levels](img/integration-levels.png)
 
@@ -838,7 +863,4 @@ end)
 
 Squads matching any registered ownership filter are excluded from AP at the protection gate (producer), in find_squads results (consequence), and via get_owner queries. Gated by MCM allow_external_ownership. Warfare is registered by default in ap_core_compat.
 
-HUD register hooks (Coordinate level):
-
-- ap_core_hud.register_identity_source(fn): add a squad-id list provider. Squads in the returned list receive the consequence-specific marker when not currently scripted. Last writer wins on duplicate registration. Today: tracker registers get_alpha_marker_squads.
-- ap_core_hud.register_subject_resolver(fn): replace the marker subject-line resolver, function(squad) -> string. Today: ap_ext_util.format_subject returns "<name|species_display> (<faction_display>)".
+Activity record queries (Coordinate level): foreign integrators that need to know what AP is currently doing on a squad call ap_api.get_record({squad_id, assigned=true}) for the live entry, or ap_api.get_records(opts) for a bulk filter. Each entry carries denormalized display facts (subject_*, other_*) so callers do not re-resolve faction or species. The warfare tooltip integration uses this path through the get_scripted_ids alias plus get_record for the consequence label.

@@ -228,42 +228,6 @@ ALPHA_LOOT = {
 }
 
 
---- Mutant engine faction -> XML display key. Resolved via game.translate_string at compose time.
---- Engine factions have no user-facing localization; AP provides its own via `st_ap_news_mutant_*` keys.
-MUTANT_FACTION_DISPLAY_KEY = {
-    monster_predatory_day   = "st_ap_news_mutant_predatory_day",
-    monster_predatory_night = "st_ap_news_mutant_predatory_night",
-    monster_vegetarian      = "st_ap_news_mutant_vegetarian",
-    monster_zombied_day     = "st_ap_news_mutant_zombied_day",
-    monster_zombied_night   = "st_ap_news_mutant_zombied_night",
-    monster_special         = "st_ap_news_mutant_special",
-}
-
---- xcreature species string -> XML display key (plural form for #species# slot).
---- Resolved inline via game.translate_string; missing species -> empty slot -> variant filter drop.
-SPECIES_DISPLAY_KEY = {
-    bloodsucker = "st_ap_news_species_bloodsucker",
-    boar        = "st_ap_news_species_boar",
-    burer       = "st_ap_news_species_burer",
-    chimera     = "st_ap_news_species_chimera",
-    controller  = "st_ap_news_species_controller",
-    dog         = "st_ap_news_species_dog",
-    flesh       = "st_ap_news_species_flesh",
-    gigant      = "st_ap_news_species_gigant",
-    psy_dog     = "st_ap_news_species_psy_dog",
-    pseudodog   = "st_ap_news_species_pseudodog",
-    snork       = "st_ap_news_species_snork",
-    tushkano    = "st_ap_news_species_tushkano",
-    cat         = "st_ap_news_species_cat",
-    fracture    = "st_ap_news_species_fracture",
-    zombie      = "st_ap_news_species_zombie",
-    poltergeist = "st_ap_news_species_poltergeist",
-    rat         = "st_ap_news_species_rat",
-    karlik      = "st_ap_news_species_karlik",
-    psysucker   = "st_ap_news_species_psysucker",
-    lurker      = "st_ap_news_species_lurker",
-}
-
 --- Stalker needs DTO field names
 NEED_FIELDS = {
     "last_hunger_at", "last_sleep_at", "last_rest_at",

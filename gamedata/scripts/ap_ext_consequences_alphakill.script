@@ -21,11 +21,10 @@ local _personality = { PERSONALITY.AGGRESSION }
 local _move_actor_chasers = ap_ext_common.move_actor_chasers
 
 local _move_smart_chasers = ap_ext_common.make_move_smart_chasers(
-    CONSEQUENCE.ALPHAKILL_TARGETED, ACTION.ALPHAKILL_TARGETED, "consequence_alphakill_targeted_rush", PRE_RELEASE_GULAG.ALPHAKILL_TARGETED)
+    CONSEQUENCE.ALPHAKILL_TARGETED, "consequence_alphakill_targeted_rush", PRE_RELEASE_GULAG.ALPHAKILL_TARGETED)
 
 local _on_arrive = ap_ext_common.make_on_arrive({
     consequence_key = CONSEQUENCE.ALPHAKILL_TARGETED,
-    action_key = ACTION.ALPHAKILL_TARGETED,
     rush_cfg_key = "consequence_alphakill_targeted_rush",
     gulag_value = PRE_RELEASE_GULAG.ALPHAKILL_TARGETED,
     max_chases_cfg_key = "consequence_alphakill_targeted_max_chases",
@@ -59,7 +58,7 @@ local function _handler(event_data)
 
         local hunters = {}
         for _, squad in ipairs(candidates) do
-            local species = ap_ext_util.get_species(squad.id)
+            local species = xcreature.get_mutant_species(squad.id)
             if species ~= victim_species then goto continue end
             if not ap_ext_util.check_personality(_personality, species, { name = CONSEQUENCE.ALPHAKILL_TARGETED }) then goto continue end
             hunters[#hunters + 1] = squad
@@ -72,7 +71,7 @@ local function _handler(event_data)
         local dst_smart = nil
         ap_core_debug.observe(trace, PHASE.MOVE_SQUAD, function()
             if is_player_kill then
-                _move_actor_chasers(CONSEQUENCE.ALPHAKILL_TARGETED, ACTION.ALPHAKILL_TARGETED, hunters, moved)
+                _move_actor_chasers(hunters, moved)
             else
                 dst_smart = ap_core_util.find_smart(killer_squad.position, {
                     level_id = level_id, max_distance = RANGE_SCENT,
@@ -86,7 +85,8 @@ local function _handler(event_data)
         if #moved == 0 then return { code = RESULT.FAILED_ACTION, reason = REASON.MOVE_FAILED } end
 
         for i = 1, #moved do
-            ap_ext_news.add(moved[i], CAUSE.ALPHAKILL, CONSEQUENCE.ALPHAKILL_TARGETED, {
+            ap_core_broker.add_record(moved[i], CAUSE.ALPHAKILL, CONSEQUENCE.ALPHAKILL_TARGETED, {
+                action_key = ACTION.ALPHAKILL_TARGETED,
                 other_squad = killer_squad,
                 smart = dst_smart, level_id = level_id,
             })

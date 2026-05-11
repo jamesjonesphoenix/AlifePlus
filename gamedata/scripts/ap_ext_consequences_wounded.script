@@ -61,8 +61,6 @@ local function _handler_help(event_data)
         ap_core_debug.observe(trace, PHASE.MOVE_SQUAD, function()
             for _, squad in ipairs(squads) do
                 local res = ap_core_broker.script_squad(squad, target_smart, {
-                    consequence = CONSEQUENCE.WOUNDED_HELP,
-                    action = ACTION.WOUNDED_HELP,
                     rush = cfg.consequence_wounded_help_rush,
                     pre_release_gulag = PRE_RELEASE_GULAG.WOUNDED_HELP,
                 })
@@ -72,7 +70,8 @@ local function _handler_help(event_data)
         end)
         if #moved == 0 then return { code = RESULT.FAILED_ACTION, reason = last_reason or REASON.MOVE_FAILED } end
         for i = 1, #moved do
-            ap_ext_news.add(moved[i], CAUSE.WOUNDED, CONSEQUENCE.WOUNDED_HELP, {
+            ap_core_broker.add_record(moved[i], CAUSE.WOUNDED, CONSEQUENCE.WOUNDED_HELP, {
+                action_key = ACTION.WOUNDED_HELP,
                 other_squad = event_data.patient_squad,
                 smart = target_smart, level_id = level_id,
             })
@@ -99,7 +98,7 @@ local function _handler_hunt(event_data)
         if #candidates == 0 then return { code = RESULT.FAILED_SCAN, reason = REASON.NO_SQUAD } end
         local squads = {}
         for _, squad in ipairs(candidates) do
-            local species = ap_ext_util.get_species(squad.id)
+            local species = xcreature.get_mutant_species(squad.id)
             if not species or not _species_hunt[species] then goto continue end
             if not ap_ext_util.check_personality(_personality_hunt, species, { name = CONSEQUENCE.WOUNDED_HUNT }) then goto continue end
             squads[#squads + 1] = squad
@@ -112,8 +111,6 @@ local function _handler_hunt(event_data)
         ap_core_debug.observe(trace, PHASE.MOVE_SQUAD, function()
             for _, squad in ipairs(squads) do
                 local res = ap_core_broker.script_squad(squad, target_smart, {
-                    consequence = CONSEQUENCE.WOUNDED_HUNT,
-                    action = ACTION.WOUNDED_HUNT,
                     rush = cfg.consequence_wounded_hunt_rush,
                     pre_release_gulag = PRE_RELEASE_GULAG.WOUNDED_HUNT,
                 })
@@ -123,7 +120,8 @@ local function _handler_hunt(event_data)
         end)
         if #moved == 0 then return { code = RESULT.FAILED_ACTION, reason = last_reason or REASON.MOVE_FAILED } end
         for i = 1, #moved do
-            ap_ext_news.add(moved[i], CAUSE.WOUNDED, CONSEQUENCE.WOUNDED_HUNT, {
+            ap_core_broker.add_record(moved[i], CAUSE.WOUNDED, CONSEQUENCE.WOUNDED_HUNT, {
+                action_key = ACTION.WOUNDED_HUNT,
                 other_squad = event_data.patient_squad,
                 smart = target_smart, level_id = level_id,
             })

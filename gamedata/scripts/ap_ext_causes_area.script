@@ -207,7 +207,7 @@ local function _on_smart(trace, squad)
 
     local result
     if _alignment_mutant[squad.player_id] then
-        local species = ap_ext_util.get_species(squad.id)
+        local species = xcreature.get_mutant_species(squad.id)
         if not species then return { code = RESULT.FAILED_RULES, reason = REASON.WRONG_ALIGNMENT, community = squad.player_id } end
         result = _try_eligible(trace, CAUSE.AREA_INFEST, _eligible_infest, squad, species, now, level_id)
         if not result then result = _try_eligible(trace, CAUSE.AREA_SWARM, _eligible_swarm, squad, species, now, level_id) end

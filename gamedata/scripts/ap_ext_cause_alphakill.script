@@ -38,7 +38,7 @@ local function _on_death(trace, squad, npc, killer)
         if protected then return { code = RESULT.FAILED_RULES, reason = reason, detail = detail, name = pname } end
     end
 
-    local species = squad and ap_ext_util.get_species(squad.id)
+    local species = squad and xcreature.get_mutant_species(squad.id)
 
     ap_core_limiter.increment_cause_counter(CATEGORY)
     return {

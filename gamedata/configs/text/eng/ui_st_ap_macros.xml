@@ -7,4 +7,26 @@
   <string id="st_ap_macros_ago_hours">
     <text>a few hours ago</text>
   </string>
+
+  <!-- ==== #subject_species# / #other_species# plurals (lowercase). id matches xcreature.get_mutant_species return prefixed by "st_ap_macros_species_". ==== -->
+  <string id="st_ap_macros_species_bloodsucker"><text>bloodsuckers</text></string>
+  <string id="st_ap_macros_species_boar"><text>boars</text></string>
+  <string id="st_ap_macros_species_burer"><text>burers</text></string>
+  <string id="st_ap_macros_species_chimera"><text>chimeras</text></string>
+  <string id="st_ap_macros_species_controller"><text>controllers</text></string>
+  <string id="st_ap_macros_species_dog"><text>wild dogs</text></string>
+  <string id="st_ap_macros_species_flesh"><text>flesh mutants</text></string>
+  <string id="st_ap_macros_species_gigant"><text>gigants</text></string>
+  <string id="st_ap_macros_species_psy_dog"><text>psy-dogs</text></string>
+  <string id="st_ap_macros_species_pseudodog"><text>pseudodogs</text></string>
+  <string id="st_ap_macros_species_snork"><text>snorks</text></string>
+  <string id="st_ap_macros_species_tushkano"><text>tushkanos</text></string>
+  <string id="st_ap_macros_species_cat"><text>cats</text></string>
+  <string id="st_ap_macros_species_fracture"><text>fractures</text></string>
+  <string id="st_ap_macros_species_zombie"><text>zombies</text></string>
+  <string id="st_ap_macros_species_poltergeist"><text>poltergeists</text></string>
+  <string id="st_ap_macros_species_rat"><text>rats</text></string>
+  <string id="st_ap_macros_species_karlik"><text>karliks</text></string>
+  <string id="st_ap_macros_species_psysucker"><text>psysuckers</text></string>
+  <string id="st_ap_macros_species_lurker"><text>lurkers</text></string>
 </string_table>

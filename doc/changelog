@@ -1,3 +1,18 @@
+next
+  Summary: activity record is the single substrate; capture moved to ap_core_broker; mutant tables dropped; warfare shim widened
+  News:
+    Changed: News composer reads the broker activity record. Standalone ledger retired.
+    Changed: PDA marker shows action, consequence, subject (and other if any), target smart with level, and dispatch time. Mutant subjects render as species only.
+    Removed: News Chance slider. Compose interval and scope filter remain.
+  Modder API:
+    Added: ap_api.add_record - publish to the activity record.
+    Added: ap_api.get_record / get_records - read activity records.
+    Changed: Activity record fields are localization keys; translate via ap_api.get_text at render.
+  Localization:
+    Changed: Species display rows moved to ui_st_ap_macros.xml with st_ap_macros_species_* ids. EN + RU.
+    Removed: Six st_ap_news_mutant_* bucket rows. EN + RU.
+
+
 1.5.5 - "Maintenance"
   Summary: animated destinations, mutant swarm, massacre loot, slumber by species, stash by alignment, day/night split, MCM regroup, ap_api facade
   Gameplay:
@@ -116,7 +131,7 @@
            ap_core_const.CONSEQUENCE_PHASE - sub-phase identifiers (FIND_TARGETS, MOVE_SQUAD, ARRIVE, etc.)
            ap_core_debug.observe consumes them at DEBUG log level.
     Added: news dispatch (ap_ext_news).
-           record_event(subject_squad, cause, consequence, opts) - main entry
+           add_record(subject_squad, cause, consequence, opts) - main entry
            opts.cause_id - groups siblings for paired dispatch
            opts.other_squad - enables two-party templates
            Template pools follow per-consequence, paired, and pattern id conventions.

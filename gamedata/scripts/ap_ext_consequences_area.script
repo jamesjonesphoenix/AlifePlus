@@ -68,8 +68,6 @@ local function _make_handler(entry)
             local res
             ap_core_debug.observe(trace, PHASE.MOVE_SQUAD, function()
                 res = ap_core_broker.script_squad(squad, smart, {
-                    consequence = entry.consequence,
-                    action = entry.action,
                     rush = cfg["consequence_" .. entry.name .. "_rush"],
                     on_arrive = entry.consequence,
                     on_arrive_args = {
@@ -84,7 +82,8 @@ local function _make_handler(entry)
                 return res
             end)
             if res.code ~= RESULT.SUCCESS then return { code = RESULT.FAILED_ACTION, reason = res.reason or REASON.MOVE_FAILED } end
-            ap_ext_news.add(squad, event_data.cause, entry.consequence, {
+            ap_core_broker.add_record(squad, event_data.cause, entry.consequence, {
+                action_key = entry.action,
                 smart = smart, level_id = event_data.level_id,
             })
             return { code = RESULT.SUCCESS, id = squad.id, dst_id = smart.id, identity = event_data.identity }
