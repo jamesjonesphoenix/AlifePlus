@@ -53,9 +53,7 @@ local INSTINCTS = {
 --- Each cause carries: cause const, name, parent drive, alignment subset, personality, filter.
 local CAUSES
 
-local function _is_wild_smart(smart)
-    return not xsmart.is_base(smart) and not xsmart.has_stalker_jobs(smart, xsmart.JOB_TYPE_TRADER)
-end
+local _is_wild_smart = ap_ext_util.is_wild_smart
 
 local function _make_territory_filter(player_id)
     return function(smart)
@@ -234,7 +232,7 @@ local function _find_overdue_drives(dto, now, species)
             if not tier or tier > 2 then goto continue end
         end
 
-        local elapsed = now - dto[inst.field]
+        local elapsed = now - (dto[inst.field] or 0)
         local threshold = cfg[inst.threshold_key] * HOURS_TO_SECONDS
         if elapsed <= threshold then goto continue end
         local ratio = elapsed / threshold

@@ -4,6 +4,13 @@ local math_random = math.random
 local PERSONALITY = ap_ext_const.PERSONALITY
 local _alignment_mutant_night = ap_ext_const.alignment_mutant_night
 
+-- inv_<trait> -> <trait> lookup; resolves the INV_ prefix without a per-call string.match.
+local _INV_TO_BASE = {
+    [PERSONALITY.INV_AGGRESSION] = PERSONALITY.AGGRESSION,
+    [PERSONALITY.INV_TERRITORY]  = PERSONALITY.TERRITORY,
+    [PERSONALITY.INV_DISCIPLINE] = PERSONALITY.DISCIPLINE,
+}
+
 function is_night()
     if not level.present() then return false end
     local hours = level.get_time_hours()
@@ -63,7 +70,7 @@ function check_personality(traits, community, opts)
     local sum, count = 0, 0
     for i = 1, #traits do
         local key = traits[i]
-        local base_key = key:match("^inv_(.+)$")
+        local base_key = _INV_TO_BASE[key]
         if base_key then
             sum = sum + (1.0 - (faction_traits[base_key] or 0.5))
         else
@@ -86,6 +93,14 @@ function check_personality(traits, community, opts)
         ap_core_debug.debug("[UTIL] PERSONALITY_BLOCKED consequence=%s community=%s avg=%.2f chance=%.2f roll=%.2f", opts.name or "?", community, avg, chance, roll)
     end
     return passed
+end
+
+--- Wild smart: not a base, no trader job. AP-domain classifier shared by area/instincts
+--- generators. See xsmart.is_base / xsmart.has_stalker_jobs for the engine-side semantics.
+--- @param smart smart_terrain
+--- @return boolean
+function is_wild_smart(smart)
+    return not xsmart.is_base(smart) and not xsmart.has_stalker_jobs(smart, xsmart.JOB_TYPE_TRADER)
 end
 
 function on_game_start()
