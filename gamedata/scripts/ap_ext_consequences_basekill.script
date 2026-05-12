@@ -13,6 +13,8 @@ local PHASE = ap_core_const.CONSEQUENCE_PHASE
 local PRE_RELEASE_GULAG = ap_core_const.PRE_RELEASE_GULAG
 local PERSONALITY = ap_ext_const.PERSONALITY
 
+local LOG_INIT = ap_core_debug.bracket(CAUSE.BASEKILL)
+
 local cfg = ap_core_mcm.cfg
 
 local _alignment_support = xtable.subtract(ap_ext_const.alignment_human, { ["renegade"] = true })
@@ -128,5 +130,5 @@ function on_game_start()
         event = CAUSE.BASEKILL,
         condition = function() return cfg.consequence_basekill_flee_enabled end,
     }, _handler_flee)
-    ap_core_debug.info("[CONSEQUENCE.BASEKILL] Initialized: 2 consequences (support, flee)")
+    ap_core_debug.info(LOG_INIT .. " Initialized: 2 consequences (support, flee)")
 end
