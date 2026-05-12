@@ -504,9 +504,9 @@ Revert. xsmart.clear_shared_spawn(smart, "ap_conquest") removes the entry. Smart
 
 Volatility. Engine rebuilds respawn_params from LTX on every load (STATE_Read calls read_params), so the injected entry is lost. Two-phase restore: load_state -> _conquered_pending; on_game_load applies via set_shared_spawn after entities exist. 60s periodic scanner re-applies injections as a safety net.
 
-Decay. cfg.area_conquest_decay_hours (default 72). Scanner checks xtime.game_sec() - conquered_at and calls clear_shared_spawn on expired entries. Original LTX spawns never interrupted - decay just removes the extra entry.
+Decay. cfg.mutator_area_conquest_decay_hours (default 72). Scanner checks xtime.game_sec() - conquered_at and calls clear_shared_spawn on expired entries. Original LTX spawns never interrupted - decay just removes the extra entry.
 
-Eviction. FIFO at cfg.area_conquest_max_smarts (default 50). Oldest by game time evicted on cap. Same-faction re-conquest refreshes the timestamp (LRU). Different-faction overwrites without eviction.
+Eviction. FIFO at cfg.mutator_area_conquest_max_smarts (default 50). Oldest by game time evicted on cap. Same-faction re-conquest refreshes the timestamp (LRU). Different-faction overwrites without eviction.
 
 #### Infestation (exclusive spawn)
 
@@ -514,11 +514,11 @@ infest_smart(smart_id, faction, level_id) calls xsmart.set_exclusive_spawn(smart
 
 Faction re-apply. check_smart_faction runs every tick on online smarts and counts only IsStalker NPCs - monsters invisible. When only mutants occupy an online smart, self.faction reverts to default_faction, breaking the faction gate match. 60s periodic scanner re-applies smart.faction via set_exclusive_spawn for all infested smarts.
 
-Per-level cap. can_infest_on_level(level_id) counts infested smarts with matching level_id. Rejects if count >= cfg.area_infest_max_per_level (default 1, MCM 1-5).
+Per-level cap. can_infest_on_level(level_id) counts infested smarts with matching level_id. Rejects if count >= cfg.mutator_area_infest_max_per_level (default 1, MCM 1-5).
 
 Volatility. Same as conquest: engine rebuilds faction_controlled, faction, respawn_params from LTX on every load. Two-phase restore re-applies all three in _on_game_load. 60s scanner handles ongoing faction reversion for online smarts.
 
-Decay. Separate from conquest. cfg.area_infest_decay_hours (default 0 = permanent). clear_exclusive_spawn reverts faction_controlled to nil, faction to default_faction, and removes the infest entry. Original LTX spawns resume on next try_respawn.
+Decay. Separate from conquest. cfg.mutator_area_infest_decay_hours (default 0 = permanent). clear_exclusive_spawn reverts faction_controlled to nil, faction to default_faction, and removes the infest entry. Original LTX spawns resume on next try_respawn.
 
 Interaction with conquest. If a smart is both conquered and infested, the exclusive spawn's faction gate suppresses the conquest entry (no .faction field). Infest wins at runtime. Both data tables coexist independently - clearing infest restores conquest if it has not yet decayed.
 
@@ -526,7 +526,7 @@ Interaction with conquest. If a smart is both conquered and infested, the exclus
 
 Runtime combat modifiers for alpha mutants and high-rank stalkers. Two independent systems on monster_on_before_hit and npc_on_before_hit.
 
-Alpha mutants (monster_on_before_hit). Outgoing hit power bonus and incoming hit power absorption via _alpha_hit_power_dealt[npc_id] / _alpha_hit_power_taken[npc_id] hash tables, populated at promote time. Panic immunity (set_custom_panic_threshold(0)) applied lazily on first hit. O(1) lookup, 0.5s throttle, early exit when tables empty. Alpha level: min(10, floor(kills / alpha_kills_per_level)). Loot items injected via monster_on_loot_init callback with per-species bonus pools, managed in ap_ext_tracker.
+Alpha mutants (monster_on_before_hit). Outgoing hit power bonus and incoming hit power absorption via _mutator_alpha_hit_power_dealt[npc_id] / _mutator_alpha_hit_power_taken[npc_id] hash tables, populated at promote time. Panic immunity (set_custom_panic_threshold(0)) applied lazily on first hit. O(1) lookup, 0.5s throttle, early exit when tables empty. Alpha level: min(10, floor(kills / cause_alpha_kills_per_level)). Loot items injected via monster_on_loot_init callback with per-species bonus pools, managed in ap_ext_tracker.
 
 Stalker rank (npc_on_before_hit). Outgoing hit power bonus and incoming hit power reduction for veteran+ stalkers (rank 12000+). Linear scaling from veteran to legend. Reads engine character_rank(); never manipulates it.
 

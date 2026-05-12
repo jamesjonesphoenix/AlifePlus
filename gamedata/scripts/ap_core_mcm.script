@@ -22,7 +22,7 @@ defaults = {
 
     -- Cause: Alpha
     cause_alpha_enabled = true,
-    alpha_kills_per_level = 3,
+    cause_alpha_kills_per_level = 3,
 
     -- Cause: Alphakill
     cause_alphakill_enabled = true,
@@ -133,7 +133,7 @@ defaults = {
 
     -- Consequence: Alpha Promote
     consequence_alpha_promote_enabled = true,
-    max_alphas = 40,
+    consequence_alpha_promote_max_alphas = 40,
 
     -- Consequence: Alphakill Targeted
     consequence_alphakill_targeted_enabled = true,
@@ -142,18 +142,18 @@ defaults = {
     consequence_alphakill_targeted_max_chases = 5,
 
     -- Mutators: Alpha
-    alpha_hit_power_dealt_enabled = true,
-    alpha_hit_power_dealt_per_level = 0.05,
-    alpha_hit_power_taken_enabled = true,
-    alpha_hit_power_taken_per_level = 0.05,
-    alpha_panic_immunity_enabled = true,
-    alpha_loot_enabled = true,
+    mutator_alpha_hit_power_dealt_enabled = true,
+    mutator_alpha_hit_power_dealt_per_level = 0.05,
+    mutator_alpha_hit_power_taken_enabled = true,
+    mutator_alpha_hit_power_taken_per_level = 0.05,
+    mutator_alpha_panic_immunity_enabled = true,
+    mutator_alpha_loot_enabled = true,
 
     -- Mutators: Stalker Rank (veteran+)
-    rank_hit_power_dealt_enabled = true,
-    rank_hit_power_dealt_mult = 0.15,
-    rank_hit_power_taken_enabled = true,
-    rank_hit_power_taken_mult = 0.15,
+    mutator_rank_hit_power_dealt_enabled = true,
+    mutator_rank_hit_power_dealt_mult = 0.15,
+    mutator_rank_hit_power_taken_enabled = true,
+    mutator_rank_hit_power_taken_mult = 0.15,
 
     -- Consequence: Massacre Scavenge
     consequence_massacre_scavenge_enabled = true,
@@ -295,16 +295,16 @@ defaults = {
     transit_balance_window_hours = 72,
 
     -- Area conquest (additive shared spawn)
-    area_conquest_mutate_smart = true,
-    area_conquest_max_smarts = 50,
-    area_conquest_spawn_num = 2,
-    area_conquest_decay_hours = 72,
+    mutator_area_conquest_mutate_smart = true,
+    mutator_area_conquest_max_smarts = 50,
+    mutator_area_conquest_spawn_num = 2,
+    mutator_area_conquest_decay_hours = 72,
 
     -- Area infest (exclusive spawn replacement)
-    area_infest_mutate_smart = true,
-    area_infest_max_per_level = 1,
-    area_infest_spawn_num = 3,
-    area_infest_decay_hours = 0,
+    mutator_area_infest_mutate_smart = true,
+    mutator_area_infest_max_per_level = 1,
+    mutator_area_infest_spawn_num = 3,
+    mutator_area_infest_decay_hours = 0,
 
     -- Development
     log_level = "WARN",
@@ -332,7 +332,7 @@ local _key_to_tab = {
     news_scope = "news",
     news_max_age_game_hours = "news",
     cause_alpha_enabled = "causes/reactions",
-    alpha_kills_per_level = "causes/reactions",
+    cause_alpha_kills_per_level = "causes/reactions",
     cause_alphakill_enabled = "causes/reactions",
     cause_massacre_enabled = "causes/reactions",
     cause_massacre_threshold = "causes/reactions",
@@ -411,26 +411,26 @@ local _key_to_tab = {
     consequence_area_swarm_rush = "consequences/area_swarm",
     consequence_area_infest_enabled = "consequences/area_infest",
     consequence_area_infest_rush = "consequences/area_infest",
-    area_infest_mutate_smart = "mutators/infest",
-    area_infest_max_per_level = "mutators/infest",
-    area_infest_spawn_num = "mutators/infest",
-    area_infest_decay_hours = "mutators/infest",
+    mutator_area_infest_mutate_smart = "mutators/infest",
+    mutator_area_infest_max_per_level = "mutators/infest",
+    mutator_area_infest_spawn_num = "mutators/infest",
+    mutator_area_infest_decay_hours = "mutators/infest",
     consequence_alpha_promote_enabled = "consequences/alpha_promote",
-    max_alphas = "consequences/alpha_promote",
-    alpha_loot_enabled = "consequences/alpha_promote",
+    consequence_alpha_promote_max_alphas = "consequences/alpha_promote",
+    mutator_alpha_loot_enabled = "consequences/alpha_promote",
     consequence_alphakill_targeted_enabled = "consequences/alphakill_targeted",
     consequence_alphakill_targeted_rush = "consequences/alphakill_targeted",
     consequence_alphakill_targeted_max_squads = "consequences/alphakill_targeted",
     consequence_alphakill_targeted_max_chases = "consequences/alphakill_targeted",
-    alpha_hit_power_dealt_enabled = "mutators/alpha",
-    alpha_hit_power_dealt_per_level = "mutators/alpha",
-    alpha_hit_power_taken_enabled = "mutators/alpha",
-    alpha_hit_power_taken_per_level = "mutators/alpha",
-    alpha_panic_immunity_enabled = "mutators/alpha",
-    rank_hit_power_dealt_enabled = "mutators/rank",
-    rank_hit_power_dealt_mult = "mutators/rank",
-    rank_hit_power_taken_enabled = "mutators/rank",
-    rank_hit_power_taken_mult = "mutators/rank",
+    mutator_alpha_hit_power_dealt_enabled = "mutators/alpha",
+    mutator_alpha_hit_power_dealt_per_level = "mutators/alpha",
+    mutator_alpha_hit_power_taken_enabled = "mutators/alpha",
+    mutator_alpha_hit_power_taken_per_level = "mutators/alpha",
+    mutator_alpha_panic_immunity_enabled = "mutators/alpha",
+    mutator_rank_hit_power_dealt_enabled = "mutators/rank",
+    mutator_rank_hit_power_dealt_mult = "mutators/rank",
+    mutator_rank_hit_power_taken_enabled = "mutators/rank",
+    mutator_rank_hit_power_taken_mult = "mutators/rank",
     consequence_massacre_scavenge_enabled = "consequences/massacre_scavenge",
     consequence_massacre_scavenge_rush = "consequences/massacre_scavenge",
     consequence_massacre_scavenge_max_squads = "consequences/massacre_scavenge",
@@ -465,10 +465,10 @@ local _key_to_tab = {
     consequence_wounded_help_enabled = "consequences/wounded_help",
     consequence_wounded_help_rush = "consequences/wounded_help",
     consequence_wounded_help_max_squads = "consequences/wounded_help",
-    area_conquest_mutate_smart = "mutators/conquest",
-    area_conquest_max_smarts = "mutators/conquest",
-    area_conquest_spawn_num = "mutators/conquest",
-    area_conquest_decay_hours = "mutators/conquest",
+    mutator_area_conquest_mutate_smart = "mutators/conquest",
+    mutator_area_conquest_max_smarts = "mutators/conquest",
+    mutator_area_conquest_spawn_num = "mutators/conquest",
+    mutator_area_conquest_decay_hours = "mutators/conquest",
     consequence_harvest_rob_enabled = "consequences/harvest_rob",
     consequence_harvest_rob_rush = "consequences/harvest_rob",
     consequence_harvest_rob_max_squads = "consequences/harvest_rob",
@@ -560,10 +560,6 @@ local function _tag(txt)
     return { id = "tag", type = "desc", text = txt, clr = {180, 150, 140, 110} }
 end
 
-local function _tag_plain(txt)
-    return { id = "tag", type = "desc", text = txt, clr = {180, 150, 140, 110} }
-end
-
 local function _check(key)
     return { id = key, type = "check", val = 1, def = defaults[key] }
 end
@@ -632,7 +628,7 @@ function on_mcm_load()
                             _slide("ui_mcm_ap_causes_reactions_title"),
                             _tag("ui_mcm_ap_causes_alpha_tag"),
                             _check("cause_alpha_enabled"),
-                            _track("alpha_kills_per_level", 1, 10, 1),
+                            _track("cause_alpha_kills_per_level", 1, 10, 1),
                             { id = "div_alphakill", type = "line" },
                             _tag("ui_mcm_ap_causes_alphakill_tag"),
                             _check("cause_alphakill_enabled"),
@@ -804,10 +800,10 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_alpha_promote_title"),
-                            _tag_plain("ui_mcm_ap_consequences_alpha_promote_tag"),
+                            _tag("ui_mcm_ap_consequences_alpha_promote_tag"),
                             _check("consequence_alpha_promote_enabled"),
-                            _track("max_alphas", 0, 300, 5),
-                            _check("alpha_loot_enabled"),
+                            _track("consequence_alpha_promote_max_alphas", 0, 300, 5),
+                            _check("mutator_alpha_loot_enabled"),
                         },
                     },
                     {
@@ -815,7 +811,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_alphakill_targeted_title"),
-                            _tag_plain("ui_mcm_ap_consequences_alphakill_targeted_tag"),
+                            _tag("ui_mcm_ap_consequences_alphakill_targeted_tag"),
                             _check("consequence_alphakill_targeted_enabled"),
                             _check("consequence_alphakill_targeted_rush"),
                             _track("consequence_alphakill_targeted_max_squads", 1, 10, 1),
@@ -827,7 +823,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_massacre_scavenge_title"),
-                            _tag_plain("ui_mcm_ap_consequences_massacre_scavenge_tag"),
+                            _tag("ui_mcm_ap_consequences_massacre_scavenge_tag"),
                             _check("consequence_massacre_scavenge_enabled"),
                             _check("consequence_massacre_scavenge_rush"),
                             _track("consequence_massacre_scavenge_max_squads", 1, 20, 1),
@@ -838,7 +834,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_massacre_investigate_title"),
-                            _tag_plain("ui_mcm_ap_consequences_massacre_investigate_tag"),
+                            _tag("ui_mcm_ap_consequences_massacre_investigate_tag"),
                             _check("consequence_massacre_investigate_enabled"),
                             _check("consequence_massacre_investigate_rush"),
                             _track("consequence_massacre_investigate_max_squads", 1, 20, 1),
@@ -849,7 +845,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_massacre_loot_title"),
-                            _tag_plain("ui_mcm_ap_consequences_massacre_loot_tag"),
+                            _tag("ui_mcm_ap_consequences_massacre_loot_tag"),
                             _check("consequence_massacre_loot_enabled"),
                             _check("consequence_massacre_loot_rush"),
                             _track("consequence_massacre_loot_max_squads", 1, 20, 1),
@@ -860,7 +856,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_stash_ambush_title"),
-                            _tag_plain("ui_mcm_ap_consequences_stash_ambush_tag"),
+                            _tag("ui_mcm_ap_consequences_stash_ambush_tag"),
                             _check("consequence_stash_ambush_enabled"),
                             _check("consequence_stash_ambush_rush"),
                         },
@@ -870,7 +866,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_stash_loot_title"),
-                            _tag_plain("ui_mcm_ap_consequences_stash_loot_tag"),
+                            _tag("ui_mcm_ap_consequences_stash_loot_tag"),
                             _check("consequence_stash_loot_enabled"),
                             _check("consequence_stash_loot_rush"),
                             _check("consequence_stash_loot_protect_toolkits"),
@@ -881,7 +877,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_stash_fill_title"),
-                            _tag_plain("ui_mcm_ap_consequences_stash_fill_tag"),
+                            _tag("ui_mcm_ap_consequences_stash_fill_tag"),
                             _check("consequence_stash_fill_enabled"),
                             _check("consequence_stash_fill_rush"),
                             _track("consequence_stash_fill_min_items", 1, 5, 1),
@@ -893,7 +889,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_squadkill_revenge_title"),
-                            _tag_plain("ui_mcm_ap_consequences_squadkill_revenge_tag"),
+                            _tag("ui_mcm_ap_consequences_squadkill_revenge_tag"),
                             _check("consequence_squadkill_revenge_enabled"),
                             _check("consequence_squadkill_revenge_rush"),
                             _track("consequence_squadkill_revenge_max_squads", 1, 20, 1),
@@ -905,7 +901,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_basekill_support_title"),
-                            _tag_plain("ui_mcm_ap_consequences_basekill_support_tag"),
+                            _tag("ui_mcm_ap_consequences_basekill_support_tag"),
                             _check("consequence_basekill_support_enabled"),
                             _check("consequence_basekill_support_rush"),
                             _track("consequence_basekill_support_max_squads", 1, 20, 1),
@@ -916,7 +912,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_basekill_flee_title"),
-                            _tag_plain("ui_mcm_ap_consequences_basekill_flee_tag"),
+                            _tag("ui_mcm_ap_consequences_basekill_flee_tag"),
                             _check("consequence_basekill_flee_enabled"),
                             _check("consequence_basekill_flee_rush"),
                             _track("consequence_basekill_flee_max_squads", 1, 20, 1),
@@ -927,7 +923,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_wounded_hunt_title"),
-                            _tag_plain("ui_mcm_ap_consequences_wounded_hunt_tag"),
+                            _tag("ui_mcm_ap_consequences_wounded_hunt_tag"),
                             _check("consequence_wounded_hunt_enabled"),
                             _check("consequence_wounded_hunt_rush"),
                             _track("consequence_wounded_hunt_max_squads", 1, 20, 1),
@@ -938,7 +934,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_wounded_help_title"),
-                            _tag_plain("ui_mcm_ap_consequences_wounded_help_tag"),
+                            _tag("ui_mcm_ap_consequences_wounded_help_tag"),
                             _check("consequence_wounded_help_enabled"),
                             _check("consequence_wounded_help_rush"),
                             _track("consequence_wounded_help_max_squads", 1, 20, 1),
@@ -949,7 +945,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_area_conquer_title"),
-                            _tag_plain("ui_mcm_ap_consequences_area_conquer_tag"),
+                            _tag("ui_mcm_ap_consequences_area_conquer_tag"),
                             _check("consequence_area_conquer_enabled"),
                             _check("consequence_area_conquer_rush"),
                         },
@@ -959,7 +955,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_area_swarm_title"),
-                            _tag_plain("ui_mcm_ap_consequences_area_swarm_tag"),
+                            _tag("ui_mcm_ap_consequences_area_swarm_tag"),
                             _check("consequence_area_swarm_enabled"),
                             _check("consequence_area_swarm_rush"),
                         },
@@ -969,7 +965,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_harvest_rob_title"),
-                            _tag_plain("ui_mcm_ap_consequences_harvest_rob_tag"),
+                            _tag("ui_mcm_ap_consequences_harvest_rob_tag"),
                             _check("consequence_harvest_rob_enabled"),
                             _check("consequence_harvest_rob_rush"),
                             _track("consequence_harvest_rob_max_squads", 1, 20, 1),
@@ -981,7 +977,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_harvest_haunt_title"),
-                            _tag_plain("ui_mcm_ap_consequences_harvest_haunt_tag"),
+                            _tag("ui_mcm_ap_consequences_harvest_haunt_tag"),
                             _check("consequence_harvest_haunt_enabled"),
                             _check("consequence_harvest_haunt_rush"),
                             _track("consequence_harvest_haunt_max_squads", 1, 20, 1),
@@ -992,7 +988,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_hunger_campfire_title"),
-                            _tag_plain("ui_mcm_ap_consequences_hunger_campfire_tag"),
+                            _tag("ui_mcm_ap_consequences_hunger_campfire_tag"),
                             _check("consequence_hunger_campfire_enabled"),
                             _check("consequence_hunger_campfire_rush"),
                             _check("consequence_hunger_campfire_arrive_action_enabled"),
@@ -1003,7 +999,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_sleep_campfire_title"),
-                            _tag_plain("ui_mcm_ap_consequences_sleep_campfire_tag"),
+                            _tag("ui_mcm_ap_consequences_sleep_campfire_tag"),
                             _check("consequence_sleep_campfire_enabled"),
                             _check("consequence_sleep_campfire_rush"),
                         },
@@ -1013,7 +1009,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_rest_campfire_title"),
-                            _tag_plain("ui_mcm_ap_consequences_rest_campfire_tag"),
+                            _tag("ui_mcm_ap_consequences_rest_campfire_tag"),
                             _check("consequence_rest_campfire_enabled"),
                             _check("consequence_rest_campfire_rush"),
                             _check("consequence_rest_campfire_arrive_action_enabled"),
@@ -1024,7 +1020,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_heal_shelter_title"),
-                            _tag_plain("ui_mcm_ap_consequences_heal_shelter_tag"),
+                            _tag("ui_mcm_ap_consequences_heal_shelter_tag"),
                             _check("consequence_heal_shelter_enabled"),
                             _check("consequence_heal_shelter_rush"),
                             _check("consequence_heal_shelter_arrive_action_enabled"),
@@ -1035,7 +1031,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_shelter_indoor_title"),
-                            _tag_plain("ui_mcm_ap_consequences_shelter_indoor_tag"),
+                            _tag("ui_mcm_ap_consequences_shelter_indoor_tag"),
                             _check("consequence_shelter_indoor_enabled"),
                             _check("consequence_shelter_indoor_rush"),
                         },
@@ -1045,7 +1041,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_shelter_outdoor_title"),
-                            _tag_plain("ui_mcm_ap_consequences_shelter_outdoor_tag"),
+                            _tag("ui_mcm_ap_consequences_shelter_outdoor_tag"),
                             _check("consequence_shelter_outdoor_enabled"),
                             _check("consequence_shelter_outdoor_rush"),
                         },
@@ -1055,7 +1051,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_money_harvest_title"),
-                            _tag_plain("ui_mcm_ap_consequences_money_harvest_tag"),
+                            _tag("ui_mcm_ap_consequences_money_harvest_tag"),
                             _check("consequence_money_harvest_enabled"),
                             _check("consequence_money_harvest_rush"),
                         },
@@ -1065,7 +1061,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_money_hunt_title"),
-                            _tag_plain("ui_mcm_ap_consequences_money_hunt_tag"),
+                            _tag("ui_mcm_ap_consequences_money_hunt_tag"),
                             _check("consequence_money_hunt_enabled"),
                             _check("consequence_money_hunt_rush"),
                         },
@@ -1075,7 +1071,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_supply_trader_title"),
-                            _tag_plain("ui_mcm_ap_consequences_supply_trader_tag"),
+                            _tag("ui_mcm_ap_consequences_supply_trader_tag"),
                             _check("consequence_supply_trader_enabled"),
                             _check("consequence_supply_trader_rush"),
                             _check("consequence_supply_trader_arrive_action_enabled"),
@@ -1086,7 +1082,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_job_outpost_title"),
-                            _tag_plain("ui_mcm_ap_consequences_job_outpost_tag"),
+                            _tag("ui_mcm_ap_consequences_job_outpost_tag"),
                             _check("consequence_job_outpost_enabled"),
                             _check("consequence_job_outpost_rush"),
                             _check("consequence_job_outpost_arrive_action_enabled"),
@@ -1097,7 +1093,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_job_explore_title"),
-                            _tag_plain("ui_mcm_ap_consequences_job_explore_tag"),
+                            _tag("ui_mcm_ap_consequences_job_explore_tag"),
                             _check("consequence_job_explore_enabled"),
                             _check("consequence_job_explore_rush"),
                         },
@@ -1107,7 +1103,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_job_research_title"),
-                            _tag_plain("ui_mcm_ap_consequences_job_research_tag"),
+                            _tag("ui_mcm_ap_consequences_job_research_tag"),
                             _check("consequence_job_research_enabled"),
                             _check("consequence_job_research_rush"),
                         },
@@ -1117,7 +1113,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_social_campfire_title"),
-                            _tag_plain("ui_mcm_ap_consequences_social_campfire_tag"),
+                            _tag("ui_mcm_ap_consequences_social_campfire_tag"),
                             _check("consequence_social_campfire_enabled"),
                             _check("consequence_social_campfire_rush"),
                             _check("consequence_social_campfire_arrive_action_enabled"),
@@ -1128,12 +1124,12 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_social_base_title"),
-                            _tag_plain("ui_mcm_ap_consequences_social_base_tag"),
+                            _tag("ui_mcm_ap_consequences_social_base_tag"),
                             _check("consequence_social_base_enabled"),
                             _check("consequence_social_base_rush"),
                             _check("consequence_social_base_arrive_action_enabled"),
                             { id = "div_social_base_transit", type = "line" },
-                            _tag_plain("ui_mcm_ap_consequences_social_base_transit_tag"),
+                            _tag("ui_mcm_ap_consequences_social_base_transit_tag"),
                             _check("consequence_social_base_transit_enabled"),
                             _check("consequence_social_base_transit_rush"),
                             _check("consequence_social_base_transit_arrive_action_enabled"),
@@ -1144,7 +1140,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_scatter_title"),
-                            _tag_plain("ui_mcm_ap_consequences_scatter_tag"),
+                            _tag("ui_mcm_ap_consequences_scatter_tag"),
                             _check("consequence_scatter_enabled"),
                             _check("consequence_scatter_rush"),
                         },
@@ -1154,7 +1150,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_feed_title"),
-                            _tag_plain("ui_mcm_ap_consequences_feed_tag"),
+                            _tag("ui_mcm_ap_consequences_feed_tag"),
                             _check("consequence_feed_enabled"),
                             _check("consequence_feed_rush"),
                         },
@@ -1164,7 +1160,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_slumber_field_title"),
-                            _tag_plain("ui_mcm_ap_consequences_slumber_field_tag"),
+                            _tag("ui_mcm_ap_consequences_slumber_field_tag"),
                             _check("consequence_slumber_field_enabled"),
                             _check("consequence_slumber_field_rush"),
                         },
@@ -1174,7 +1170,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_slumber_lair_title"),
-                            _tag_plain("ui_mcm_ap_consequences_slumber_lair_tag"),
+                            _tag("ui_mcm_ap_consequences_slumber_lair_tag"),
                             _check("consequence_slumber_lair_enabled"),
                             _check("consequence_slumber_lair_rush"),
                         },
@@ -1184,7 +1180,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_slumber_surge_title"),
-                            _tag_plain("ui_mcm_ap_consequences_slumber_surge_tag"),
+                            _tag("ui_mcm_ap_consequences_slumber_surge_tag"),
                             _check("consequence_slumber_surge_enabled"),
                             _check("consequence_slumber_surge_rush"),
                         },
@@ -1194,7 +1190,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_roam_title"),
-                            _tag_plain("ui_mcm_ap_consequences_roam_tag"),
+                            _tag("ui_mcm_ap_consequences_roam_tag"),
                             _check("consequence_roam_enabled"),
                             _check("consequence_roam_rush"),
                         },
@@ -1204,7 +1200,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_pack_title"),
-                            _tag_plain("ui_mcm_ap_consequences_pack_tag"),
+                            _tag("ui_mcm_ap_consequences_pack_tag"),
                             _check("consequence_pack_enabled"),
                             _check("consequence_pack_rush"),
                         },
@@ -1214,7 +1210,7 @@ function on_mcm_load()
                         sh = true,
                         gr = {
                             _slide("ui_mcm_ap_consequences_area_infest_title"),
-                            _tag_plain("ui_mcm_ap_consequences_area_infest_tag"),
+                            _tag("ui_mcm_ap_consequences_area_infest_tag"),
                             _check("consequence_area_infest_enabled"),
                             _check("consequence_area_infest_rush"),
                         },
@@ -1230,11 +1226,11 @@ function on_mcm_load()
                         gr = {
                             _slide("ui_mcm_ap_mutators_alpha_title"),
                             _desc("ui_mcm_ap_mutators_alpha_desc"),
-                            _check("alpha_hit_power_dealt_enabled"),
-                            _track("alpha_hit_power_dealt_per_level", 0.01, 0.20, 0.01),
-                            _check("alpha_hit_power_taken_enabled"),
-                            _track("alpha_hit_power_taken_per_level", 0.01, 0.20, 0.01),
-                            _check("alpha_panic_immunity_enabled"),
+                            _check("mutator_alpha_hit_power_dealt_enabled"),
+                            _track("mutator_alpha_hit_power_dealt_per_level", 0.01, 0.20, 0.01),
+                            _check("mutator_alpha_hit_power_taken_enabled"),
+                            _track("mutator_alpha_hit_power_taken_per_level", 0.01, 0.20, 0.01),
+                            _check("mutator_alpha_panic_immunity_enabled"),
                         },
                     },
                     {
@@ -1243,10 +1239,10 @@ function on_mcm_load()
                         gr = {
                             _slide("ui_mcm_ap_mutators_rank_title"),
                             _desc("ui_mcm_ap_mutators_rank_desc"),
-                            _check("rank_hit_power_dealt_enabled"),
-                            _track("rank_hit_power_dealt_mult", 0.05, 0.50, 0.05),
-                            _check("rank_hit_power_taken_enabled"),
-                            _track("rank_hit_power_taken_mult", 0.05, 0.50, 0.05),
+                            _check("mutator_rank_hit_power_dealt_enabled"),
+                            _track("mutator_rank_hit_power_dealt_mult", 0.05, 0.50, 0.05),
+                            _check("mutator_rank_hit_power_taken_enabled"),
+                            _track("mutator_rank_hit_power_taken_mult", 0.05, 0.50, 0.05),
                         },
                     },
                     {
@@ -1255,10 +1251,10 @@ function on_mcm_load()
                         gr = {
                             _slide("ui_mcm_ap_mutators_conquest_title"),
                             _desc("ui_mcm_ap_mutators_conquest_desc"),
-                            _check("area_conquest_mutate_smart"),
-                            _track("area_conquest_max_smarts", 10, 100, 5),
-                            _track("area_conquest_spawn_num", 1, 5, 1),
-                            _track("area_conquest_decay_hours", 0, 168, 4),
+                            _check("mutator_area_conquest_mutate_smart"),
+                            _track("mutator_area_conquest_max_smarts", 10, 100, 5),
+                            _track("mutator_area_conquest_spawn_num", 1, 5, 1),
+                            _track("mutator_area_conquest_decay_hours", 0, 168, 4),
                         },
                     },
                     {
@@ -1267,10 +1263,10 @@ function on_mcm_load()
                         gr = {
                             _slide("ui_mcm_ap_mutators_infest_title"),
                             _desc("ui_mcm_ap_mutators_infest_desc"),
-                            _check("area_infest_mutate_smart"),
-                            _track("area_infest_max_per_level", 1, 5, 1),
-                            _track("area_infest_spawn_num", 1, 5, 1),
-                            _track("area_infest_decay_hours", 0, 168, 4),
+                            _check("mutator_area_infest_mutate_smart"),
+                            _track("mutator_area_infest_max_per_level", 1, 5, 1),
+                            _track("mutator_area_infest_spawn_num", 1, 5, 1),
+                            _track("mutator_area_infest_decay_hours", 0, 168, 4),
                         },
                     },
                 },

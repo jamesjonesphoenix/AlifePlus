@@ -341,10 +341,10 @@
     <string id="ui_mcm_ap_causes_reactions_cause_alpha_enabled_desc">
         <text>Fire cause:alpha when a mutant reaches a new alpha level.</text>
     </string>
-    <string id="ui_mcm_ap_causes_reactions_alpha_kills_per_level">
+    <string id="ui_mcm_ap_causes_reactions_cause_alpha_kills_per_level">
         <text>Kills per level</text>
     </string>
-    <string id="ui_mcm_ap_causes_reactions_alpha_kills_per_level_desc">
+    <string id="ui_mcm_ap_causes_reactions_cause_alpha_kills_per_level_desc">
         <text>Kills required per alpha level. At 2: level 1 at 2 kills, level 10 at 20 kills.</text>
     </string>
 
@@ -649,16 +649,16 @@
     <string id="ui_mcm_ap_consequences_alpha_promote_consequence_alpha_promote_enabled_desc">
         <text>Register mutants as alphas when they level up from kills.</text>
     </string>
-    <string id="ui_mcm_ap_consequences_alpha_promote_max_alphas">
+    <string id="ui_mcm_ap_consequences_alpha_promote_consequence_alpha_promote_max_alphas">
         <text>Maximum alphas</text>
     </string>
-    <string id="ui_mcm_ap_consequences_alpha_promote_max_alphas_desc">
+    <string id="ui_mcm_ap_consequences_alpha_promote_consequence_alpha_promote_max_alphas_desc">
         <text>Maximum number of alphas allowed worldwide. Only blocks new alphas, not level-ups.</text>
     </string>
-    <string id="ui_mcm_ap_consequences_alpha_promote_alpha_loot_enabled">
+    <string id="ui_mcm_ap_consequences_alpha_promote_mutator_alpha_loot_enabled">
         <text>Loot enabled</text>
     </string>
-    <string id="ui_mcm_ap_consequences_alpha_promote_alpha_loot_enabled_desc">
+    <string id="ui_mcm_ap_consequences_alpha_promote_mutator_alpha_loot_enabled_desc">
         <text>Alpha mutants carry valuable items (mutant parts, hides, artefacts). Better loot at higher levels. Items persist in inventory and drop on death.</text>
     </string>
 
@@ -1434,35 +1434,35 @@
     <string id="ui_mcm_ap_mutators_alpha_desc">
         <text>Combat modifiers for alpha mutants. Alphas are mutants that earned their status through kills. Hit power bonus makes their attacks land harder. Hit power reduction makes incoming hits land softer.</text>
     </string>
-    <string id="ui_mcm_ap_mutators_alpha_alpha_hit_power_dealt_enabled">
+    <string id="ui_mcm_ap_mutators_alpha_mutator_alpha_hit_power_dealt_enabled">
         <text>Hit power bonus enabled</text>
     </string>
-    <string id="ui_mcm_ap_mutators_alpha_alpha_hit_power_dealt_enabled_desc">
+    <string id="ui_mcm_ap_mutators_alpha_mutator_alpha_hit_power_dealt_enabled_desc">
         <text>Alpha mutant attacks land harder. Scales with alpha level.</text>
     </string>
-    <string id="ui_mcm_ap_mutators_alpha_alpha_hit_power_dealt_per_level">
+    <string id="ui_mcm_ap_mutators_alpha_mutator_alpha_hit_power_dealt_per_level">
         <text>Hit power bonus per level</text>
     </string>
-    <string id="ui_mcm_ap_mutators_alpha_alpha_hit_power_dealt_per_level_desc">
+    <string id="ui_mcm_ap_mutators_alpha_mutator_alpha_hit_power_dealt_per_level_desc">
         <text>Hit power bonus per alpha level. At 0.05: level 1 = +5%, level 10 = +50%.</text>
     </string>
-    <string id="ui_mcm_ap_mutators_alpha_alpha_hit_power_taken_enabled">
+    <string id="ui_mcm_ap_mutators_alpha_mutator_alpha_hit_power_taken_enabled">
         <text>Hit power reduction enabled</text>
     </string>
-    <string id="ui_mcm_ap_mutators_alpha_alpha_hit_power_taken_enabled_desc">
+    <string id="ui_mcm_ap_mutators_alpha_mutator_alpha_hit_power_taken_enabled_desc">
         <text>Incoming hits against alpha mutants land softer. Scales with alpha level.</text>
     </string>
-    <string id="ui_mcm_ap_mutators_alpha_alpha_hit_power_taken_per_level">
+    <string id="ui_mcm_ap_mutators_alpha_mutator_alpha_hit_power_taken_per_level">
         <text>Hit power reduction per level</text>
     </string>
-    <string id="ui_mcm_ap_mutators_alpha_alpha_hit_power_taken_per_level_desc">
+    <string id="ui_mcm_ap_mutators_alpha_mutator_alpha_hit_power_taken_per_level_desc">
         <text>Hit power reduction per alpha level. At 0.05: level 1 = -5%, level 10 = -50%.</text>
     </string>
 
-    <string id="ui_mcm_ap_mutators_alpha_alpha_panic_immunity_enabled">
+    <string id="ui_mcm_ap_mutators_alpha_mutator_alpha_panic_immunity_enabled">
         <text>Panic immunity enabled</text>
     </string>
-    <string id="ui_mcm_ap_mutators_alpha_alpha_panic_immunity_enabled_desc">
+    <string id="ui_mcm_ap_mutators_alpha_mutator_alpha_panic_immunity_enabled_desc">
         <text>Alpha mutants never panic or flee. Panic threshold set to zero on first hit.</text>
     </string>
 
@@ -1473,28 +1473,28 @@
     <string id="ui_mcm_ap_mutators_rank_desc">
         <text>Combat modifiers for veteran+ stalkers (rank 12000+). Based on engine rank earned through kills. Scales linearly from veteran to legend.</text>
     </string>
-    <string id="ui_mcm_ap_mutators_rank_rank_hit_power_dealt_enabled">
+    <string id="ui_mcm_ap_mutators_rank_mutator_rank_hit_power_dealt_enabled">
         <text>Hit power bonus enabled</text>
     </string>
-    <string id="ui_mcm_ap_mutators_rank_rank_hit_power_dealt_enabled_desc">
+    <string id="ui_mcm_ap_mutators_rank_mutator_rank_hit_power_dealt_enabled_desc">
         <text>Veteran+ stalker attacks land harder. A legend at max bonus hits significantly harder.</text>
     </string>
-    <string id="ui_mcm_ap_mutators_rank_rank_hit_power_dealt_mult">
+    <string id="ui_mcm_ap_mutators_rank_mutator_rank_hit_power_dealt_mult">
         <text>Maximum hit power bonus</text>
     </string>
-    <string id="ui_mcm_ap_mutators_rank_rank_hit_power_dealt_mult_desc">
+    <string id="ui_mcm_ap_mutators_rank_mutator_rank_hit_power_dealt_mult_desc">
         <text>Maximum hit power bonus at legend rank. At 0.15: veteran = +3%, legend = +15%.</text>
     </string>
-    <string id="ui_mcm_ap_mutators_rank_rank_hit_power_taken_enabled">
+    <string id="ui_mcm_ap_mutators_rank_mutator_rank_hit_power_taken_enabled">
         <text>Hit power reduction enabled</text>
     </string>
-    <string id="ui_mcm_ap_mutators_rank_rank_hit_power_taken_enabled_desc">
+    <string id="ui_mcm_ap_mutators_rank_mutator_rank_hit_power_taken_enabled_desc">
         <text>Incoming hits against veteran+ stalkers land softer. A legend at max reduction takes significantly less.</text>
     </string>
-    <string id="ui_mcm_ap_mutators_rank_rank_hit_power_taken_mult">
+    <string id="ui_mcm_ap_mutators_rank_mutator_rank_hit_power_taken_mult">
         <text>Maximum hit power reduction</text>
     </string>
-    <string id="ui_mcm_ap_mutators_rank_rank_hit_power_taken_mult_desc">
+    <string id="ui_mcm_ap_mutators_rank_mutator_rank_hit_power_taken_mult_desc">
         <text>Maximum hit power reduction at legend rank. At 0.15: veteran = -3%, legend = -15%.</text>
     </string>
 
@@ -1505,28 +1505,28 @@
     <string id="ui_mcm_ap_mutators_conquest_desc">
         <text>Smart terrain mutation for area conquest. Adds an extra respawn slot for the conquering faction alongside the original LTX spawns. Squads from both the conqueror and the original occupants compete for population slots. Disable to keep the squad movement (the area_conquer consequence) without touching engine spawn tables.</text>
     </string>
-    <string id="ui_mcm_ap_mutators_conquest_area_conquest_mutate_smart">
+    <string id="ui_mcm_ap_mutators_conquest_mutator_area_conquest_mutate_smart">
         <text>Inject spawns</text>
     </string>
-    <string id="ui_mcm_ap_mutators_conquest_area_conquest_mutate_smart_desc">
+    <string id="ui_mcm_ap_mutators_conquest_mutator_area_conquest_mutate_smart_desc">
         <text>Conquered areas spawn the conqueror's squads alongside original spawns. Disable to keep squad movement without spawn changes.</text>
     </string>
-    <string id="ui_mcm_ap_mutators_conquest_area_conquest_max_smarts">
+    <string id="ui_mcm_ap_mutators_conquest_mutator_area_conquest_max_smarts">
         <text>Max conquered areas</text>
     </string>
-    <string id="ui_mcm_ap_mutators_conquest_area_conquest_max_smarts_desc">
+    <string id="ui_mcm_ap_mutators_conquest_mutator_area_conquest_max_smarts_desc">
         <text>Maximum smart terrains that can be conquered. FIFO eviction when reached.</text>
     </string>
-    <string id="ui_mcm_ap_mutators_conquest_area_conquest_spawn_num">
+    <string id="ui_mcm_ap_mutators_conquest_mutator_area_conquest_spawn_num">
         <text>Spawn squads per area</text>
     </string>
-    <string id="ui_mcm_ap_mutators_conquest_area_conquest_spawn_num_desc">
+    <string id="ui_mcm_ap_mutators_conquest_mutator_area_conquest_spawn_num_desc">
         <text>Extra squads at conquered area. Added alongside original spawns.</text>
     </string>
-    <string id="ui_mcm_ap_mutators_conquest_area_conquest_decay_hours">
+    <string id="ui_mcm_ap_mutators_conquest_mutator_area_conquest_decay_hours">
         <text>Conquest decay (hours)</text>
     </string>
-    <string id="ui_mcm_ap_mutators_conquest_area_conquest_decay_hours_desc">
+    <string id="ui_mcm_ap_mutators_conquest_mutator_area_conquest_decay_hours_desc">
         <text>Conquered smart terrains lose the conqueror's spawns after this many game hours. Original spawns are unaffected. Set to 0 to disable decay.</text>
     </string>
 
@@ -1537,28 +1537,28 @@
     <string id="ui_mcm_ap_mutators_infest_desc">
         <text>Smart terrain mutation for mutant infestation. Replaces original LTX spawns with the infesting species exclusively. Per-level cap limits how many smarts can be infested on each level. Disable to keep the squad movement (the area_infest consequence) without touching engine spawn tables.</text>
     </string>
-    <string id="ui_mcm_ap_mutators_infest_area_infest_mutate_smart">
+    <string id="ui_mcm_ap_mutators_infest_mutator_area_infest_mutate_smart">
         <text>Inject spawns</text>
     </string>
-    <string id="ui_mcm_ap_mutators_infest_area_infest_mutate_smart_desc">
+    <string id="ui_mcm_ap_mutators_infest_mutator_area_infest_mutate_smart_desc">
         <text>Infested areas spawn the infesting species exclusively, replacing original spawns. Disable to keep squad movement without spawn changes.</text>
     </string>
-    <string id="ui_mcm_ap_mutators_infest_area_infest_max_per_level">
+    <string id="ui_mcm_ap_mutators_infest_mutator_area_infest_max_per_level">
         <text>Max infested per level</text>
     </string>
-    <string id="ui_mcm_ap_mutators_infest_area_infest_max_per_level_desc">
+    <string id="ui_mcm_ap_mutators_infest_mutator_area_infest_max_per_level_desc">
         <text>[1-5]\nMaximum number of infested smart terrains per level. Default: 1.</text>
     </string>
-    <string id="ui_mcm_ap_mutators_infest_area_infest_spawn_num">
+    <string id="ui_mcm_ap_mutators_infest_mutator_area_infest_spawn_num">
         <text>Spawn count</text>
     </string>
-    <string id="ui_mcm_ap_mutators_infest_area_infest_spawn_num_desc">
+    <string id="ui_mcm_ap_mutators_infest_mutator_area_infest_spawn_num_desc">
         <text>[1-5]\nNumber of squads the infested spawn entry can produce. Default: 3.</text>
     </string>
-    <string id="ui_mcm_ap_mutators_infest_area_infest_decay_hours">
+    <string id="ui_mcm_ap_mutators_infest_mutator_area_infest_decay_hours">
         <text>Decay time (hours)</text>
     </string>
-    <string id="ui_mcm_ap_mutators_infest_area_infest_decay_hours_desc">
+    <string id="ui_mcm_ap_mutators_infest_mutator_area_infest_decay_hours_desc">
         <text>[0-168]\nGame hours before infestation expires. 0 = permanent (no decay). Default: 0.</text>
     </string>
 

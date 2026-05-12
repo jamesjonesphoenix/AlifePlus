@@ -95,7 +95,7 @@ end
 
 --- Compute alpha level from kill count (0 if below threshold)
 function compute_level(kills)
-    local kpl = cfg.alpha_kills_per_level
+    local kpl = cfg.cause_alpha_kills_per_level
     if not kills or kills < kpl then return 0 end
     return math_min(ALPHA_MAX_LEVEL, math_floor(kills / kpl))
 end
