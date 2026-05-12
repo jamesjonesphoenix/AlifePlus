@@ -37,9 +37,9 @@ local _record_assigned = {}
 -- Capture in-game clock at write so the HUD marker can show when the dispatch started.
 -- Returns "HH:MM" string or nil if game time is unavailable (early init / between levels).
 local function _capture_clock()
-    local game_time = xtime.game_time()
-    if not game_time then return nil end
-    return string_format("%02d:%02d", game_time:hour(), game_time:min())
+    local h, m = xtime.hms()
+    if not h then return nil end
+    return string_format("%02d:%02d", h, m)
 end
 
 -- Capture one side's display keys from the live squad. Mutant squads carry a species key,
