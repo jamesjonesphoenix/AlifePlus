@@ -11,7 +11,7 @@ local REASON = ap_core_const.REASON
 local LOG = ap_core_debug.bracket(CAUSE.MASSACRE)
 
 local cfg = ap_core_mcm.cfg
-local deaths = nil
+local _deaths = nil
 local _alignment_human = ap_ext_const.alignment_human
 
 local function _on_squad_npc_death(trace, squad, se_victim, se_killer)
@@ -26,7 +26,7 @@ local function _on_squad_npc_death(trace, squad, se_victim, se_killer)
     if not smart then return { code = RESULT.FAILED_RULES, reason = REASON.NO_SMART } end
     if xsquad.is_squad_at_base(squad) then return { code = RESULT.FAILED_RULES, reason = REASON.AT_BASE } end
 
-    local count = ap_core_util.count_until_threshold(deaths, smart.id, cfg.cause_massacre_threshold)
+    local count = ap_core_util.count_until_threshold(_deaths, smart.id, cfg.cause_massacre_threshold)
     if not count then return { code = RESULT.FAILED_RULES, reason = REASON.BELOW_THRESHOLD } end
 
     local killer_squad = se_killer and xsquad.get_squad_by_member(se_killer.id) or nil
@@ -45,7 +45,7 @@ local function _on_squad_npc_death(trace, squad, se_victim, se_killer)
 end
 
 function on_game_start()
-    deaths = xttltable.create_ttl_table({ default_ttl = cfg.cause_massacre_decay_time, clock = xtime.game_sec })
+    _deaths = xttltable.create_ttl_table({ default_ttl = cfg.cause_massacre_decay_time, clock = xtime.game_sec })
 
     ap_core_producer.register({
         callback = CALLBACK.SQUAD_ON_NPC_DEATH, cause_type = CAUSE_TYPE.REACTIVE,
