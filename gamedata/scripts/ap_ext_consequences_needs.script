@@ -4,6 +4,7 @@ local alife_release_id, alife_create_item = alife_release_id, alife_create_item
 local math_random, string_sub = math.random, string.sub
 
 local CAUSE = ap_core_const.CAUSE
+local CAUSE_CATEGORY = ap_core_const.CAUSE_CATEGORY
 local RESULT = ap_core_const.RESULT
 local REASON = ap_core_const.REASON
 local CONSEQUENCE = ap_core_const.CONSEQUENCE
@@ -13,6 +14,8 @@ local TRACE = ap_core_const.TRACE
 local PRE_RELEASE_GULAG = ap_core_const.PRE_RELEASE_GULAG
 local NEEDS_SECTIONS = ap_ext_const.NEEDS_SECTIONS
 local INVALID_LEVEL_VERTEX_ID = xconst.INVALID_LEVEL_VERTEX_ID
+
+local LOG_INIT = ap_core_debug.bracket(CAUSE_CATEGORY.NEEDS)
 
 local cfg = ap_core_mcm.cfg
 
@@ -74,7 +77,7 @@ local CONFIGS = {
     { consequence = CONSEQUENCE.MONEY_HUNT, action = ACTION.MONEY_HUNT,             event = CAUSE.MONEY_HUNT,       name = "money_hunt",
       pre_release_gulag = PRE_RELEASE_GULAG.MONEY_HUNT },
     { consequence = CONSEQUENCE.JOB_OUTPOST, action = ACTION.JOB_OUTPOST,           event = CAUSE.JOB_OUTPOST,      name = "job_outpost",
-      section_key = "GUARD",   pre_release_gulag = PRE_RELEASE_GULAG.JOB_OUTPOST },
+      section_key = "OUTPOST", pre_release_gulag = PRE_RELEASE_GULAG.JOB_OUTPOST },
     { consequence = CONSEQUENCE.JOB_EXPLORE, action = ACTION.JOB_EXPLORE,           event = CAUSE.JOB_EXPLORE,      name = "job_explore",
       pre_release_gulag = PRE_RELEASE_GULAG.JOB_EXPLORE },
     { consequence = CONSEQUENCE.JOB_RESEARCH, action = ACTION.JOB_RESEARCH,         event = CAUSE.JOB_RESEARCH,     name = "job_research",
@@ -182,5 +185,5 @@ function on_game_start()
             on_arrive = _on_arrive,
         }, _make_handler(entry))
     end
-    ap_core_debug.info("[CONSEQUENCE.NEEDS] Initialized: %d consequences", #CONFIGS)
+    ap_core_debug.info(LOG_INIT .. " Initialized: %d consequences", #CONFIGS)
 end
