@@ -101,8 +101,14 @@ function create_cooldown(expire_ms)
     }
 end
 
+local function _on_option_change()
+    if not _consequence_limiter then return end
+    _consequence_limiter:set_rate(cfg.consequence_max_events / ap_core_const.CONSEQUENCE_WINDOW_SEC)
+end
+
 function on_game_start()
     _cause_counter = nil
     _consequence_limiter = nil
     _global_consequence_counter = nil
+    RegisterScriptCallback(ap_core_const.CALLBACK.ON_OPTION_CHANGE, _on_option_change)
 end
