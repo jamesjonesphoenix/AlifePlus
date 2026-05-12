@@ -182,7 +182,7 @@ Per consequence:
 4. Handler runs. Returns { code = RESULT.X, reason = "..." }. FAILED_RULES (business rules rejected: alignment, personality, species, validation), FAILED_SCAN (rules passed but world query empty), FAILED_ACTION (rules and scan passed but the action failed: script_squad could not route, registration call returned false), SUCCESS.
 5. On SUCCESS: increment per-consequence counter; for radiant only, increment global radiant counter; set event_data._fired = true. For radiant, also stop the loop (rule 5 below).
 
-DISABLED is a consumer-only pre-gate result code (condition returned false). Handlers themselves return only the four phase codes.
+DISABLED is the rules-layer skip for a consequence whose MCM toggle is off. Semantically equivalent to a FAILED_RULES with reason="disabled"; emitted by the consumer pre-gate (`ap_core_consumer.script:87`) so the handler is not called. The four phase codes are still what the handler returns when it runs.
 
 #### Dispatch rules
 
@@ -773,7 +773,7 @@ Two cause types: REACTIVE (triggered by an engine event, fans out 1:N to consequ
 
 Two consequence file shapes: _set (hand-written N handlers, used for per-handler quirks) and CONFIGS factory (one CONFIGS table + one closure builder generates N handlers from a single body).
 
-Five result codes: SUCCESS, FAILED_RULES, FAILED_SCAN, FAILED_ACTION, DISABLED. Handlers return the first four. DISABLED is consumer-only (pre-gate when the MCM toggle is off).
+Five result codes: SUCCESS, FAILED_RULES, FAILED_SCAN, FAILED_ACTION, DISABLED. The handler (`entry.handler` in `ap_core_consumer`) returns one of the first four when it runs. DISABLED is a rules-layer skip emitted by the consumer pre-gate when a consequence's MCM toggle is off; the handler is not called.
 
 ### Universal rules
 

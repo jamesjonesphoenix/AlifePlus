@@ -175,11 +175,11 @@ Template phase outcomes. Each code names the phase that answered.
 | `FAILED_RULES` | rules | Business rules rejected (alignment, personality, validation) |
 | `FAILED_SCAN` | scan | World query found nothing (no squads, no smart, entity gone) |
 | `FAILED_ACTION` | action | Rules and scan passed but action failed (script_squad rejected) |
-| `DISABLED` | consumer | Condition pre-gate returned false (MCM toggle off). Never returned by handlers. |
+| `DISABLED` | rules | Consumer pre-gate skipped this consequence because its MCM toggle is off. Semantically a FAILED_RULES sub-flavor; emitted by the consumer, the handler is not called. |
 
 Rules:
-- Handlers return SUCCESS, FAILED_RULES, FAILED_SCAN, or FAILED_ACTION
-- DISABLED is consumer-only (condition pre-gate, line consumer:68)
+- The handler returns SUCCESS, FAILED_RULES, FAILED_SCAN, or FAILED_ACTION when it runs
+- DISABLED is emitted by the consumer pre-gate (`ap_core_consumer.script:87`) when condition returns false
 - Consumer continues to next consequence on any non-SUCCESS result
 - Consumer stops loop only when global radiant budget is exhausted
 - On SUCCESS: consumer increments per-type counter, global radiant counter, sets `event_data._fired = true`
