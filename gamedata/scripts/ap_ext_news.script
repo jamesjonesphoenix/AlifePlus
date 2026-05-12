@@ -118,19 +118,10 @@ local function _slots_for(entry)
     }
 end
 
--- Substitute slot table into template.
+-- Substitute slot table into template. Unknown #key# tokens are kept as-is
+-- (Lua gsub: a nil return leaves the match unchanged).
 local function _substitute(template, slots)
-    local result = template
-    result = string_gsub(result, "#subject_faction#", slots.subject_faction)
-    result = string_gsub(result, "#subject_species#", slots.subject_species)
-    result = string_gsub(result, "#subject_name#", slots.subject_name)
-    result = string_gsub(result, "#other_faction#", slots.other_faction)
-    result = string_gsub(result, "#other_species#", slots.other_species)
-    result = string_gsub(result, "#other_name#", slots.other_name)
-    result = string_gsub(result, "#location#", slots.location)
-    result = string_gsub(result, "#level#", slots.level)
-    result = string_gsub(result, "#ago#", slots.ago)
-    return result
+    return (string_gsub(template, "#(%w+)#", function(key) return slots[key] end))
 end
 
 -- Slot placeholder -> slot name. Variant rejected if it references a placeholder whose slot is empty.
