@@ -38,7 +38,7 @@ local function _is_protected_stash(stash_id)
     return false
 end
 
--- Stash fill item pool (medical, tools, artefacts). Weighted via duplicates.
+-- Stash fill item pool (medical, tools, artefacts). Weighted via duplicates; picks are with replacement (intentional).
 local STASH_FILL_ITEMS = {
     -- Medical - bandages/tourniquets
     "bandage", "bandage", "bandage",
