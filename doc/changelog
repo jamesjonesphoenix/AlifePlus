@@ -11,6 +11,8 @@ next
     Added: Causes > Needs > Social Base Transit toggle.
     Added: Consequences > Social Base > Social Base Transit toggle, rush, arrive action.
     Added: Framework > Transit balance cap (1-10) and Transit balance window (1-7 game-days).
+    Changed: Per-consequence rate limit slider (consequence_max_events) applies mid-session.
+    Renamed: Mutator cfg keys follow mutator_<name>_<setting>. Saved MCM values for the old keys revert to defaults on first load.
   Modder API:
     Added: ap_api.add_record - publish to the activity record.
     Added: ap_api.get_record / get_records - read activity records.
@@ -18,12 +20,14 @@ next
   X-Ray & xlibs:
     Added: xlevel.get_level_id_by_name. Lazy name to level_id map from SIMBOARD.smarts_by_names.
     Added: xttltable TTL counter :export / :import for save/load round-trip.
+    Added: xttltable token bucket :set_rate(rate). Updates refill rate without rebuilding; preserves in-flight token state.
   Localization:
     Changed: Species display rows moved to ui_st_ap_macros.xml with st_ap_macros_species_* ids. EN + RU.
     Removed: Six st_ap_news_mutant_* bucket rows. EN + RU.
     Added: 10 EN + 10 RU MCM strings for Social Base Transit and Transit balance.
   Fixed:
     Fixed: Harvest Rob and Squadkill Revenge gate dispatch by hostile relation to the target's true community (disguise-aware).
+    Fixed: Mutant Swarm filter checks accepts_mutant. Swarming squads no longer dispatch to smart terrains whose props reject their species.
 
 
 1.5.5 - "Maintenance"
