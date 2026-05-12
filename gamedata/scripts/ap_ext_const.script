@@ -36,23 +36,13 @@ alignment_outlaw = {
     ["greh"] = true,
 }
 
---- All human factions (union of principled + selfserving + outlaw, DAMIS watermark order)
-alignment_human = {
-    ["dolg"] = true,
-    ["army"] = true,
-    ["monolith"] = true,
-    ["isg"] = true,
-    ["stalker"] = true,
-    ["freedom"] = true,
-    ["csky"] = true,
-    ["ecolog"] = true,
-    ["killer"] = true,
-    ["bandit"] = true,
-    ["renegade"] = true,
-    ["greh"] = true,
-}
+--- All human factions. Derived: principled + selfserving + outlaw. Zombied is excluded
+--- (per architecture.md). Unprincipled is a subset of selfserving so it adds nothing.
+alignment_human = xtable.merge(alignment_principled, alignment_selfserving, alignment_outlaw)
 
---- Zone dwellers who live off the land (AP subset of selfserving)
+--- Zone dwellers who live off the land. AP editorial subset of selfserving (drops "killer").
+--- Kept explicit on purpose: this is a curated set, not a derived union. Adding a faction
+--- to selfserving should NOT auto-grow naturalist.
 alignment_naturalist = {
     ["stalker"] = true,
     ["csky"] = true,
@@ -270,7 +260,7 @@ NEEDS_SECTIONS = {
     REST = { "cigarettes", "cigarettes_lucky", "cigarettes_russian", "vodka", "vodka2", "vodka_quality", "beer" },
     HEAL = { "medkit", "medkit_army", "medkit_scientic", "bandage", "stimpack", "stimpack_army", "stimpack_scientic" },
     SOCIAL = { "cigarettes", "cigarettes_lucky", "cigarettes_russian", "vodka", "vodka2", "vodka_quality", "beer" },
-    GUARD = { "cigarettes", "cigarettes_lucky", "cigarettes_russian" },
+    OUTPOST = { "cigarettes", "cigarettes_lucky", "cigarettes_russian" },
     TRADE_BUY = {
         "medkit", "medkit_army", "bandage", "ammo_9x18_fmj", "ammo_9x19_fmj", "ammo_5.45x39_fmj",
         "ammo_5.56x45_fmj", "ammo_7.62x39_fmj", "ammo_12x70_buck", "grenade_rgd5", "grenade_f1",
