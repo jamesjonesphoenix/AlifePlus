@@ -54,18 +54,15 @@ local function _serialize_factions(factions)
     return #keys > 0 and table_concat(keys, ",") or "empty"
 end
 
---- Find squads, excluding AP-scripted squads before luabind
+--- Find squads, excluding AP-scripted squads before luabind.
+--- Caller's opts table is not mutated; protection fields are merged into a fresh
+--- table built via ap_core_broker.build_protection_opts.
 --- @param pos vector Origin position
---- @param opts table Options (forwarded to xsquad.find_squads with exclude_ids injected)
+--- @param opts table|nil Caller options (factions, level_id, min/max_distance, etc.)
 --- @return table Array of squad server objects
 function find_squads(pos, opts)
+    opts = ap_core_broker.build_protection_opts(opts)
     opts.exclude_ids = ap_core_broker.get_scripted_squads()
-    opts.exclude_filter = ap_core_broker.get_owner
-    opts.exclude_filter_reason = "is_owned"
-    opts.exclude_scripted = true
-    opts.exclude_permanent = true
-    opts.exclude_active_role = true
-    opts.exclude_task_target = true
     local result, skipped_protected = xsquad.find_squads(pos, opts)
     if ap_core_debug.enabled() then
         local params = "factions=" .. _serialize_factions(opts.factions)
@@ -107,9 +104,11 @@ function find_smart(pos, opts)
     if not ap_core_debug.enabled() then
         return xsmart.find_smart(pos, opts)
     end
-    local original_filter = opts.filter
+    local local_opts = {}
+    if opts then for k, v in pairs(opts) do local_opts[k] = v end end
+    local original_filter = local_opts.filter
     local checked, rejected_filter = 0, 0
-    opts.filter = function(smart)
+    local_opts.filter = function(smart)
         checked = checked + 1
         if original_filter and not original_filter(smart) then
             rejected_filter = rejected_filter + 1
@@ -117,10 +116,10 @@ function find_smart(pos, opts)
         end
         return true
     end
-    local result = xsmart.find_smart(pos, opts)
+    local result = xsmart.find_smart(pos, local_opts)
     if not result then
         ap_core_debug.debug("[DISPATCH.FIND_SMART] no_smart checked=%d rejected_filter=%d level=%s",
-            checked, rejected_filter, opts.level_id)
+            checked, rejected_filter, local_opts.level_id)
     end
     return result
 end

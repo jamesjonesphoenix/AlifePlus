@@ -250,7 +250,36 @@ function get_owner(squad)
 end
 
 
+-- Static protection-policy fields shared by is_protected and build_protection_opts.
+-- exclude_filter (get_owner function ref) is assigned separately because it cannot
+-- live in a module-top const table referenced before get_owner is defined.
+local _PROTECTION_FIELDS = {
+    exclude_filter_reason = REASON.IS_OWNED,
+    exclude_scripted      = true,
+    exclude_permanent     = true,
+    exclude_active_role   = true,
+    exclude_task_target   = true,
+}
+
 local _protection_opts = nil
+
+--- Build a fresh opts table merging caller_opts with AP's protection policy.
+--- Used by ap_core_util.find_squads (per-call) and any caller needing the AP
+--- protection contract on top of their own opts. Returned table is a fresh copy;
+--- caller_opts is never mutated.
+--- @safety SAFE - pure Lua table allocation
+--- @cost O(n) caller_opts fields + 5 protection fields | 0 luabind
+--- @param caller_opts table|nil
+--- @return table merged opts (fresh table)
+function build_protection_opts(caller_opts)
+    local out = {}
+    if caller_opts then
+        for k, v in pairs(caller_opts) do out[k] = v end
+    end
+    for k, v in pairs(_PROTECTION_FIELDS) do out[k] = v end
+    out.exclude_filter = get_owner
+    return out
+end
 
 --- Check all squad protection guards via xsquad.is_protected
 --- Delegates to xsquad.is_protected with ownership, scripted, permanent, active_role, task_target checks
@@ -261,14 +290,9 @@ local _protection_opts = nil
 function is_protected(squad)
     if not squad then return false, nil, nil, nil end
     if not _protection_opts then
-        _protection_opts = {
-            exclude_filter = get_owner,
-            exclude_filter_reason = REASON.IS_OWNED,
-            exclude_scripted = true,
-            exclude_permanent = true,
-            exclude_active_role = true,
-            exclude_task_target = true,
-        }
+        _protection_opts = {}
+        for k, v in pairs(_PROTECTION_FIELDS) do _protection_opts[k] = v end
+        _protection_opts.exclude_filter = get_owner
     end
     return xsquad.is_protected(squad, _protection_opts)
 end
