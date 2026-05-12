@@ -495,6 +495,8 @@ local function _update_arrival_flags(squad_id, data)
     end
     ap_core_debug.debug("[SQUAD] on_arrive: squad=%d handler=%s target=%s", squad_id, key, data.scripted_target)
     handler(squad, data.on_arrive_args)
+    -- Handler may have unscripted+rescripted this squad (chase recursion via ap_ext_common.make_on_arrive).
+    -- New entry owns its own arrival lifecycle; do not arm gulag on it from this frame.
     if _ap_scripted_squads[squad_id] ~= data then return end
     if _try_arrival_gulag(squad_id, squad, smart, data) then
         ap_core_debug.debug("[SQUAD] gulag_started: squad=%d target=%s hold=%ds", squad_id, data.scripted_target, data.pre_release_gulag)
