@@ -213,8 +213,12 @@ local function _on_radiant(squad)
     -- Gate 2: is_protected (full eligibility check)
     local protected, reason, detail, name = ap_core_broker.is_protected(squad)
     if protected then
-        ap_core_debug.debug("[PRODUCER.RADIANT] PROTECTED squad=%d reason=%s detail=%s name=%s",
-            squad.id, reason or "?", detail or "?", name or squad:section_name() or "?")
+        -- Gate the log: name is nil for owner/scripted/active_role/task_target rejects,
+        -- so squad:section_name() would fire on every reject when DEBUG is off.
+        if ap_core_debug.enabled() then
+            ap_core_debug.debug("[PRODUCER.RADIANT] PROTECTED squad=%d reason=%s detail=%s name=%s",
+                squad.id, reason or "?", detail or "?", name or squad:section_name() or "?")
+        end
         if sc then sr.protected = sr.protected + 1 end
         return
     end
