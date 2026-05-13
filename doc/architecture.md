@@ -5,7 +5,7 @@ AlifePlus is a reactive framework for STALKER Anomaly. It hooks X-Ray engine cal
 - Event Pipeline (ap_core_producer): gate chain -> cause generator -> xbus publish.
 - Dispatch Pipeline (ap_core_consumer): xbus subscribe -> consequence handler -> script_squad.
 
-The framework owns protection (ap_core_broker), rate limiting (ap_core_limiter), squad lifecycle (ap_core_broker), tracing (ap_core_debug), and HUD (ap_core_hud). Domain logic registers a cause generator with the producer and a consequence handler with the consumer.
+The framework owns protection (ap_core_broker), rate limiting (ap_core_limiter), squad lifecycle (ap_core_broker), tracing (ap_core_debug), PDA map markers (ap_core_map), and statistics overlay (ap_core_hud). Domain logic registers a cause generator with the producer and a consequence handler with the consumer.
 
 Two layers: core (ap_core_*) and ext (ap_ext_*). Core never imports ext. All domain logic reaches the framework through registered function references.
 
@@ -39,7 +39,7 @@ Built on xlibs. _ap_deps asserts xlibs presence and version on load. See convent
 
 Two layers. Core is the framework. Ext is the domain. Core never imports ext; all ext modules register with core via function references at on_game_start.
 
-### Core (12 files)
+### Core (13 files)
 
 | File | Role |
 |------|------|
@@ -53,7 +53,8 @@ Two layers. Core is the framework. Ext is the domain. Core never imports ext; al
 | ap_core_consumer | Dispatch Pipeline: xbus subscribe, consequence iteration, result codes, rate gating |
 | ap_core_broker | Squad lifecycle: protection, ownership registry, scripting, 20s scan, arrival, release, transit balance |
 | ap_core_record | Activity record: FIFO of dispatched consequences with denormalized display facts; HUD / news / external integrators read from it |
-| ap_core_hud | PDA map markers (rendered from activity records), pipeline statistics overlay |
+| ap_core_map | PDA map markers rendered from activity record entries; 10s apply timer, 20s validate pass, 60s linger before unmark |
+| ap_core_hud | Pipeline statistics overlay (UIStatsHUD): counters, gate breakdown, periodic dump |
 | ap_core_compat | Save data cleanup for version upgrades, default ownership proxy (warfare) |
 
 ### Ext: cause and consequence files
@@ -250,7 +251,8 @@ axr_main calls on_game_start() on every loaded script. File order alphabetical, 
 - ap_core_producer resets dispatch state, registers actor_on_first_update. register() is write-through (maintains _handlers, _radiant_callbacks, _cascade_buf synchronously); engine subscription is deferred to actor_on_first_update.
 - ap_core_consumer registers actor_on_first_update. Does NOT subscribe to xbus yet.
 - ap_core_broker registers save/load callbacks, creates the 20s scripted-squad scan timer.
-- ap_core_hud resets statistics, registers first_update / option_change / net_destroy / GUI / entity_unregister callbacks.
+- ap_core_hud resets statistics, registers first_update / option_change / net_destroy / GUI callbacks.
+- ap_core_map registers first_update (marker init) + server_entity_on_unregister (marker cleanup on entity death).
 - ap_core_compat registers load_state for save cleanup, registers ownership proxy (warfare).
 - ap_ext_cause_* / ap_ext_causes_* register generators with producer via register().
 - ap_ext_consequences_* register handlers with consumer via register(). Arrival handlers via consumer opts.
@@ -356,23 +358,19 @@ xsquad.acquire_squad sets scripted_target on acquire; xsquad.release_squad clear
 
 ---
 
-## HUD
+## PDA map markers (ap_core_map)
 
-ap_core_hud consolidates all visual output: PDA map markers and pipeline statistics overlay. Reads from ap_core_broker activity records. Owns no domain state.
-
-### Markers
-
-HUD owns the marker lifecycle end-to-end via a private _marker_state[squad_id] = { cons_id, remove_at? } table. cons_id is the broker monotonic id of the entry last rendered (cache miss when a fresh entry is recorded for the same squad). Marker timer fires every UPDATE_MARKERS_SEC = 10s (apply); validate runs on the same timer at VALIDATE_MARKERS_SEC = 20s cadence.
+ap_core_map owns the marker lifecycle end-to-end via a private _marker_state[squad_id] = { cons_id, remove_at? } table. cons_id is the activity record monotonic id of the entry last rendered (cache miss when a fresh entry is recorded for the same squad). Marker timer fires every UPDATE_MARKERS_SEC = 10s (apply); validate runs on the same timer at VALIDATE_MARKERS_SEC = 20s cadence. Reads from ap_core_record. Owns no domain state.
 
 Apply pass. Iterates ap_core_record.get_records({assigned=true}) and calls _mark_squad on each. _mark_squad short-circuits when state.cons_id matches; otherwise resolves the action label via game.translate_string(entry.action_key) (the ACTION enum value is itself the localization id, e.g. "action:massacre_investigate" -> "Investigating a Massacre Site"). The marker label is a multi-line block built inline from record fields: action / `Subject: <name | translated species> (translated faction)` / optional `Other: ...` line when entry.other_squad_id is non-nil. xpda.mark_squad is called and _marker_state[squad_id] caches the cons_id.
 
-Validate pass. Iterates _marker_state itself. Three-stage chain per squad: get_record({squad_id, assigned=true}) -> xobject.se(squad_id) -> se.scripted_target. If any stage fails, starts a MARKER_LINGER_SEC = 60s linger timer (state.remove_at) with reason `evicted` (record gone), `dead` (server entity gone), or `unscripted` (squad no longer routed). When the linger expires, unmarks via xpda.unmark_squad and drops the slot. Entity death also triggers _on_server_entity_on_unregister (in HUD) which unmarks immediately, no linger.
+Validate pass. Iterates _marker_state itself. Three-stage chain per squad: get_record({squad_id, assigned=true}) -> xobject.se(squad_id) -> se.scripted_target. If any stage fails, starts a MARKER_LINGER_SEC = 60s linger timer (state.remove_at) with reason `evicted` (record gone), `dead` (server entity gone), or `unscripted` (squad no longer routed). When the linger expires, unmarks via xpda.unmark_squad and drops the slot. Entity death also triggers _on_server_entity_on_unregister (in ap_core_map) which unmarks immediately, no linger.
 
-Subject resolution. The record entry carries translation keys for both subject and other (`subject_faction_key`, `subject_species_key`, `subject_name`, plus the `other_*` mirror). HUD calls game.translate_string on each `_key` at render time and runs an inline `_format_party` helper to compose `<name | translated species> (translated faction)`. No ext import.
+Subject resolution. The record entry carries translation keys for both subject and other (`subject_faction_key`, `subject_species_key`, `subject_name`, plus the `other_*` mirror). ap_core_map calls game.translate_string on each `_key` at render time and runs an inline `_format_party` helper to compose `<name | translated species> (translated faction)`. No ext import.
 
 ALPHA_PROMOTE flow. Alpha squads write a record via ap_ext_consequences_alpha (calls add_record with CAUSE.ALPHA / CONSEQUENCE.ALPHA_PROMOTE) but never call script_squad. Their record is `assigned=true` so apply renders the marker. validate sees `not se.scripted_target` and starts linger after the next 20s pass; the marker fades MARKER_LINGER_SEC after promotion. Re-promotion (new alpha record) resets the cycle.
 
-### Statistics overlay
+## Statistics overlay (ap_core_hud)
 
 Pipeline counters: r for radiant, x for reactive. Track events, gate admissions, cause publishes, consequence results, blocker breakdown. classify(result, is_radiant) routes each consequence result to the appropriate counter. UIStatsHUD renders a compact table with R / X columns and a per-minute or percentage extra column. Six screen positions via MCM. Hides on PDA, inventory, menus. Zero overhead when statistics_position is "off". Log dump every 10s with total and per-minute breakdowns.
 

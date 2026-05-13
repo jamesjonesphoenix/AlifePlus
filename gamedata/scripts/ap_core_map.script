@@ -1,0 +1,167 @@
+--- ap_core_map: PDA map markers for AP-dispatched squads.
+--- Reads activity record (assigned=true), mirrors each entry as an engine map spot
+--- via xpda. Per-squad shadow state {_marker_state}; entries linger for
+--- MARKER_LINGER_SEC after the record evicts / entity dies / squad unscripts.
+local pairs, clock, RegisterScriptCallback = pairs, os.clock, RegisterScriptCallback
+local table_concat = table.concat
+
+local CALLBACK = ap_core_const.CALLBACK
+local cfg = ap_core_mcm.cfg
+
+local MARKER_TIMER_EV = "ap_map"
+local UPDATE_MARKERS = "update_markers"
+local UPDATE_MARKERS_SEC = 10
+local VALIDATE_MARKERS_SEC = 20
+local _last_validate_at = 0
+
+-- Marker render-state, owned exclusively by this module. Keyed by squad_id.
+-- { cons_id = number, remove_at = number|nil }
+-- cons_id: record monotonic id of the entry last rendered. Cache miss when entry refreshed.
+-- remove_at: set when the squad enters linger; nil otherwise.
+local _marker_state = {}
+
+-- Build "Name (Faction)" for stalkers, "species" for mutants (faction_display empty after the bucket
+-- removal), or "Faction" alone if name absent. Mutants' name slot receives species_display.
+local function _format_party(name_or_species, faction_display)
+    local primary = (name_or_species and name_or_species ~= "") and name_or_species or nil
+    local secondary = (faction_display and faction_display ~= "") and faction_display or nil
+    if primary and secondary then return primary .. " (" .. secondary .. ")" end
+    if primary then return primary end
+    return secondary or "?"
+end
+
+local function _xml(key)
+    if not key then return "" end
+    local v = game.translate_string(key)
+    if v and v ~= key and v ~= "" then return v end
+    return ""
+end
+
+-- Translate a key; return nil on miss / empty / round-trip echo (engine returns the key on miss).
+local function _translate_or_nil(key)
+    if not key then return nil end
+    local v = game.translate_string(key)
+    if not v or v == key or v == "" then return nil end
+    return v
+end
+
+-- Smart display name with sentence-flow normalization ("Great Swamp. Northern Village" -> "Great Swamp, Northern Village").
+local function _smart_display(smart_id)
+    if not smart_id then return nil end
+    local smart = xobject.se(smart_id)
+    if not smart then return nil end
+    local name = xlevel.get_smart_display_name(smart)
+    if not name or name == "" then return nil end
+    return (name:gsub("%. ", ", "))
+end
+
+local function _mark_squad(entry)
+    local state = _marker_state[entry.squad_id]
+    if state and state.cons_id == entry.cons_id then return end
+
+    local action = _translate_or_nil(entry.action_key)
+    local consequence = _translate_or_nil(entry.consequence_key)
+    local headline
+    if action and consequence then
+        headline = action .. " [" .. consequence .. "]"
+    elseif action then
+        headline = action
+    elseif consequence then
+        headline = consequence
+    else
+        headline = entry.consequence_key or entry.action_key or "?"
+    end
+
+    local subject = _format_party(entry.subject_name or _xml(entry.subject_species_key), _xml(entry.subject_faction_key))
+    local lines = { headline, "Subject: " .. subject }
+    if entry.other_squad_id then
+        local other = _format_party(entry.other_name or _xml(entry.other_species_key), _xml(entry.other_faction_key))
+        lines[#lines + 1] = "Other: " .. other
+    end
+
+    local target_parts = {}
+    local smart_name = _smart_display(entry.smart_id)
+    if smart_name then target_parts[#target_parts + 1] = smart_name end
+    if entry.level_id then
+        local level_name = xlevel.get_level_name(entry.level_id)
+        if level_name and level_name ~= "" then target_parts[#target_parts + 1] = level_name end
+    end
+    local target_text = (#target_parts > 0) and table_concat(target_parts, ", ") or nil
+    if target_text and entry.started_clock then
+        lines[#lines + 1] = "Target: " .. target_text .. " @ " .. entry.started_clock
+    elseif target_text then
+        lines[#lines + 1] = "Target: " .. target_text
+    elseif entry.started_clock then
+        lines[#lines + 1] = "Started: " .. entry.started_clock
+    end
+
+    local label = table_concat(lines, "\\n")
+
+    xpda.mark_squad(entry.squad_id, { label = label, marker_type = ap_core_const.MARKER_ACTIVE })
+    _marker_state[entry.squad_id] = { cons_id = entry.cons_id }
+    ap_core_debug.debug("[MAP] mark: squad=%d cons=%d label=%s", entry.squad_id, entry.cons_id, label)
+end
+
+local function _apply_markers()
+    local records = ap_core_record.get_records({ assigned = true })
+    for i = 1, #records do _mark_squad(records[i]) end
+end
+
+-- Linger condition: record evicted/unassigned, server entity gone, or squad no longer scripted.
+local function _validate_markers()
+    local now = clock()
+    for squad_id, state in pairs(_marker_state) do
+        local entry = ap_core_record.get_record({ squad_id = squad_id, assigned = true })
+        local se = entry and xobject.se(squad_id)
+        local should_linger = not entry or not se or not se.scripted_target
+        if should_linger and not state.remove_at then
+            state.remove_at = now + ap_core_const.MARKER_LINGER_SEC
+            local reason = (not entry) and "evicted" or (not se and "dead" or "unscripted")
+            ap_core_debug.debug("[MAP] mark_linger: squad=%d reason=%s", squad_id, reason)
+        end
+        if state.remove_at and now >= state.remove_at then
+            xpda.unmark_squad(squad_id)
+            _marker_state[squad_id] = nil
+            ap_core_debug.debug("[MAP] unmark: squad=%d", squad_id)
+        end
+    end
+end
+
+local function _update_markers()
+    ResetTimeEvent(MARKER_TIMER_EV, UPDATE_MARKERS, UPDATE_MARKERS_SEC)
+    if not cfg.map_markers then return false end
+    local now = clock()
+    if (now - _last_validate_at) >= VALIDATE_MARKERS_SEC then
+        _last_validate_at = now
+        _validate_markers()
+    end
+    _apply_markers()
+    return false
+end
+
+local function _on_server_entity_on_unregister(se_obj)
+    if not se_obj then return end
+    local id = se_obj.id
+    if not id then return end
+    if _marker_state[id] then
+        xpda.unmark_squad(id)
+        _marker_state[id] = nil
+    end
+end
+
+local function _on_first_update()
+    -- Engine wipes markers on level transition; clear our shadow state too.
+    xpda.clear_squad_markers()
+    _marker_state = {}
+    _last_validate_at = 0
+    if cfg.map_markers then
+        RemoveTimeEvent(MARKER_TIMER_EV, UPDATE_MARKERS)
+        CreateTimeEvent(MARKER_TIMER_EV, UPDATE_MARKERS, UPDATE_MARKERS_SEC, _update_markers)
+        ap_core_debug.debug("[MAP] marker timer created (map_markers=true)")
+    end
+end
+
+function on_game_start()
+    RegisterScriptCallback(CALLBACK.ACTOR_ON_FIRST_UPDATE, _on_first_update)
+    RegisterScriptCallback(CALLBACK.SERVER_ENTITY_ON_UNREGISTER, _on_server_entity_on_unregister)
+end

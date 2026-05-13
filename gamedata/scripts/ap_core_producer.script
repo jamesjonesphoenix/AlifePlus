@@ -6,9 +6,9 @@ local clock, RegisterScriptCallback = os.clock, RegisterScriptCallback
 local CALLBACK = ap_core_const.CALLBACK
 local CAUSE_TYPE = ap_core_const.CAUSE_TYPE
 local cfg = ap_core_mcm.cfg
-local stats = ap_core_hud
-local stats_collecting = stats.collecting
-local sr, sx = stats.r, stats.x
+local hud = ap_core_hud
+local hud_collecting = ap_core_hud.collecting
+local sr, sx = hud.r, hud.x
 local _handlers = {}
 local _subscribed = {}
 local _reactive_event_limiter = nil
@@ -112,7 +112,7 @@ local function _try_publish(on_map, result, trace, category, cause_type)
     result._trace = trace
     result.cause_type = cause_type
     ap_core_util.event_publish(result.cause, result)
-    if stats_collecting() then stats.inc_pub(cause_type) end
+    if hud_collecting() then hud.inc_pub(cause_type) end
     ap_core_debug.debug("[PRODUCER] PUBLISHED cause=%s category=%s sq=%s on_map=%s level=%s",
         result.cause, category, result.squad_id, on_map, result.level_id)
 end
@@ -135,7 +135,7 @@ local function _try_one_reactive(on_map, entry, args, sc)
         _try_publish(on_map, result, trace, entry.category, entry.cause_type)
         return
     end
-    if sc then stats.classify_cause(result, false) end
+    if sc then hud.classify_cause(result, false) end
 end
 
 local function _eval_reactive_handlers(handlers, on_map, ...)
@@ -144,7 +144,7 @@ local function _eval_reactive_handlers(handlers, on_map, ...)
     -- across loop iterations. Allocation is ~50us/sec in dense combat; acceptable cost
     -- for reactive pipeline fan-out.
     local args = {...}
-    local sc = stats_collecting()
+    local sc = hud_collecting()
     for i = 1, #handlers do
         _try_one_reactive(on_map, handlers[i], args, sc)
     end
@@ -180,7 +180,7 @@ local function _try_one_radiant(on_map, squad, entry, sc)
         _try_publish(on_map, result, trace, entry.category, entry.cause_type)
         return true
     end
-    if sc then stats.classify_cause(result, true) end
+    if sc then hud.classify_cause(result, true) end
     return false
 end
 
@@ -190,7 +190,7 @@ local function _eval_radiant_cascade(on_map, squad)
         local j = math_random(i)
         if j ~= i then _cascade_buf[i], _cascade_buf[j] = _cascade_buf[j], _cascade_buf[i] end
     end
-    local sc = stats_collecting()
+    local sc = hud_collecting()
     for i = 1, cascade_size do
         if _try_one_radiant(on_map, squad, _cascade_buf[i], sc) then break end
     end
@@ -201,7 +201,7 @@ end
 --- Counters in each gate count what the gate BLOCKED (not what passed). events is input count.
 local function _on_radiant(squad)
     if #_cascade_buf == 0 then return end
-    local sc = stats_collecting()
+    local sc = hud_collecting()
     if sc then sr.events = sr.events + 1 end
     -- Gate 1: PACER_1 (100ms coarse limiter, pure clock + comparison)
     local now = clock()
@@ -255,7 +255,7 @@ end
 local function _on_reactive(callback_type, ...)
     local handlers = _handlers[callback_type]
     if not handlers or #handlers == 0 then return end
-    local sc = stats_collecting()
+    local sc = hud_collecting()
 
     if sc then sx.events = sx.events + 1 end
     if not _reactive_pacer_gate(callback_type) then

@@ -10,8 +10,8 @@ local _cause_for = {}
 local _subscribed = false
 local _subscribe_event
 
-local stats = ap_core_hud
-local stats_collecting = stats.collecting
+local hud = ap_core_hud
+local hud_collecting = ap_core_hud.collecting
 
 --- Register a consequence handler for an event. Strict: refuses duplicate names.
 --- Caller must call unregister(name) first if replacing.
@@ -100,17 +100,17 @@ end
 local function _dispatch_entry(entry, event_type, event_data, is_radiant, sc)
     if is_radiant and not ap_core_limiter.check_global_consequence_rate_limit() then
         ap_core_debug.debug("[CONSUMER] GLOBAL_RATE_EXHAUSTED consequence=%s cause=%s", entry.name, event_type)
-        if sc then stats.inc_cap() end
+        if sc then hud.inc_cap() end
         return true, false
     end
     if not ap_core_limiter.check_consequence_rate_limit(entry.name) then
         ap_core_debug.debug("[CONSUMER] RATE_LIMITED consequence=%s", entry.name)
-        if sc then stats.inc_bucket(is_radiant) end
+        if sc then hud.inc_bucket(is_radiant) end
         return false, false
     end
     local result = _run_handler(entry, event_data)
     if not result or result.code == RESULT.DISABLED then return false, false end
-    if sc then stats.classify_csq(result, is_radiant) end
+    if sc then hud.classify_csq(result, is_radiant) end
     if result.code == RESULT.SUCCESS then
         _on_success(entry.name, is_radiant, event_data)
         if is_radiant then return true, true end
@@ -126,7 +126,7 @@ local function _process(event_type, event_data)
         event_type, event_data.squad_id or event_data.id, event_data.level_id, event_data.cause_type)
 
     local is_radiant = event_data.cause_type == ap_core_const.CAUSE_TYPE.RADIANT
-    local sc = stats_collecting()
+    local sc = hud_collecting()
     -- In-place Fisher-Yates on _registry[event_type]. Order between events is permuted; every
     -- entry still gets considered. Avoids per-event allocation. Mirrors ap_core_producer's _cascade_buf shuffle.
     local count = #consequences
