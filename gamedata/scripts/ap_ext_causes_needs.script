@@ -113,7 +113,7 @@ local function _try_cause(trace, squad, level_id, entry)
     local opts = { filter = filter, level_id = level_id, max_distance = RANGE_RADIO }
     if entry.offmap then
         if not ap_core_limiter.check_offmap_rate_limit(level_id, cfg.cause_max_offmap) then
-            return { code = RESULT.FAILED_RULES, reason = REASON.BUDGET_EXHAUSTED }
+            return { code = RESULT.FAILED_RULES, reason = REASON.OFFMAP_EXHAUSTED }
         end
         local source = level_id
         local base = opts.filter
@@ -238,10 +238,13 @@ function on_game_start()
           filter = function(s) return xsmart.has_stalker_jobs(s, xsmart.JOB_TYPE_TRADER) end,
           exclude_enemy = true,
           personality = { PERSONALITY.GREED, PERSONALITY.RELATION } },
+        -- Cross-map peer row. Personality leans on DISCIPLINE (commit to long structured travel)
+        -- in place of the local row's RELATION; high-discipline stalkers travel for resupply,
+        -- low-discipline ones stick to local. Prop-only filter (is_base) works cross-level since
+        -- stalker_jobs is nil for off-actor-level smarts (smart_terrain.script:462 early-exit).
         { cause = CAUSE.SUPPLY_TRADER_OFFMAP, name = "supply_trader_offmap", need = "supply",
-          filter = function(s) return xsmart.has_stalker_jobs(s, xsmart.JOB_TYPE_TRADER) end,
-          exclude_enemy = true,
-          personality = { PERSONALITY.GREED, PERSONALITY.RELATION }, offmap = true },
+          filter = xsmart.is_base,            exclude_enemy = true,
+          personality = { PERSONALITY.GREED, PERSONALITY.DISCIPLINE }, offmap = true },
         { cause = CAUSE.MONEY_HARVEST,    name = "money_harvest",    need = "money",
           filter = function(s) return xsmart.has_anomaly(s) and xsmart.has_animated_stalker_jobs(s) end,
           alignment = _alignment_selfserving, exclude_enemy = true,
@@ -258,27 +261,30 @@ function on_game_start()
           filter = function(s) return _is_unclaimed(s) and xsmart.has_animated_stalker_jobs(s) end,
           alignment = _alignment_selfserving,
           personality = { PERSONALITY.PERCEPTION, PERSONALITY.TERRITORY } },
+        -- Cross-map peer row. Personality swaps TERRITORY -> DISCIPLINE so high-discipline
+        -- stalkers commit to cross-map scouting while territorial ones stay home. Filter drops
+        -- has_animated_stalker_jobs because stalker_jobs is nil for off-actor-level smarts
+        -- (smart_terrain.script:462); unclaimed-faction check is prop-based and works cross-level.
         { cause = CAUSE.JOB_EXPLORE_OFFMAP, name = "job_explore_offmap", need = "job",
-          filter = function(s) return _is_unclaimed(s) and xsmart.has_animated_stalker_jobs(s) end,
+          filter = _is_unclaimed,
           alignment = _alignment_selfserving,
-          personality = { PERSONALITY.PERCEPTION, PERSONALITY.TERRITORY }, offmap = true },
+          personality = { PERSONALITY.PERCEPTION, PERSONALITY.DISCIPLINE }, offmap = true },
         { cause = CAUSE.JOB_RESEARCH,     name = "job_research",     need = "job",
           filter = function(s) return xsmart.has_anomaly(s) and xsmart.has_animated_stalker_jobs(s) end,
           alignment = _alignment_ecolog, exclude_enemy = true,
           personality = { PERSONALITY.PERCEPTION, PERSONALITY.DISCIPLINE } },
-        { cause = CAUSE.JOB_RESEARCH_OFFMAP, name = "job_research_offmap", need = "job",
-          filter = function(s) return xsmart.has_anomaly(s) and xsmart.has_animated_stalker_jobs(s) end,
-          alignment = _alignment_ecolog, exclude_enemy = true,
-          personality = { PERSONALITY.PERCEPTION, PERSONALITY.DISCIPLINE }, offmap = true },
         { cause = CAUSE.SOCIAL_CAMPFIRE,  name = "social_campfire",  need = "social",
           filter = xsmart.has_campfire,       exclude_enemy = true,
           personality = { PERSONALITY.RELATION } },
         { cause = CAUSE.SOCIAL_BASE,      name = "social_base",      need = "social",
           filter = xsmart.is_base,            alignment = _alignment_principled, exclude_enemy = true,
           personality = { PERSONALITY.RELATION, PERSONALITY.TERRITORY } },
+        -- Cross-map peer row. No alignment gate (any faction; on-map SOCIAL_BASE is principled-only).
+        -- Personality swaps TERRITORY -> DISCIPLINE so high-discipline stalkers travel for company
+        -- while homebody (high-territory) ones stay at their own base.
         { cause = CAUSE.SOCIAL_OFFBASE,   name = "social_offbase",   need = "social",
           filter = xsmart.is_base,            exclude_enemy = true,
-          personality = { PERSONALITY.RELATION, PERSONALITY.TERRITORY }, offmap = true },
+          personality = { PERSONALITY.RELATION, PERSONALITY.DISCIPLINE }, offmap = true },
     }
 
     local radiant = ap_core_const.RADIANT_CALLBACKS

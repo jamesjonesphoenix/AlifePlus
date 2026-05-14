@@ -1,7 +1,7 @@
 next
-  Summary: cross-map needs fallback; activity record is the single substrate; mutant tables dropped; warfare shim widened
+  Summary: cross-map sibling causes for Supply / Job Explore / Social; activity record is the single substrate; mutant tables dropped; warfare shim widened
   Gameplay:
-    Added: Cross-map fallback for Supply, Job Explore, Job Research, and Social. When no on-map target matches, the squad heads to one on another map. Each off-map cause sits next to its on-map sibling and fires only when the on-map sibling found nothing.
+    Added: Off-map sibling rows for Supply, Job Explore, and Social. Each is a peer in the cascade with discipline-weighted personality, so high-discipline stalkers travel cross-map while territorial ones stay home. Supply off-map targets any base (bases reliably host traders).
     Added: Social Off-base fires for any faction (the on-map Social Base is principled-only).
   News:
     Changed: News composer reads the activity record. Standalone ledger retired.
@@ -9,7 +9,7 @@ next
     Removed: News Chance slider. Compose interval and scope filter remain.
   MCM:
     Added: World tab with Off-map cap. Default 2 dispatches per source map within a sliding 48 game-hour window. Persists across save/load.
-    Added: Four new consequence sub-tabs under Consequences (Social Off-base, Job Explore Off-map, Supply Trader Off-map, Job Research Off-map). Each carries the usual enabled, rush, and where applicable arrive-action toggles.
+    Added: Three new consequence sub-tabs under Consequences (Social Off-base, Job Explore Off-map, Supply Trader Off-map). Each carries the usual enabled, rush, and where applicable arrive-action toggles.
     Changed: Tab order is Framework, World, Mutators, News, Causes, Consequences, Development.
     Changed: Reset button moved from Framework to Development.
     Changed: Per-consequence rate limit slider (consequence_max_events) applies mid-session.

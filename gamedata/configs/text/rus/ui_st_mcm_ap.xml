@@ -1885,59 +1885,47 @@
   <string id="ui_mcm_menu_job_explore_offmap">
     <text>Разведка\nвне карты</text>
   </string>
-  <string id="ui_mcm_menu_job_research_offmap">
-    <text>Изучение\nвне карты</text>
-  </string>
   <string id="ui_mcm_menu_social_offbase">
     <text>Общение\nвне базы</text>
   </string>
   <string id="ui_mcm_ap_causes_needs_supply_trader_offmap_tag">
-    <text>Причина: Доступен закуп у торговца вне карты\nОписание: Отряд идёт к торговцу на другой карте. Срабатывает только если на текущей карте нет торговца для supply_trader.\nПравила: поиск по всем уровням; исключая исходный уровень; действует лимит баланса вне карты; любой сталкер; личность(жадность, отношение); торговец; не-враждебная зона; Hull</text>
+    <text>Причина: Доступен закуп вне карты\nОписание: Отряд идёт на базу на другой карте, чтобы пополнить запасы. Парная со supply_trader; взвешена по дисциплине, поэтому дисциплинированные сталкеры идут дальше.\nПравила: поиск по всем уровням; исключая исходный уровень; действует лимит баланса вне карты; любой сталкер; личность(жадность, дисциплина); база; не-враждебная зона; Hull</text>
   </string>
   <string id="ui_mcm_ap_causes_needs_job_explore_offmap_tag">
-    <text>Причина: Доступна разведка вне карты\nОписание: Отряд разведает незанятую локацию на другой карте. Срабатывает только если на текущей карте нет подходящей локации для job_explore.\nПравила: поиск по всем уровням; исключая исходный уровень; действует лимит баланса вне карты; корыстные сталкеры; личность(восприятие, территория); незанятая локация; Hull</text>
-  </string>
-  <string id="ui_mcm_ap_causes_needs_job_research_offmap_tag">
-    <text>Причина: Доступно изучение аномалий вне карты\nОписание: Отряд экологов идёт к аномальной зоне на другой карте. Срабатывает только если на текущей карте нет подходящей аномалии для job_research.\nПравила: поиск по всем уровням; исключая исходный уровень; действует лимит баланса вне карты; экологи; личность(восприятие, дисциплина); аномалия; не-враждебная зона; Hull</text>
+    <text>Причина: Доступна разведка вне карты\nОписание: Отряд разведает незанятую локацию на другой карте. Парная с job_explore; взвешена по дисциплине, поэтому дисциплинированные сталкеры идут в разведку дальше.\nПравила: поиск по всем уровням; исключая исходный уровень; действует лимит баланса вне карты; корыстные сталкеры; личность(восприятие, дисциплина); незанятая фракция; Hull</text>
   </string>
   <string id="ui_mcm_ap_causes_needs_social_offbase_tag">
-    <text>Причина: Доступно общение вне базы\nОписание: Отряд посещает базу на другой карте для отдыха. Срабатывает для любой фракции, когда на текущей карте нет доступной базы для social_base.\nПравила: поиск по всем уровням; исключая исходный уровень; действует лимит баланса вне карты; любой сталкер; личность(отношение, территория); база; не-враждебная зона; Hull</text>
+    <text>Причина: Доступно общение вне базы\nОписание: Отряд посещает базу на другой карте ради общества. Парная с social_base; для любой фракции (без принципиального ограничения) и взвешена по дисциплине, поэтому кочевые сталкеры идут за компанией.\nПравила: поиск по всем уровням; исключая исходный уровень; действует лимит баланса вне карты; любой сталкер; личность(отношение, дисциплина); база; не-враждебная зона; Hull</text>
   </string>
   <string id="ui_mcm_ap_causes_needs_cause_supply_trader_offmap_enabled">
     <text>Включено</text>
   </string>
   <string id="ui_mcm_ap_causes_needs_cause_supply_trader_offmap_enabled_desc">
-    <text>Разрешить публикацию причины supply_trader_offmap (резерв — торговец на другой карте).</text>
+    <text>Разрешить публикацию причины supply_trader_offmap (парная с supply_trader; дисциплинированные сталкеры идут на другую карту).</text>
   </string>
   <string id="ui_mcm_ap_causes_needs_cause_job_explore_offmap_enabled">
     <text>Включено</text>
   </string>
   <string id="ui_mcm_ap_causes_needs_cause_job_explore_offmap_enabled_desc">
-    <text>Разрешить публикацию причины job_explore_offmap (резерв — незанятая локация на другой карте).</text>
-  </string>
-  <string id="ui_mcm_ap_causes_needs_cause_job_research_offmap_enabled">
-    <text>Включено</text>
-  </string>
-  <string id="ui_mcm_ap_causes_needs_cause_job_research_offmap_enabled_desc">
-    <text>Разрешить публикацию причины job_research_offmap (резерв — аномалия на другой карте).</text>
+    <text>Разрешить публикацию причины job_explore_offmap (парная с job_explore; дисциплинированные сталкеры идут в разведку на другую карту).</text>
   </string>
   <string id="ui_mcm_ap_causes_needs_cause_social_offbase_enabled">
     <text>Включено</text>
   </string>
   <string id="ui_mcm_ap_causes_needs_cause_social_offbase_enabled_desc">
-    <text>Разрешить публикацию причины social_offbase (резерв — база на другой карте; для любой фракции).</text>
+    <text>Разрешить публикацию причины social_offbase (парная с social_base; для любой фракции; дисциплинированные сталкеры идут за компанией).</text>
   </string>
   <string id="ui_mcm_ap_consequences_supply_trader_offmap_title">
     <text>Закуп у торговца вне карты</text>
   </string>
   <string id="ui_mcm_ap_consequences_supply_trader_offmap_tag">
-    <text>Описание: Отряд идёт к торговцу на другой карте\nПричина: Доступен закуп у торговца вне карты</text>
+    <text>Описание: Отряд идёт на базу на другой карте, чтобы пополнить запасы\nПричина: Доступен закуп вне карты</text>
   </string>
   <string id="ui_mcm_ap_consequences_supply_trader_offmap_consequence_supply_trader_offmap_enabled">
     <text>Включено</text>
   </string>
   <string id="ui_mcm_ap_consequences_supply_trader_offmap_consequence_supply_trader_offmap_enabled_desc">
-    <text>Сталкеры идут к торговцу на другой карте, когда на текущей нет доступного.</text>
+    <text>Сталкеры идут на базу на другой карте, чтобы пополнить запасы, когда на текущей нет доступного торговца.</text>
   </string>
   <string id="ui_mcm_ap_consequences_supply_trader_offmap_consequence_supply_trader_offmap_rush">
     <text>Режим спринта</text>
@@ -1967,24 +1955,6 @@
     <text>Режим спринта</text>
   </string>
   <string id="ui_mcm_ap_consequences_job_explore_offmap_consequence_job_explore_offmap_rush_desc">
-    <text>Скриптованные отряды двигаются на максимальной скорости. Отключите для более медленного, реалистичного движения.</text>
-  </string>
-  <string id="ui_mcm_ap_consequences_job_research_offmap_title">
-    <text>Изучение аномалий вне карты</text>
-  </string>
-  <string id="ui_mcm_ap_consequences_job_research_offmap_tag">
-    <text>Описание: Отряд экологов идёт к аномальной зоне на другой карте\nПричина: Доступно изучение аномалий вне карты</text>
-  </string>
-  <string id="ui_mcm_ap_consequences_job_research_offmap_consequence_job_research_offmap_enabled">
-    <text>Включено</text>
-  </string>
-  <string id="ui_mcm_ap_consequences_job_research_offmap_consequence_job_research_offmap_enabled_desc">
-    <text>Экологи идут к аномальной зоне на другой карте, когда на текущей нет доступной.</text>
-  </string>
-  <string id="ui_mcm_ap_consequences_job_research_offmap_consequence_job_research_offmap_rush">
-    <text>Режим спринта</text>
-  </string>
-  <string id="ui_mcm_ap_consequences_job_research_offmap_consequence_job_research_offmap_rush_desc">
     <text>Скриптованные отряды двигаются на максимальной скорости. Отключите для более медленного, реалистичного движения.</text>
   </string>
   <string id="ui_mcm_ap_consequences_social_offbase_title">

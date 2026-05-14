@@ -288,7 +288,7 @@ Needs
   - Job - The stalker guards outposts and checkpoints, explores the Zone, or researches anomalies.
   - Social - The stalker finds a campfire or safe location and shares cigarettes and drinks.
 
-  Cross-map fallback: when no on-map target matches Supply, Job Explore, Job Research, or Social, the squad heads to one on another map.
+  Cross-map sibling rows: Supply, Job Explore, and Social each ship a paired off-map row. The off-map row weights discipline traits, so disciplined stalkers travel cross-map for resupply, scouting, or company while territorial ones stay home.
   Capped per source map within a sliding 48 game-hour window to keep cross-map traffic in check.
 
   NPCs consume real items from their inventory on arrival.

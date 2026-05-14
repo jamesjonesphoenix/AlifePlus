@@ -124,7 +124,6 @@ end
 --- @param max number Cap (cfg.cause_max_offmap)
 --- @return boolean allowed, number count, number max
 function check_offmap_rate_limit(level_id, max)
-    if not _offmap_counter then return true, 0, max end
     local count = _offmap_counter:count(_get_offmap_rate_key(level_id))
     if count >= max then
         return false, count, max
@@ -135,20 +134,17 @@ end
 --- Increment offmap counter after a successful offmap dispatch.
 --- @param level_id number Source map id
 function increment_offmap_counter(level_id)
-    if not _offmap_counter then return end
     _offmap_counter:add(_get_offmap_rate_key(level_id))
 end
 
 local function _on_save_state(m_data)
-    m_data.ap_core_limiter = {
-        offmap_counter = _offmap_counter and _offmap_counter:export() or nil,
-    }
+    m_data.ap_core_limiter = { offmap_counter = _offmap_counter:export() }
 end
 
 local function _on_load_state(m_data)
     local saved = m_data.ap_core_limiter
     if type(saved) ~= "table" then return end
-    if _offmap_counter and type(saved.offmap_counter) == "table" then
+    if type(saved.offmap_counter) == "table" then
         _offmap_counter:import(saved.offmap_counter)
     end
 end

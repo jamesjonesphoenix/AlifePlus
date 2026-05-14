@@ -81,7 +81,6 @@ defaults = {
     cause_social_base_enabled = true,
     cause_supply_trader_offmap_enabled = true,
     cause_job_explore_offmap_enabled = true,
-    cause_job_research_offmap_enabled = true,
     cause_social_offbase_enabled = true,
 
     -- World: offmap balance cap (dispatches per source map per OFFMAP_WINDOW_SEC)
@@ -305,10 +304,6 @@ defaults = {
     consequence_supply_trader_offmap_rush = false,
     consequence_supply_trader_offmap_arrive_action_enabled = true,
 
-    -- Consequence: Job Research Offmap (cross-map sibling of job_research)
-    consequence_job_research_offmap_enabled = true,
-    consequence_job_research_offmap_rush = false,
-
     -- Area conquest (additive shared spawn)
     mutator_area_conquest_mutate_smart = true,
     mutator_area_conquest_max_smarts = 50,
@@ -390,7 +385,6 @@ local _key_to_tab = {
     cause_social_base_enabled = "causes/needs",
     cause_supply_trader_offmap_enabled = "causes/needs",
     cause_job_explore_offmap_enabled = "causes/needs",
-    cause_job_research_offmap_enabled = "causes/needs",
     cause_social_offbase_enabled = "causes/needs",
     cause_max_offmap = "world/offmap",
     cause_scatter_enabled = "causes/instincts",
@@ -539,8 +533,6 @@ local _key_to_tab = {
     consequence_supply_trader_offmap_enabled = "consequences/supply_trader_offmap",
     consequence_supply_trader_offmap_rush = "consequences/supply_trader_offmap",
     consequence_supply_trader_offmap_arrive_action_enabled = "consequences/supply_trader_offmap",
-    consequence_job_research_offmap_enabled = "consequences/job_research_offmap",
-    consequence_job_research_offmap_rush = "consequences/job_research_offmap",
     btn_reset_all = "development",
 }
 
@@ -854,9 +846,6 @@ function on_mcm_load()
                             { id = "div_job_research", type = "line" },
                             _tag("ui_mcm_ap_causes_needs_job_research_tag"),
                             _check("cause_job_research_enabled"),
-                            { id = "div_job_research_offmap", type = "line" },
-                            _tag("ui_mcm_ap_causes_needs_job_research_offmap_tag"),
-                            _check("cause_job_research_offmap_enabled"),
                             { id = "div_social_campfire", type = "line" },
                             _tag("ui_mcm_ap_causes_needs_social_campfire_tag"),
                             _check("cause_social_campfire_enabled"),
@@ -1223,16 +1212,6 @@ function on_mcm_load()
                             _tag("ui_mcm_ap_consequences_job_research_tag"),
                             _check("consequence_job_research_enabled"),
                             _check("consequence_job_research_rush"),
-                        },
-                    },
-                    {
-                        id = "job_research_offmap",
-                        sh = true,
-                        gr = {
-                            _slide("ui_mcm_ap_consequences_job_research_offmap_title"),
-                            _tag("ui_mcm_ap_consequences_job_research_offmap_tag"),
-                            _check("consequence_job_research_offmap_enabled"),
-                            _check("consequence_job_research_offmap_rush"),
                         },
                     },
                     {

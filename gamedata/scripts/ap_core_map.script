@@ -82,8 +82,17 @@ local function _mark_squad(entry)
     local target_parts = {}
     local smart_name = _smart_display(entry.smart_id)
     if smart_name then target_parts[#target_parts + 1] = smart_name end
-    if entry.level_id then
-        local level_name = xlevel.get_level_name(entry.level_id)
+    -- Derive level from the destination smart, not entry.level_id. Off-map dispatches store
+    -- source level_id (so news filtering matches the player level) but the marker should show
+    -- where the squad is going.
+    local level_id_for_display
+    if entry.smart_id then
+        local smart_se = xobject.se(entry.smart_id)
+        if smart_se then level_id_for_display = xlevel.get_level_id(smart_se) end
+    end
+    level_id_for_display = level_id_for_display or entry.level_id
+    if level_id_for_display then
+        local level_name = xlevel.get_level_name(level_id_for_display)
         if level_name and level_name ~= "" then target_parts[#target_parts + 1] = level_name end
     end
     local target_text = (#target_parts > 0) and table_concat(target_parts, ", ") or nil
