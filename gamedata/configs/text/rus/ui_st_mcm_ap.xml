@@ -198,12 +198,6 @@
   <string id="ui_mcm_ap_framework_title">
     <text>Каркас</text>
   </string>
-  <string id="ui_mcm_ap_framework_btn_reset_all">
-    <text>Сбросить ВСЁ к умолчаниям</text>
-  </string>
-  <string id="ui_mcm_ap_framework_btn_reset_all_desc">
-    <text>Вернуть все настройки AlifePlus к заводским значениям. Действует немедленно — закройте и снова откройте MCM, чтобы увидеть обновлённые ползунки. Полезно после экспериментов или при обновлении до новой версии с пересчитанными умолчаниями.</text>
-  </string>
   <string id="ui_mcm_ap_framework_desc">
     <text>Управление конвейером событий. События проходят через специализированные ограничители скорости, контролируемые соотношением A-Life, интервалом A-Life, бюджетами причин и следствий.</text>
   </string>
@@ -1878,5 +1872,161 @@
   </string>
   <string id="ui_mcm_ap_consequences_area_infest_consequence_area_infest_rush_desc">
     <text>Когда включено, отряды двигаются в спринте, чтобы занять своё гнездо.</text>
+  </string>
+  <string id="ui_mcm_menu_world">
+    <text>Мир</text>
+  </string>
+  <string id="ui_mcm_menu_offmap">
+    <text>Вне карты</text>
+  </string>
+  <string id="ui_mcm_menu_supply_trader_offmap">
+    <text>Закуп\nвне карты</text>
+  </string>
+  <string id="ui_mcm_menu_job_explore_offmap">
+    <text>Разведка\nвне карты</text>
+  </string>
+  <string id="ui_mcm_menu_job_research_offmap">
+    <text>Изучение\nвне карты</text>
+  </string>
+  <string id="ui_mcm_menu_social_offbase">
+    <text>Общение\nвне базы</text>
+  </string>
+  <string id="ui_mcm_ap_causes_needs_supply_trader_offmap_tag">
+    <text>Причина: Доступен закуп у торговца вне карты\nОписание: Отряд идёт к торговцу на другой карте. Срабатывает только если на текущей карте нет торговца для supply_trader.\nПравила: поиск по всем уровням; исключая исходный уровень; действует лимит баланса вне карты; любой сталкер; личность(жадность, отношение); торговец; не-враждебная зона; Hull</text>
+  </string>
+  <string id="ui_mcm_ap_causes_needs_job_explore_offmap_tag">
+    <text>Причина: Доступна разведка вне карты\nОписание: Отряд разведает незанятую локацию на другой карте. Срабатывает только если на текущей карте нет подходящей локации для job_explore.\nПравила: поиск по всем уровням; исключая исходный уровень; действует лимит баланса вне карты; корыстные сталкеры; личность(восприятие, территория); незанятая локация; Hull</text>
+  </string>
+  <string id="ui_mcm_ap_causes_needs_job_research_offmap_tag">
+    <text>Причина: Доступно изучение аномалий вне карты\nОписание: Отряд экологов идёт к аномальной зоне на другой карте. Срабатывает только если на текущей карте нет подходящей аномалии для job_research.\nПравила: поиск по всем уровням; исключая исходный уровень; действует лимит баланса вне карты; экологи; личность(восприятие, дисциплина); аномалия; не-враждебная зона; Hull</text>
+  </string>
+  <string id="ui_mcm_ap_causes_needs_social_offbase_tag">
+    <text>Причина: Доступно общение вне базы\nОписание: Отряд посещает базу на другой карте для отдыха. Срабатывает для любой фракции, когда на текущей карте нет доступной базы для social_base.\nПравила: поиск по всем уровням; исключая исходный уровень; действует лимит баланса вне карты; любой сталкер; личность(отношение, территория); база; не-враждебная зона; Hull</text>
+  </string>
+  <string id="ui_mcm_ap_causes_needs_cause_supply_trader_offmap_enabled">
+    <text>Включено</text>
+  </string>
+  <string id="ui_mcm_ap_causes_needs_cause_supply_trader_offmap_enabled_desc">
+    <text>Разрешить публикацию причины supply_trader_offmap (резерв — торговец на другой карте).</text>
+  </string>
+  <string id="ui_mcm_ap_causes_needs_cause_job_explore_offmap_enabled">
+    <text>Включено</text>
+  </string>
+  <string id="ui_mcm_ap_causes_needs_cause_job_explore_offmap_enabled_desc">
+    <text>Разрешить публикацию причины job_explore_offmap (резерв — незанятая локация на другой карте).</text>
+  </string>
+  <string id="ui_mcm_ap_causes_needs_cause_job_research_offmap_enabled">
+    <text>Включено</text>
+  </string>
+  <string id="ui_mcm_ap_causes_needs_cause_job_research_offmap_enabled_desc">
+    <text>Разрешить публикацию причины job_research_offmap (резерв — аномалия на другой карте).</text>
+  </string>
+  <string id="ui_mcm_ap_causes_needs_cause_social_offbase_enabled">
+    <text>Включено</text>
+  </string>
+  <string id="ui_mcm_ap_causes_needs_cause_social_offbase_enabled_desc">
+    <text>Разрешить публикацию причины social_offbase (резерв — база на другой карте; для любой фракции).</text>
+  </string>
+  <string id="ui_mcm_ap_consequences_supply_trader_offmap_title">
+    <text>Закуп у торговца вне карты</text>
+  </string>
+  <string id="ui_mcm_ap_consequences_supply_trader_offmap_tag">
+    <text>Описание: Отряд идёт к торговцу на другой карте\nПричина: Доступен закуп у торговца вне карты</text>
+  </string>
+  <string id="ui_mcm_ap_consequences_supply_trader_offmap_consequence_supply_trader_offmap_enabled">
+    <text>Включено</text>
+  </string>
+  <string id="ui_mcm_ap_consequences_supply_trader_offmap_consequence_supply_trader_offmap_enabled_desc">
+    <text>Сталкеры идут к торговцу на другой карте, когда на текущей нет доступного.</text>
+  </string>
+  <string id="ui_mcm_ap_consequences_supply_trader_offmap_consequence_supply_trader_offmap_rush">
+    <text>Режим спринта</text>
+  </string>
+  <string id="ui_mcm_ap_consequences_supply_trader_offmap_consequence_supply_trader_offmap_rush_desc">
+    <text>Скриптованные отряды двигаются на максимальной скорости. Отключите для более медленного, реалистичного движения.</text>
+  </string>
+  <string id="ui_mcm_ap_consequences_supply_trader_offmap_consequence_supply_trader_offmap_arrive_action_enabled">
+    <text>Действие по прибытии</text>
+  </string>
+  <string id="ui_mcm_ap_consequences_supply_trader_offmap_consequence_supply_trader_offmap_arrive_action_enabled_desc">
+    <text>По прибытии NPC продаёт один артефакт из инвентаря и получает патроны, гранаты или медикаменты. Оба предмета реальны.</text>
+  </string>
+  <string id="ui_mcm_ap_consequences_job_explore_offmap_title">
+    <text>Разведка вне карты</text>
+  </string>
+  <string id="ui_mcm_ap_consequences_job_explore_offmap_tag">
+    <text>Описание: Отряд идёт к незанятой локации на другой карте\nПричина: Доступна разведка вне карты</text>
+  </string>
+  <string id="ui_mcm_ap_consequences_job_explore_offmap_consequence_job_explore_offmap_enabled">
+    <text>Включено</text>
+  </string>
+  <string id="ui_mcm_ap_consequences_job_explore_offmap_consequence_job_explore_offmap_enabled_desc">
+    <text>Сталкеры идут к незанятой локации на другой карте, когда на текущей нет доступной.</text>
+  </string>
+  <string id="ui_mcm_ap_consequences_job_explore_offmap_consequence_job_explore_offmap_rush">
+    <text>Режим спринта</text>
+  </string>
+  <string id="ui_mcm_ap_consequences_job_explore_offmap_consequence_job_explore_offmap_rush_desc">
+    <text>Скриптованные отряды двигаются на максимальной скорости. Отключите для более медленного, реалистичного движения.</text>
+  </string>
+  <string id="ui_mcm_ap_consequences_job_research_offmap_title">
+    <text>Изучение аномалий вне карты</text>
+  </string>
+  <string id="ui_mcm_ap_consequences_job_research_offmap_tag">
+    <text>Описание: Отряд экологов идёт к аномальной зоне на другой карте\nПричина: Доступно изучение аномалий вне карты</text>
+  </string>
+  <string id="ui_mcm_ap_consequences_job_research_offmap_consequence_job_research_offmap_enabled">
+    <text>Включено</text>
+  </string>
+  <string id="ui_mcm_ap_consequences_job_research_offmap_consequence_job_research_offmap_enabled_desc">
+    <text>Экологи идут к аномальной зоне на другой карте, когда на текущей нет доступной.</text>
+  </string>
+  <string id="ui_mcm_ap_consequences_job_research_offmap_consequence_job_research_offmap_rush">
+    <text>Режим спринта</text>
+  </string>
+  <string id="ui_mcm_ap_consequences_job_research_offmap_consequence_job_research_offmap_rush_desc">
+    <text>Скриптованные отряды двигаются на максимальной скорости. Отключите для более медленного, реалистичного движения.</text>
+  </string>
+  <string id="ui_mcm_ap_consequences_social_offbase_title">
+    <text>Общение вне базы</text>
+  </string>
+  <string id="ui_mcm_ap_consequences_social_offbase_tag">
+    <text>Описание: Отряд посещает базу на другой карте для отдыха; для любой фракции\nПричина: Доступно общение вне базы</text>
+  </string>
+  <string id="ui_mcm_ap_consequences_social_offbase_consequence_social_offbase_enabled">
+    <text>Включено</text>
+  </string>
+  <string id="ui_mcm_ap_consequences_social_offbase_consequence_social_offbase_enabled_desc">
+    <text>Сталкеры идут на базу на другой карте для отдыха, когда на текущей нет доступной. Для любой фракции.</text>
+  </string>
+  <string id="ui_mcm_ap_consequences_social_offbase_consequence_social_offbase_rush">
+    <text>Режим спринта</text>
+  </string>
+  <string id="ui_mcm_ap_consequences_social_offbase_consequence_social_offbase_rush_desc">
+    <text>Скриптованные отряды двигаются на максимальной скорости. Отключите для более медленного, реалистичного движения.</text>
+  </string>
+  <string id="ui_mcm_ap_consequences_social_offbase_consequence_social_offbase_arrive_action_enabled">
+    <text>Действие по прибытии</text>
+  </string>
+  <string id="ui_mcm_ap_consequences_social_offbase_consequence_social_offbase_arrive_action_enabled_desc">
+    <text>По прибытии NPC делится сигаретой или напитком из инвентаря на базе. Предмет удаляется.</text>
+  </string>
+  <string id="ui_mcm_ap_world_offmap_title">
+    <text>Вне карты</text>
+  </string>
+  <string id="ui_mcm_ap_world_offmap_desc">
+    <text>Лимит баланса между картами. Ограничивает количество отправок вне карты от исходного уровня в скользящем окне 48 игровых часов. Сохраняется между загрузками.</text>
+  </string>
+  <string id="ui_mcm_ap_world_offmap_cause_max_offmap">
+    <text>Лимит вне карты</text>
+  </string>
+  <string id="ui_mcm_ap_world_offmap_cause_max_offmap_desc">
+    <text>[1-10]\nМаксимум отправок вне карты от исходного уровня в окне 48 игровых часов. Не зависит от фракции и точки назначения; общий счётчик для всех причин вне карты. По умолчанию 2.</text>
+  </string>
+  <string id="ui_mcm_ap_development_btn_reset_all">
+    <text>Сбросить ВСЁ к умолчаниям</text>
+  </string>
+  <string id="ui_mcm_ap_development_btn_reset_all_desc">
+    <text>Вернуть все настройки AlifePlus к заводским значениям. Действует немедленно; закройте и снова откройте MCM, чтобы увидеть обновлённые ползунки. Полезно после экспериментов или при обновлении до новой версии с пересчитанными умолчаниями.</text>
   </string>
 </string_table>

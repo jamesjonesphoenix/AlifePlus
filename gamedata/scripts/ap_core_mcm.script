@@ -79,6 +79,13 @@ defaults = {
     cause_job_research_enabled = true,
     cause_social_campfire_enabled = true,
     cause_social_base_enabled = true,
+    cause_supply_trader_offmap_enabled = true,
+    cause_job_explore_offmap_enabled = true,
+    cause_job_research_offmap_enabled = true,
+    cause_social_offbase_enabled = true,
+
+    -- World: offmap balance cap (dispatches per source map per OFFMAP_WINDOW_SEC)
+    cause_max_offmap = 2,
 
     -- Cause: Instincts (5 drives, slumber multi-answer)
     cause_scatter_enabled = true,
@@ -284,6 +291,24 @@ defaults = {
     consequence_social_base_rush = false,
     consequence_social_base_arrive_action_enabled = true,
 
+    -- Consequence: Social Offbase (cross-map sibling of social_base)
+    consequence_social_offbase_enabled = true,
+    consequence_social_offbase_rush = false,
+    consequence_social_offbase_arrive_action_enabled = true,
+
+    -- Consequence: Job Explore Offmap (cross-map sibling of job_explore)
+    consequence_job_explore_offmap_enabled = true,
+    consequence_job_explore_offmap_rush = false,
+
+    -- Consequence: Supply Trader Offmap (cross-map sibling of supply_trader)
+    consequence_supply_trader_offmap_enabled = true,
+    consequence_supply_trader_offmap_rush = false,
+    consequence_supply_trader_offmap_arrive_action_enabled = true,
+
+    -- Consequence: Job Research Offmap (cross-map sibling of job_research)
+    consequence_job_research_offmap_enabled = true,
+    consequence_job_research_offmap_rush = false,
+
     -- Area conquest (additive shared spawn)
     mutator_area_conquest_mutate_smart = true,
     mutator_area_conquest_max_smarts = 50,
@@ -363,6 +388,11 @@ local _key_to_tab = {
     cause_job_research_enabled = "causes/needs",
     cause_social_campfire_enabled = "causes/needs",
     cause_social_base_enabled = "causes/needs",
+    cause_supply_trader_offmap_enabled = "causes/needs",
+    cause_job_explore_offmap_enabled = "causes/needs",
+    cause_job_research_offmap_enabled = "causes/needs",
+    cause_social_offbase_enabled = "causes/needs",
+    cause_max_offmap = "world/offmap",
     cause_scatter_enabled = "causes/instincts",
     cause_feed_enabled = "causes/instincts",
     cause_roam_enabled = "causes/instincts",
@@ -501,7 +531,17 @@ local _key_to_tab = {
     consequence_social_base_enabled = "consequences/social_base",
     consequence_social_base_rush = "consequences/social_base",
     consequence_social_base_arrive_action_enabled = "consequences/social_base",
-    btn_reset_all = "framework",
+    consequence_social_offbase_enabled = "consequences/social_offbase",
+    consequence_social_offbase_rush = "consequences/social_offbase",
+    consequence_social_offbase_arrive_action_enabled = "consequences/social_offbase",
+    consequence_job_explore_offmap_enabled = "consequences/job_explore_offmap",
+    consequence_job_explore_offmap_rush = "consequences/job_explore_offmap",
+    consequence_supply_trader_offmap_enabled = "consequences/supply_trader_offmap",
+    consequence_supply_trader_offmap_rush = "consequences/supply_trader_offmap",
+    consequence_supply_trader_offmap_arrive_action_enabled = "consequences/supply_trader_offmap",
+    consequence_job_research_offmap_enabled = "consequences/job_research_offmap",
+    consequence_job_research_offmap_rush = "consequences/job_research_offmap",
+    btn_reset_all = "development",
 }
 
 local _path_builder = function(key)
@@ -575,11 +615,77 @@ function on_mcm_load()
                     _track("consequence_max_events", 1, 100, 1),
                     _track("global_consequence_max_events", 1, 20, 1),
                     _check("allow_external_ownership"),
-                    { id = "div_reset", type = "line" },
-                    { id = "btn_reset_all", type = "button", functor = { btn_reset_all } },
                     { id = "div_version", type = "line" },
                     { id = "version", type = "desc", text = "ui_mcm_ap_framework_title",
                         ui_hook_functor = { ap_core_mcm.set_version_text }, clr = {255, 212, 201, 168} },
+                },
+            },
+            {
+                id = "world",
+                gr = {
+                    {
+                        id = "offmap",
+                        sh = true,
+                        gr = {
+                            _slide("ui_mcm_ap_world_offmap_title"),
+                            _desc("ui_mcm_ap_world_offmap_desc"),
+                            _track("cause_max_offmap", 1, 10, 1),
+                        },
+                    },
+                },
+            },
+            {
+                id = "mutators",
+                gr = {
+                    {
+                        id = "alpha",
+                        sh = true,
+                        gr = {
+                            _slide("ui_mcm_ap_mutators_alpha_title"),
+                            _desc("ui_mcm_ap_mutators_alpha_desc"),
+                            _check("mutator_alpha_hit_power_dealt_enabled"),
+                            _track("mutator_alpha_hit_power_dealt_per_level", 0.01, 0.20, 0.01),
+                            _check("mutator_alpha_hit_power_taken_enabled"),
+                            _track("mutator_alpha_hit_power_taken_per_level", 0.01, 0.20, 0.01),
+                            _check("mutator_alpha_panic_immunity_enabled"),
+                        },
+                    },
+                    {
+                        id = "rank",
+                        sh = true,
+                        gr = {
+                            _slide("ui_mcm_ap_mutators_rank_title"),
+                            _desc("ui_mcm_ap_mutators_rank_desc"),
+                            _check("mutator_rank_hit_power_dealt_enabled"),
+                            _track("mutator_rank_hit_power_dealt_mult", 0.05, 0.50, 0.05),
+                            _check("mutator_rank_hit_power_taken_enabled"),
+                            _track("mutator_rank_hit_power_taken_mult", 0.05, 0.50, 0.05),
+                        },
+                    },
+                    {
+                        id = "conquest",
+                        sh = true,
+                        gr = {
+                            _slide("ui_mcm_ap_mutators_conquest_title"),
+                            _desc("ui_mcm_ap_mutators_conquest_desc"),
+                            _check("mutator_area_conquest_mutate_smart"),
+                            _track("mutator_area_conquest_max_smarts", 10, 100, 5),
+                            _track("mutator_area_conquest_spawn_num", 1, 5, 1),
+                            _track("mutator_area_conquest_decay_hours", 0, 168, 4),
+                        },
+                    },
+                    {
+                        id = "infest",
+                        sh = true,
+                        gr = {
+                            _slide("ui_mcm_ap_mutators_infest_title"),
+                            _desc("ui_mcm_ap_mutators_infest_desc"),
+                            _check("mutator_area_infest_mutate_smart"),
+                            _track("mutator_area_infest_max_per_level", 1, 5, 1),
+                            _track("mutator_area_infest_spawn_num", 1, 5, 1),
+                            _track("mutator_area_infest_decay_hours", 0, 168, 4),
+                        },
+                    },
                 },
             },
             {
@@ -727,6 +833,9 @@ function on_mcm_load()
                             { id = "div_supply_trader", type = "line" },
                             _tag("ui_mcm_ap_causes_needs_supply_trader_tag"),
                             _check("cause_supply_trader_enabled"),
+                            { id = "div_supply_trader_offmap", type = "line" },
+                            _tag("ui_mcm_ap_causes_needs_supply_trader_offmap_tag"),
+                            _check("cause_supply_trader_offmap_enabled"),
                             { id = "div_money_harvest", type = "line" },
                             _tag("ui_mcm_ap_causes_needs_money_harvest_tag"),
                             _check("cause_money_harvest_enabled"),
@@ -739,15 +848,24 @@ function on_mcm_load()
                             { id = "div_job_explore", type = "line" },
                             _tag("ui_mcm_ap_causes_needs_job_explore_tag"),
                             _check("cause_job_explore_enabled"),
+                            { id = "div_job_explore_offmap", type = "line" },
+                            _tag("ui_mcm_ap_causes_needs_job_explore_offmap_tag"),
+                            _check("cause_job_explore_offmap_enabled"),
                             { id = "div_job_research", type = "line" },
                             _tag("ui_mcm_ap_causes_needs_job_research_tag"),
                             _check("cause_job_research_enabled"),
+                            { id = "div_job_research_offmap", type = "line" },
+                            _tag("ui_mcm_ap_causes_needs_job_research_offmap_tag"),
+                            _check("cause_job_research_offmap_enabled"),
                             { id = "div_social_campfire", type = "line" },
                             _tag("ui_mcm_ap_causes_needs_social_campfire_tag"),
                             _check("cause_social_campfire_enabled"),
                             { id = "div_social_base", type = "line" },
                             _tag("ui_mcm_ap_causes_needs_social_base_tag"),
                             _check("cause_social_base_enabled"),
+                            { id = "div_social_offbase", type = "line" },
+                            _tag("ui_mcm_ap_causes_needs_social_offbase_tag"),
+                            _check("cause_social_offbase_enabled"),
                             { id = "div_drives", type = "line" },
                             _track("cause_hunger_threshold", 0.1, 48, 0.1),
                             { id = "div_sleep_threshold", type = "line" },
@@ -1056,6 +1174,17 @@ function on_mcm_load()
                         },
                     },
                     {
+                        id = "supply_trader_offmap",
+                        sh = true,
+                        gr = {
+                            _slide("ui_mcm_ap_consequences_supply_trader_offmap_title"),
+                            _tag("ui_mcm_ap_consequences_supply_trader_offmap_tag"),
+                            _check("consequence_supply_trader_offmap_enabled"),
+                            _check("consequence_supply_trader_offmap_rush"),
+                            _check("consequence_supply_trader_offmap_arrive_action_enabled"),
+                        },
+                    },
+                    {
                         id = "job_outpost",
                         sh = true,
                         gr = {
@@ -1077,6 +1206,16 @@ function on_mcm_load()
                         },
                     },
                     {
+                        id = "job_explore_offmap",
+                        sh = true,
+                        gr = {
+                            _slide("ui_mcm_ap_consequences_job_explore_offmap_title"),
+                            _tag("ui_mcm_ap_consequences_job_explore_offmap_tag"),
+                            _check("consequence_job_explore_offmap_enabled"),
+                            _check("consequence_job_explore_offmap_rush"),
+                        },
+                    },
+                    {
                         id = "job_research",
                         sh = true,
                         gr = {
@@ -1084,6 +1223,16 @@ function on_mcm_load()
                             _tag("ui_mcm_ap_consequences_job_research_tag"),
                             _check("consequence_job_research_enabled"),
                             _check("consequence_job_research_rush"),
+                        },
+                    },
+                    {
+                        id = "job_research_offmap",
+                        sh = true,
+                        gr = {
+                            _slide("ui_mcm_ap_consequences_job_research_offmap_title"),
+                            _tag("ui_mcm_ap_consequences_job_research_offmap_tag"),
+                            _check("consequence_job_research_offmap_enabled"),
+                            _check("consequence_job_research_offmap_rush"),
                         },
                     },
                     {
@@ -1106,6 +1255,17 @@ function on_mcm_load()
                             _check("consequence_social_base_enabled"),
                             _check("consequence_social_base_rush"),
                             _check("consequence_social_base_arrive_action_enabled"),
+                        },
+                    },
+                    {
+                        id = "social_offbase",
+                        sh = true,
+                        gr = {
+                            _slide("ui_mcm_ap_consequences_social_offbase_title"),
+                            _tag("ui_mcm_ap_consequences_social_offbase_tag"),
+                            _check("consequence_social_offbase_enabled"),
+                            _check("consequence_social_offbase_rush"),
+                            _check("consequence_social_offbase_arrive_action_enabled"),
                         },
                     },
                     {
@@ -1191,60 +1351,6 @@ function on_mcm_load()
                 },
             },
             {
-                id = "mutators",
-                gr = {
-                    {
-                        id = "alpha",
-                        sh = true,
-                        gr = {
-                            _slide("ui_mcm_ap_mutators_alpha_title"),
-                            _desc("ui_mcm_ap_mutators_alpha_desc"),
-                            _check("mutator_alpha_hit_power_dealt_enabled"),
-                            _track("mutator_alpha_hit_power_dealt_per_level", 0.01, 0.20, 0.01),
-                            _check("mutator_alpha_hit_power_taken_enabled"),
-                            _track("mutator_alpha_hit_power_taken_per_level", 0.01, 0.20, 0.01),
-                            _check("mutator_alpha_panic_immunity_enabled"),
-                        },
-                    },
-                    {
-                        id = "rank",
-                        sh = true,
-                        gr = {
-                            _slide("ui_mcm_ap_mutators_rank_title"),
-                            _desc("ui_mcm_ap_mutators_rank_desc"),
-                            _check("mutator_rank_hit_power_dealt_enabled"),
-                            _track("mutator_rank_hit_power_dealt_mult", 0.05, 0.50, 0.05),
-                            _check("mutator_rank_hit_power_taken_enabled"),
-                            _track("mutator_rank_hit_power_taken_mult", 0.05, 0.50, 0.05),
-                        },
-                    },
-                    {
-                        id = "conquest",
-                        sh = true,
-                        gr = {
-                            _slide("ui_mcm_ap_mutators_conquest_title"),
-                            _desc("ui_mcm_ap_mutators_conquest_desc"),
-                            _check("mutator_area_conquest_mutate_smart"),
-                            _track("mutator_area_conquest_max_smarts", 10, 100, 5),
-                            _track("mutator_area_conquest_spawn_num", 1, 5, 1),
-                            _track("mutator_area_conquest_decay_hours", 0, 168, 4),
-                        },
-                    },
-                    {
-                        id = "infest",
-                        sh = true,
-                        gr = {
-                            _slide("ui_mcm_ap_mutators_infest_title"),
-                            _desc("ui_mcm_ap_mutators_infest_desc"),
-                            _check("mutator_area_infest_mutate_smart"),
-                            _track("mutator_area_infest_max_per_level", 1, 5, 1),
-                            _track("mutator_area_infest_spawn_num", 1, 5, 1),
-                            _track("mutator_area_infest_decay_hours", 0, 168, 4),
-                        },
-                    },
-                },
-            },
-            {
                 id = "development",
                 sh = true,
                 gr = {
@@ -1266,6 +1372,8 @@ function on_mcm_load()
                         {"bottom_right", "bottom_right"},
                     }),
                     _check("map_markers"),
+                    { id = "div_reset", type = "line" },
+                    { id = "btn_reset_all", type = "button", functor = { btn_reset_all } },
                 },
             },
         },

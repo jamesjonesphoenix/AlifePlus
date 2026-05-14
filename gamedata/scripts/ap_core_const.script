@@ -5,6 +5,10 @@ CAUSE_WINDOW_SEC = 60
 CONSEQUENCE_WINDOW_SEC = 60
 GLOBAL_CONSEQUENCE_WINDOW_SEC = 60
 
+--- Offmap balance window (game seconds). Caps cumulative offmap dispatches per source map.
+--- Mirrors framework pattern: pipeline windows are const, only caps are MCM-exposed.
+OFFMAP_WINDOW_SEC = 48 * 3600
+
 --- Reactive event distributor interval (seconds, hardcoded -- per callback type)
 REACTIVE_EVENT_INTERVAL_SEC = 1
 
@@ -23,11 +27,15 @@ PRE_RELEASE_GULAG = {
     MONEY_HARVEST = 3600,
     MONEY_HUNT = 3600,
     SUPPLY_TRADER = 900,
+    SUPPLY_TRADER_OFFMAP = 900,
     JOB_OUTPOST = 7200,
     JOB_EXPLORE = 3600,
+    JOB_EXPLORE_OFFMAP = 3600,
     JOB_RESEARCH = 3600,
+    JOB_RESEARCH_OFFMAP = 3600,
     SOCIAL_CAMPFIRE = 1800,
     SOCIAL_BASE = 3600,
+    SOCIAL_OFFBASE = 3600,
     AREA_CONQUER = 7200,
     AREA_SWARM = 14400,
     MASSACRE_SCAVENGE = 1800,
@@ -201,13 +209,17 @@ CAUSE = {
     SHELTER_INDOOR   = "cause:shelter_indoor",
     SHELTER_OUTDOOR  = "cause:shelter_outdoor",
     SUPPLY_TRADER    = "cause:supply_trader",
+    SUPPLY_TRADER_OFFMAP = "cause:supply_trader_offmap",
     MONEY_HARVEST    = "cause:money_harvest",
     MONEY_HUNT       = "cause:money_hunt",
     JOB_OUTPOST      = "cause:job_outpost",
     JOB_EXPLORE      = "cause:job_explore",
+    JOB_EXPLORE_OFFMAP = "cause:job_explore_offmap",
     JOB_RESEARCH     = "cause:job_research",
+    JOB_RESEARCH_OFFMAP = "cause:job_research_offmap",
     SOCIAL_CAMPFIRE  = "cause:social_campfire",
     SOCIAL_BASE      = "cause:social_base",
+    SOCIAL_OFFBASE   = "cause:social_offbase",
     -- INSTINCTS family (radiant Hull-scored)
     SCATTER         = "cause:scatter",
     FEED            = "cause:feed",
@@ -315,11 +327,15 @@ CONSEQUENCE = {
     MONEY_HARVEST = "consequence:money_harvest",
     MONEY_HUNT = "consequence:money_hunt",
     SUPPLY_TRADER = "consequence:supply_trader",
+    SUPPLY_TRADER_OFFMAP = "consequence:supply_trader_offmap",
     JOB_OUTPOST = "consequence:job_outpost",
     JOB_EXPLORE = "consequence:job_explore",
+    JOB_EXPLORE_OFFMAP = "consequence:job_explore_offmap",
     JOB_RESEARCH = "consequence:job_research",
+    JOB_RESEARCH_OFFMAP = "consequence:job_research_offmap",
     SOCIAL_CAMPFIRE = "consequence:social_campfire",
     SOCIAL_BASE = "consequence:social_base",
+    SOCIAL_OFFBASE = "consequence:social_offbase",
     FEED = "consequence:feed",
     SLUMBER_FIELD = "consequence:slumber_field",
     SLUMBER_LAIR = "consequence:slumber_lair",
@@ -361,11 +377,15 @@ ACTION = {
     MONEY_HARVEST        = "action:money_harvest",
     MONEY_HUNT           = "action:money_hunt",
     SUPPLY_TRADER        = "action:supply_trader",
+    SUPPLY_TRADER_OFFMAP = "action:supply_trader_offmap",
     JOB_OUTPOST          = "action:job_outpost",
     JOB_EXPLORE          = "action:job_explore",
+    JOB_EXPLORE_OFFMAP   = "action:job_explore_offmap",
     JOB_RESEARCH         = "action:job_research",
+    JOB_RESEARCH_OFFMAP  = "action:job_research_offmap",
     SOCIAL_CAMPFIRE      = "action:social_campfire",
     SOCIAL_BASE          = "action:social_base",
+    SOCIAL_OFFBASE       = "action:social_offbase",
     FEED                 = "action:feed",
     SLUMBER_FIELD        = "action:slumber_field",
     SLUMBER_LAIR         = "action:slumber_lair",

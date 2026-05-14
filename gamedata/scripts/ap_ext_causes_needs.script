@@ -111,9 +111,20 @@ local function _try_cause(trace, squad, level_id, entry)
     end
     local filter = _build_filter(entry, squad.player_id)
     local opts = { filter = filter, level_id = level_id, max_distance = RANGE_RADIO }
+    if entry.offmap then
+        if not ap_core_limiter.check_offmap_rate_limit(level_id, cfg.cause_max_offmap) then
+            return { code = RESULT.FAILED_RULES, reason = REASON.BUDGET_EXHAUSTED }
+        end
+        local source = level_id
+        local base = opts.filter
+        opts.filter = function(s) return base(s) and xlevel.get_level_id(s) ~= source end
+        opts.level_id = nil
+        opts.max_distance = nil
+    end
     local smart = ap_core_util.find_smart_observed(trace, squad.position, opts)
     if not smart then return { code = RESULT.FAILED_SCAN, reason = REASON.NO_SMART } end
     ap_core_limiter.increment_cause_counter(SCAN_KEY)
+    if entry.offmap then ap_core_limiter.increment_offmap_counter(level_id) end
     return { code = RESULT.SUCCESS, smart = smart }
 end
 
@@ -227,6 +238,10 @@ function on_game_start()
           filter = function(s) return xsmart.has_stalker_jobs(s, xsmart.JOB_TYPE_TRADER) end,
           exclude_enemy = true,
           personality = { PERSONALITY.GREED, PERSONALITY.RELATION } },
+        { cause = CAUSE.SUPPLY_TRADER_OFFMAP, name = "supply_trader_offmap", need = "supply",
+          filter = function(s) return xsmart.has_stalker_jobs(s, xsmart.JOB_TYPE_TRADER) end,
+          exclude_enemy = true,
+          personality = { PERSONALITY.GREED, PERSONALITY.RELATION }, offmap = true },
         { cause = CAUSE.MONEY_HARVEST,    name = "money_harvest",    need = "money",
           filter = function(s) return xsmart.has_anomaly(s) and xsmart.has_animated_stalker_jobs(s) end,
           alignment = _alignment_selfserving, exclude_enemy = true,
@@ -243,16 +258,27 @@ function on_game_start()
           filter = function(s) return _is_unclaimed(s) and xsmart.has_animated_stalker_jobs(s) end,
           alignment = _alignment_selfserving,
           personality = { PERSONALITY.PERCEPTION, PERSONALITY.TERRITORY } },
+        { cause = CAUSE.JOB_EXPLORE_OFFMAP, name = "job_explore_offmap", need = "job",
+          filter = function(s) return _is_unclaimed(s) and xsmart.has_animated_stalker_jobs(s) end,
+          alignment = _alignment_selfserving,
+          personality = { PERSONALITY.PERCEPTION, PERSONALITY.TERRITORY }, offmap = true },
         { cause = CAUSE.JOB_RESEARCH,     name = "job_research",     need = "job",
           filter = function(s) return xsmart.has_anomaly(s) and xsmart.has_animated_stalker_jobs(s) end,
           alignment = _alignment_ecolog, exclude_enemy = true,
           personality = { PERSONALITY.PERCEPTION, PERSONALITY.DISCIPLINE } },
+        { cause = CAUSE.JOB_RESEARCH_OFFMAP, name = "job_research_offmap", need = "job",
+          filter = function(s) return xsmart.has_anomaly(s) and xsmart.has_animated_stalker_jobs(s) end,
+          alignment = _alignment_ecolog, exclude_enemy = true,
+          personality = { PERSONALITY.PERCEPTION, PERSONALITY.DISCIPLINE }, offmap = true },
         { cause = CAUSE.SOCIAL_CAMPFIRE,  name = "social_campfire",  need = "social",
           filter = xsmart.has_campfire,       exclude_enemy = true,
           personality = { PERSONALITY.RELATION } },
         { cause = CAUSE.SOCIAL_BASE,      name = "social_base",      need = "social",
           filter = xsmart.is_base,            alignment = _alignment_principled, exclude_enemy = true,
           personality = { PERSONALITY.RELATION, PERSONALITY.TERRITORY } },
+        { cause = CAUSE.SOCIAL_OFFBASE,   name = "social_offbase",   need = "social",
+          filter = xsmart.is_base,            exclude_enemy = true,
+          personality = { PERSONALITY.RELATION, PERSONALITY.TERRITORY }, offmap = true },
     }
 
     local radiant = ap_core_const.RADIANT_CALLBACKS

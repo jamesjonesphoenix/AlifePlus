@@ -1,8 +1,15 @@
 --- ap_core_limiter: Rate limiting for causes and consequences (generic counter primitives)
+---
+--- Two limiter families coexist:
+--- - Pipeline family (real-sec, ephemeral): throttles event flow so the engine doesn't churn.
+---   Per-key cause counter, per-consequence token bucket, global radiant TTL counter.
+--- - Balance family (game-sec, persisted): caps in-world impact so the world doesn't drift.
+---   Offmap dispatch counter; round-trips through save/load via :export() / :import().
 
 local RegisterScriptCallback = RegisterScriptCallback
 
 local cfg = ap_core_mcm.cfg
+local CALLBACK = ap_core_const.CALLBACK
 
 local function _get_cause_rate_key(key)
     return "lock:" .. key
@@ -103,6 +110,49 @@ function create_cooldown(expire_ms)
     }
 end
 
+--- Offmap balance counter (game-sec, persisted). Caps cumulative offmap dispatches per source
+--- level within OFFMAP_WINDOW_SEC. Single counter shared across all offmap causes:
+--- faction-agnostic, destination-agnostic. Key is source level_id only.
+local _offmap_counter = nil
+
+local function _get_offmap_rate_key(level_id)
+    return "offmap:" .. tostring(level_id)
+end
+
+--- Check offmap balance limit for a source level (true = allowed, false = blocked).
+--- @param level_id number Source map id
+--- @param max number Cap (cfg.cause_max_offmap)
+--- @return boolean allowed, number count, number max
+function check_offmap_rate_limit(level_id, max)
+    if not _offmap_counter then return true, 0, max end
+    local count = _offmap_counter:count(_get_offmap_rate_key(level_id))
+    if count >= max then
+        return false, count, max
+    end
+    return true, count, max
+end
+
+--- Increment offmap counter after a successful offmap dispatch.
+--- @param level_id number Source map id
+function increment_offmap_counter(level_id)
+    if not _offmap_counter then return end
+    _offmap_counter:add(_get_offmap_rate_key(level_id))
+end
+
+local function _on_save_state(m_data)
+    m_data.ap_core_limiter = {
+        offmap_counter = _offmap_counter and _offmap_counter:export() or nil,
+    }
+end
+
+local function _on_load_state(m_data)
+    local saved = m_data.ap_core_limiter
+    if type(saved) ~= "table" then return end
+    if _offmap_counter and type(saved.offmap_counter) == "table" then
+        _offmap_counter:import(saved.offmap_counter)
+    end
+end
+
 local function _on_option_change()
     if not _consequence_limiter then return end
     _consequence_limiter:set_rate(cfg.consequence_max_events / ap_core_const.CONSEQUENCE_WINDOW_SEC)
@@ -112,5 +162,11 @@ function on_game_start()
     _cause_counter = nil
     _consequence_limiter = nil
     _global_consequence_counter = nil
-    RegisterScriptCallback(ap_core_const.CALLBACK.ON_OPTION_CHANGE, _on_option_change)
+    _offmap_counter = xttltable.create_ttl_counter({
+        ttl = ap_core_const.OFFMAP_WINDOW_SEC,
+        clock = xtime.game_sec,
+    })
+    RegisterScriptCallback(CALLBACK.ON_OPTION_CHANGE, _on_option_change)
+    RegisterScriptCallback(CALLBACK.SAVE_STATE, _on_save_state)
+    RegisterScriptCallback(CALLBACK.LOAD_STATE, _on_load_state)
 end

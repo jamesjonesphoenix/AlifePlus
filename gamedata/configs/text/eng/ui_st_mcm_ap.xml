@@ -9,6 +9,9 @@
     <string id="ui_mcm_menu_framework">
         <text>Framework</text>
     </string>
+    <string id="ui_mcm_menu_world">
+        <text>World</text>
+    </string>
     <string id="ui_mcm_menu_news">
         <text>News</text>
     </string>
@@ -60,6 +63,9 @@
     </string>
     <string id="ui_mcm_menu_needs">
         <text>Needs</text>
+    </string>
+    <string id="ui_mcm_menu_offmap">
+        <text>Off-map</text>
     </string>
     <string id="ui_mcm_menu_instincts">
         <text>Instincts</text>
@@ -183,14 +189,23 @@
     <string id="ui_mcm_menu_supply_trader">
         <text>Supply\nTrader</text>
     </string>
+    <string id="ui_mcm_menu_supply_trader_offmap">
+        <text>Supply Trader\nOff-map</text>
+    </string>
     <string id="ui_mcm_menu_job_outpost">
         <text>Job\nOutpost</text>
     </string>
     <string id="ui_mcm_menu_job_explore">
         <text>Job\nExplore</text>
     </string>
+    <string id="ui_mcm_menu_job_explore_offmap">
+        <text>Job Explore\nOff-map</text>
+    </string>
     <string id="ui_mcm_menu_job_research">
         <text>Job\nResearch</text>
+    </string>
+    <string id="ui_mcm_menu_job_research_offmap">
+        <text>Job Research\nOff-map</text>
     </string>
     <string id="ui_mcm_menu_social_campfire">
         <text>Social\nCampfire</text>
@@ -198,16 +213,13 @@
     <string id="ui_mcm_menu_social_base">
         <text>Social\nBase</text>
     </string>
+    <string id="ui_mcm_menu_social_offbase">
+        <text>Social\nOff-base</text>
+    </string>
 
     <!-- ==================== FRAMEWORK TAB ==================== -->
     <string id="ui_mcm_ap_framework_title">
         <text>Framework</text>
-    </string>
-    <string id="ui_mcm_ap_framework_btn_reset_all">
-        <text>Reset ALL to Defaults</text>
-    </string>
-    <string id="ui_mcm_ap_framework_btn_reset_all_desc">
-        <text>Revert every AlifePlus setting to its factory default. Takes effect immediately -- close and re-open MCM to see the updated sliders. Useful after experimenting or when upgrading to a new version with rebalanced defaults.</text>
     </string>
     <string id="ui_mcm_ap_framework_desc">
         <text>Event pipeline controls. Events pass through specialized rate limiters controlled by A-Life Ratio, A-Life Interval, Cause Budget, Consequence Budget.</text>
@@ -515,13 +527,17 @@
     <string id="ui_mcm_ap_causes_needs_shelter_indoor_tag"><text>Cause: Shelter Indoor Available\nDesc: Squad takes an indoor surge shelter.\nRules: radio range; dormant period; any stalker; personality(territory, discipline); surge shelter; non-hostile; Hull</text></string>
     <string id="ui_mcm_ap_causes_needs_shelter_outdoor_tag"><text>Cause: Shelter Outdoor Available\nDesc: Squad takes a campfire as outdoor shelter.\nRules: radio range; dormant period; any stalker; personality(perception); campfire; non-hostile; Hull</text></string>
     <string id="ui_mcm_ap_causes_needs_supply_trader_tag"><text>Cause: Supply Trader Available\nDesc: Squad heads to a trader to restock.\nRules: radio range; active period; any stalker; personality(greed, relation); trader; non-hostile; Hull</text></string>
+    <string id="ui_mcm_ap_causes_needs_supply_trader_offmap_tag"><text>Cause: Supply Trader Off-map Available\nDesc: Squad heads to a trader on another map. Fires only when no on-map trader satisfies supply_trader.\nRules: all-level scan; excludes source level; offmap balance cap applies; any stalker; personality(greed, relation); trader; non-hostile; Hull</text></string>
     <string id="ui_mcm_ap_causes_needs_money_harvest_tag"><text>Cause: Money Harvest Available\nDesc: Squad heads to an anomaly to pull artefacts.\nRules: radio range; active period; self-serving stalkers; personality(greed, perception); anomaly; non-hostile; Hull</text></string>
     <string id="ui_mcm_ap_causes_needs_money_hunt_tag"><text>Cause: Money Hunt Available\nDesc: Squad heads to a lair to hunt mutants.\nRules: radio range; active period; naturalist stalkers; personality(greed, perception); lair; non-hostile; Hull</text></string>
     <string id="ui_mcm_ap_causes_needs_job_outpost_tag"><text>Cause: Job Outpost Available\nDesc: Squad mans a remote post on watch.\nRules: radio range; active period; principled stalkers; personality(territory, discipline); not at base; not at lair; non-hostile; Hull</text></string>
     <string id="ui_mcm_ap_causes_needs_job_explore_tag"><text>Cause: Job Explore Available\nDesc: Squad scouts an unclaimed smart.\nRules: radio range; active period; self-serving stalkers; personality(perception, territory); unclaimed; Hull</text></string>
+    <string id="ui_mcm_ap_causes_needs_job_explore_offmap_tag"><text>Cause: Job Explore Off-map Available\nDesc: Squad scouts an unclaimed smart on another map. Fires only when no on-map unclaimed smart satisfies job_explore.\nRules: all-level scan; excludes source level; offmap balance cap applies; self-serving stalkers; personality(perception, territory); unclaimed; Hull</text></string>
     <string id="ui_mcm_ap_causes_needs_job_research_tag"><text>Cause: Job Research Available\nDesc: Ecologist squad samples an anomaly field.\nRules: radio range; active period; ecologists; personality(perception, discipline); anomaly; non-hostile; Hull</text></string>
+    <string id="ui_mcm_ap_causes_needs_job_research_offmap_tag"><text>Cause: Job Research Off-map Available\nDesc: Ecologist squad heads to an anomaly field on another map. Fires only when no on-map anomaly satisfies job_research.\nRules: all-level scan; excludes source level; offmap balance cap applies; ecologists; personality(perception, discipline); anomaly; non-hostile; Hull</text></string>
     <string id="ui_mcm_ap_causes_needs_social_campfire_tag"><text>Cause: Social Campfire Available\nDesc: Squad gathers at a campfire to drink.\nRules: radio range; any stalker; personality(relation); campfire; non-hostile; Hull</text></string>
     <string id="ui_mcm_ap_causes_needs_social_base_tag"><text>Cause: Social Base Available\nDesc: Squad returns to base for downtime.\nRules: radio range; principled stalkers; personality(relation, territory); base; non-hostile; Hull</text></string>
+    <string id="ui_mcm_ap_causes_needs_social_offbase_tag"><text>Cause: Social Off-base Available\nDesc: Squad visits a base on another map for downtime. Fires for any faction when no on-map base satisfies social_base.\nRules: all-level scan; excludes source level; offmap balance cap applies; any stalker; personality(relation, territory); base; non-hostile; Hull</text></string>
     <string id="ui_mcm_ap_causes_needs_cause_hunger_threshold">
         <text>Hunger threshold</text>
     </string>
@@ -619,6 +635,18 @@
 
     <string id="ui_mcm_ap_causes_needs_cause_social_base_enabled"><text>Enabled</text></string>
     <string id="ui_mcm_ap_causes_needs_cause_social_base_enabled_desc"><text>Allow social_base cause to publish.</text></string>
+
+    <string id="ui_mcm_ap_causes_needs_cause_supply_trader_offmap_enabled"><text>Enabled</text></string>
+    <string id="ui_mcm_ap_causes_needs_cause_supply_trader_offmap_enabled_desc"><text>Allow supply_trader_offmap cause to publish (fallback to a trader on another map).</text></string>
+
+    <string id="ui_mcm_ap_causes_needs_cause_job_explore_offmap_enabled"><text>Enabled</text></string>
+    <string id="ui_mcm_ap_causes_needs_cause_job_explore_offmap_enabled_desc"><text>Allow job_explore_offmap cause to publish (fallback to an unclaimed smart on another map).</text></string>
+
+    <string id="ui_mcm_ap_causes_needs_cause_job_research_offmap_enabled"><text>Enabled</text></string>
+    <string id="ui_mcm_ap_causes_needs_cause_job_research_offmap_enabled_desc"><text>Allow job_research_offmap cause to publish (fallback to an anomaly on another map).</text></string>
+
+    <string id="ui_mcm_ap_causes_needs_cause_social_offbase_enabled"><text>Enabled</text></string>
+    <string id="ui_mcm_ap_causes_needs_cause_social_offbase_enabled_desc"><text>Allow social_offbase cause to publish (fallback to a base on another map; fires for any faction).</text></string>
 
     <!-- ==================== CONSEQUENCES / ALPHA PROMOTE ==================== -->
     <string id="ui_mcm_ap_consequences_alpha_promote_title">
@@ -1272,6 +1300,32 @@
         <text>On arrival, NPC sells one artefact from inventory and receives ammo, grenades, or medical supplies. Both items are real.</text>
     </string>
 
+    <!-- ==================== CONSEQUENCES / SUPPLY TRADER OFF-MAP ==================== -->
+    <string id="ui_mcm_ap_consequences_supply_trader_offmap_title">
+        <text>Supply Trader Off-map</text>
+    </string>
+    <string id="ui_mcm_ap_consequences_supply_trader_offmap_tag">
+        <text>Desc: Squad heads to a trader on another map\nCause: Supply Trader Off-map Available</text>
+    </string>
+    <string id="ui_mcm_ap_consequences_supply_trader_offmap_consequence_supply_trader_offmap_enabled">
+        <text>Enabled</text>
+    </string>
+    <string id="ui_mcm_ap_consequences_supply_trader_offmap_consequence_supply_trader_offmap_enabled_desc">
+        <text>Stalkers cross to a trader on another map when no on-map trader is available.</text>
+    </string>
+    <string id="ui_mcm_ap_consequences_supply_trader_offmap_consequence_supply_trader_offmap_rush">
+        <text>Rush mode</text>
+    </string>
+    <string id="ui_mcm_ap_consequences_supply_trader_offmap_consequence_supply_trader_offmap_rush_desc">
+        <text>Scripted squads move at maximum speed. Disable for slower, more realistic movement.</text>
+    </string>
+    <string id="ui_mcm_ap_consequences_supply_trader_offmap_consequence_supply_trader_offmap_arrive_action_enabled">
+        <text>Arrive action</text>
+    </string>
+    <string id="ui_mcm_ap_consequences_supply_trader_offmap_consequence_supply_trader_offmap_arrive_action_enabled_desc">
+        <text>On arrival, NPC sells one artefact from inventory and receives ammo, grenades, or medical supplies. Both items are real.</text>
+    </string>
+
     <!-- ==================== CONSEQUENCES / JOB OUTPOST ==================== -->
     <string id="ui_mcm_ap_consequences_job_outpost_title">
         <text>Job Outpost</text>
@@ -1318,6 +1372,26 @@
         <text>Scripted squads move at maximum speed. Disable for slower, more realistic movement.</text>
     </string>
 
+    <!-- ==================== CONSEQUENCES / JOB EXPLORE OFF-MAP ==================== -->
+    <string id="ui_mcm_ap_consequences_job_explore_offmap_title">
+        <text>Job Explore Off-map</text>
+    </string>
+    <string id="ui_mcm_ap_consequences_job_explore_offmap_tag">
+        <text>Desc: Squad heads to unclaimed territory on another map\nCause: Job Explore Off-map Available</text>
+    </string>
+    <string id="ui_mcm_ap_consequences_job_explore_offmap_consequence_job_explore_offmap_enabled">
+        <text>Enabled</text>
+    </string>
+    <string id="ui_mcm_ap_consequences_job_explore_offmap_consequence_job_explore_offmap_enabled_desc">
+        <text>Stalkers cross to unclaimed territory on another map when no on-map unclaimed smart is available.</text>
+    </string>
+    <string id="ui_mcm_ap_consequences_job_explore_offmap_consequence_job_explore_offmap_rush">
+        <text>Rush mode</text>
+    </string>
+    <string id="ui_mcm_ap_consequences_job_explore_offmap_consequence_job_explore_offmap_rush_desc">
+        <text>Scripted squads move at maximum speed. Disable for slower, more realistic movement.</text>
+    </string>
+
     <!-- ==================== CONSEQUENCES / JOB RESEARCH ==================== -->
     <string id="ui_mcm_ap_consequences_job_research_title">
         <text>Job Research</text>
@@ -1335,6 +1409,26 @@
         <text>Rush mode</text>
     </string>
     <string id="ui_mcm_ap_consequences_job_research_consequence_job_research_rush_desc">
+        <text>Scripted squads move at maximum speed. Disable for slower, more realistic movement.</text>
+    </string>
+
+    <!-- ==================== CONSEQUENCES / JOB RESEARCH OFF-MAP ==================== -->
+    <string id="ui_mcm_ap_consequences_job_research_offmap_title">
+        <text>Job Research Off-map</text>
+    </string>
+    <string id="ui_mcm_ap_consequences_job_research_offmap_tag">
+        <text>Desc: Ecologist squad heads to an anomaly field on another map\nCause: Job Research Off-map Available</text>
+    </string>
+    <string id="ui_mcm_ap_consequences_job_research_offmap_consequence_job_research_offmap_enabled">
+        <text>Enabled</text>
+    </string>
+    <string id="ui_mcm_ap_consequences_job_research_offmap_consequence_job_research_offmap_enabled_desc">
+        <text>Ecologists cross to an anomaly field on another map when no on-map anomaly is available.</text>
+    </string>
+    <string id="ui_mcm_ap_consequences_job_research_offmap_consequence_job_research_offmap_rush">
+        <text>Rush mode</text>
+    </string>
+    <string id="ui_mcm_ap_consequences_job_research_offmap_consequence_job_research_offmap_rush_desc">
         <text>Scripted squads move at maximum speed. Disable for slower, more realistic movement.</text>
     </string>
 
@@ -1389,6 +1483,33 @@
     <string id="ui_mcm_ap_consequences_social_base_consequence_social_base_arrive_action_enabled_desc">
         <text>On arrival, NPC shares a cigarette or drink from inventory at base. Item is removed.</text>
     </string>
+
+    <!-- ==================== CONSEQUENCES / SOCIAL OFF-BASE ==================== -->
+    <string id="ui_mcm_ap_consequences_social_offbase_title">
+        <text>Social Off-base</text>
+    </string>
+    <string id="ui_mcm_ap_consequences_social_offbase_tag">
+        <text>Desc: Squad visits a base on another map for downtime; any faction\nCause: Social Off-base Available</text>
+    </string>
+    <string id="ui_mcm_ap_consequences_social_offbase_consequence_social_offbase_enabled">
+        <text>Enabled</text>
+    </string>
+    <string id="ui_mcm_ap_consequences_social_offbase_consequence_social_offbase_enabled_desc">
+        <text>Stalkers cross to a base on another map for downtime when no on-map base is available. Fires for any faction.</text>
+    </string>
+    <string id="ui_mcm_ap_consequences_social_offbase_consequence_social_offbase_rush">
+        <text>Rush mode</text>
+    </string>
+    <string id="ui_mcm_ap_consequences_social_offbase_consequence_social_offbase_rush_desc">
+        <text>Scripted squads move at maximum speed. Disable for slower, more realistic movement.</text>
+    </string>
+    <string id="ui_mcm_ap_consequences_social_offbase_consequence_social_offbase_arrive_action_enabled">
+        <text>Arrive action</text>
+    </string>
+    <string id="ui_mcm_ap_consequences_social_offbase_consequence_social_offbase_arrive_action_enabled_desc">
+        <text>On arrival, NPC shares a cigarette or drink from inventory at base. Item is removed.</text>
+    </string>
+
     <!-- ==================== MUTATORS / ALPHA ==================== -->
     <string id="ui_mcm_ap_mutators_alpha_title">
         <text>Alpha Mutants</text>
@@ -1524,9 +1645,29 @@
         <text>[0-168]\nGame hours before infestation expires. 0 = permanent (no decay). Default: 0.</text>
     </string>
 
+    <!-- ==================== WORLD TAB ==================== -->
+    <string id="ui_mcm_ap_world_offmap_title">
+        <text>Off-map</text>
+    </string>
+    <string id="ui_mcm_ap_world_offmap_desc">
+        <text>Cross-map balance limit. Caps how many off-map dispatches the source level can spawn within a rolling 48 game-hour window. Persists across save/load.</text>
+    </string>
+    <string id="ui_mcm_ap_world_offmap_cause_max_offmap">
+        <text>Off-map cap</text>
+    </string>
+    <string id="ui_mcm_ap_world_offmap_cause_max_offmap_desc">
+        <text>[1-10]\nMaximum off-map dispatches per source level within a 48 game-hour window. Faction-agnostic and destination-agnostic; one shared counter across all off-map causes. Default 2.</text>
+    </string>
+
     <!-- ==================== DEVELOPMENT TAB ==================== -->
     <string id="ui_mcm_ap_development_title">
         <text>Development and Tools</text>
+    </string>
+    <string id="ui_mcm_ap_development_btn_reset_all">
+        <text>Reset ALL to Defaults</text>
+    </string>
+    <string id="ui_mcm_ap_development_btn_reset_all_desc">
+        <text>Revert every AlifePlus setting to its factory default. Takes effect immediately; close and re-open MCM to see the updated sliders. Useful after experimenting or when upgrading to a new version with rebalanced defaults.</text>
     </string>
     <string id="ui_mcm_ap_development_desc">
         <text>Debug and development. DEBUG enables tracing, performance timing, and verbose logs. Debug markers show squad destinations on the PDA map.</text>

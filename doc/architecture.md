@@ -48,7 +48,7 @@ Two layers. Core is the framework. Ext is the domain. Core never imports ext; al
 | ap_core_mcm | MCM defaults, cfg snapshot, UI builder, on_option_change |
 | ap_core_debug | Logger, observe() tracing, bracket helper, result builders. Zero overhead below DEBUG |
 | ap_core_util | xbus pub/sub wrappers, find_smart / find_squads with protection filters |
-| ap_core_limiter | Rate-limit primitives: per-key cause counter, per-consequence token bucket, global radiant TTL counter |
+| ap_core_limiter | Rate-limit primitives. Pipeline family (real-sec, ephemeral): per-key cause counter, per-consequence token bucket, global radiant TTL counter. Balance family (game-sec, persisted): offmap dispatch counter |
 | ap_core_producer | Event Pipeline: radiant + reactive gate chains, cause generator cascade, xbus publish |
 | ap_core_consumer | Dispatch Pipeline: xbus subscribe, consequence iteration, result codes, rate gating |
 | ap_core_broker | Squad lifecycle: protection, ownership registry, scripting, 20s scan, arrival, release, transit balance |
@@ -198,13 +198,14 @@ DISABLED is the rules-layer skip for a consequence whose MCM toggle is off. Sema
 
 ### Rate limiting
 
-ap_core_limiter holds three primitives. The other layers live in producer or in cause generators.
+ap_core_limiter holds two limiter families. Pipeline limiter throttles event flow so the engine doesn't churn (real-sec clock, ephemeral). Balance limiter caps in-world impact so the world doesn't drift (game-sec clock, persisted across save/load). The other layers live in producer or in cause generators.
 
 | Layer | Mechanism | Scope | Default | Lives in | Config |
 |-------|-----------|-------|---------|----------|--------|
 | Per-key cause counter | TTL counter, sliding window | per CAUSE_CATEGORY | 20 / 60s | ap_core_limiter (check_cause_rate_limit, increment_cause_counter) | MCM cause_max_<category> |
 | Per-consequence token bucket | peek / acquire | per consequence name | 2 / 60s | ap_core_limiter (check_consequence_rate_limit, increment_consequence_counter) | MCM consequence_max_events |
 | Global radiant TTL counter | TTL counter | radiant only | 5 / 60s | ap_core_limiter (check_global_consequence_rate_limit) | MCM global_consequence_max_events |
+| Offmap balance counter | TTL counter, sliding window (game-sec) | per source level_id | 2 / 48 game-hours | ap_core_limiter (check_offmap_rate_limit, increment_offmap_counter) | MCM cause_max_offmap |
 | PACER_1 | os.clock interval | global radiant | 100ms | ap_core_producer | constant |
 | PACER_2 | os.clock interval | global radiant | 5s | ap_core_producer | MCM distributor_interval_sec |
 | Reactive PACER | token bucket | per callback type | 1 / sec | ap_core_producer | constant |
@@ -213,6 +214,10 @@ ap_core_limiter holds three primitives. The other layers live in producer or in 
 Per-squad threshold (Hull / MVT). Owned by each cause generator. Reads last_<X>_at from a DTO (_ap_stalker_needs, _ap_mutant_instincts, _ap_squad_opportunities); arrival action resets the timestamp. Hull family (needs, instincts) is per-drive: multiple answers under one drive share the timestamp; any answer firing resets the drive's field. Score = weight * (elapsed/threshold)^2. MVT family (stash, area) is per-cause: each cause has its own threshold and timestamp. Gate is binary: elapsed > threshold.
 
 Per-category cause budget is consumed inside the cause generator (self-gating). The producer does not gate cause budgets. A rate-blocked generator is skipped by the EVAL cascade so the slot frees for the next entry. ap_core_limiter.create_cooldown is a small helper for arbitrary timestamp-based cooldowns.
+
+Offmap balance counter. Backs the offmap cause family (SOCIAL_OFFBASE, SUPPLY_TRADER_OFFMAP, JOB_EXPLORE_OFFMAP, JOB_RESEARCH_OFFMAP). Single counter keyed by source level_id; faction-agnostic and destination-agnostic; shared across all offmap causes. Window OFFMAP_WINDOW_SEC (48 game-hours, hardcoded) mirrors the framework pattern where pipeline windows are const and only caps are MCM-exposed (cause_max_offmap, default 2). Clock is xtime.game_sec; bucket state round-trips through save/load via xttltable export / import in ap_core_limiter SAVE_STATE / LOAD_STATE.
+
+The world tab in MCM houses the balance family. Pipeline family caps live under framework. Reset button moved to the development tab.
 
 ### Tracing
 
