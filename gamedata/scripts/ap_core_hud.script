@@ -9,11 +9,6 @@ local REASON = ap_core_const.REASON
 local cfg = ap_core_mcm.cfg
 local _debug_enabled = ap_core_debug.enabled
 
-
---- ========================
---- Pipeline Statistics
---- ========================
-
 local DUMP_INTERVAL_SEC = 10
 
 --- Radiant pipeline counters (stable reference, zeroed on reset)
@@ -425,11 +420,6 @@ end
 local function _on_gui_hide()
     if _hud then _hud:Show(_is_hud_visible()) end
 end
-
-
---- ========================
---- Initialization
---- ========================
 
 local function _on_first_update()
     _was_counters = collecting()

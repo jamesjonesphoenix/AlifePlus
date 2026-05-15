@@ -1,12 +1,9 @@
---- ap_core_limiter: Rate limiting for causes and consequences (generic counter primitives)
----
---- Two limiter families coexist:
---- - Pipeline family (real-sec, ephemeral): throttles event flow so the engine doesn't churn.
----   Per-key cause counter, per-consequence token bucket, global radiant TTL counter.
---- - Balance family (game-sec, persisted): caps in-world impact so the world doesn't drift.
----   Offmap dispatch counter; round-trips through save/load via :export() / :import().
+--- ap_core_limiter: Rate limiting for causes and consequences.
+--- Pipeline family (real-sec, ephemeral): per-key cause counter, per-consequence token bucket, global radiant TTL counter.
+--- Balance family (game-sec, persisted): offmap dispatch counter; save/load via :export() / :import().
 
 local RegisterScriptCallback = RegisterScriptCallback
+local xtime, xttltable = xtime, xttltable
 
 local cfg = ap_core_mcm.cfg
 local CALLBACK = ap_core_const.CALLBACK

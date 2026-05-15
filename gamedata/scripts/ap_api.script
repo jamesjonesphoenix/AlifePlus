@@ -1,5 +1,8 @@
 --- ap_api: Public AlifePlus API surface for external integrators.
 local pairs, type, tostring = pairs, type, tostring
+local ap_core_const, ap_core_debug = ap_core_const, ap_core_debug
+local ap_core_broker, ap_core_record = ap_core_broker, ap_core_record
+local ap_core_consumer, ap_core_producer = ap_core_consumer, ap_core_producer
 
 -- Foreign causes must declare one of AP's standard categories so they share AP's
 -- per-category rate-limit caps and MCM organization. Built lazily (CAUSE_CATEGORY
@@ -13,11 +16,6 @@ local function _is_valid_category(category)
     end
     return _CATEGORIES[category] == true
 end
-
-
--- ============================================================================
--- Ownership
--- ============================================================================
 
 --- Register a squad ownership filter. Owned squads are excluded from AP routing.
 --- Replaces existing filter on name match.
@@ -37,11 +35,6 @@ function unregister_owner(name) return ap_core_broker.unregister_owner(name) end
 --- @param squad userdata Squad server object
 --- @return string|nil Owner name, or nil if unowned
 function get_owner(squad) return ap_core_broker.get_owner(squad) end
-
-
--- ============================================================================
--- Scripted-squad state
--- ============================================================================
 
 local function _copy_entry(entry)
     if not entry then return nil end
@@ -125,11 +118,6 @@ function script_squad(squad, smart, opts) return ap_core_broker.script_squad(squ
 --- @return table { code = RESULT.X, id, dst, dst_id }
 function script_actor_target(squad) return ap_core_broker.script_actor_target(squad) end
 
-
--- ============================================================================
--- Display text
--- ============================================================================
-
 --- Resolve an action enum value to its localized phrase.
 --- e.g. ACTION.MASSACRE_INVESTIGATE ("action:massacre_investigate") -> "Investigating a Massacre Site".
 --- The action enum value is itself the localization id; get_text just translates.
@@ -142,11 +130,6 @@ function get_text(action)
     if not text or text == action or text == "" then return nil end
     return text
 end
-
-
--- ============================================================================
--- Cause / consequence registration
--- ============================================================================
 
 --- Get the cause string a consequence subscribes to.
 --- @param consequence string Consequence registration name
@@ -230,11 +213,6 @@ end
 --- @param name string Consequence registration name
 --- @return boolean true if removed, false if not registered
 function unregister_consequence(name) return ap_core_consumer.unregister(name) end
-
-
--- ============================================================================
--- Init
--- ============================================================================
 
 function on_game_start()
     ap_core_debug.info("[API] Initialized")
