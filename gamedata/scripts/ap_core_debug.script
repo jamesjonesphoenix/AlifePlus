@@ -3,6 +3,8 @@
 --- Each function checks enabled() inline. Overhead per call ~150ns, negligible vs luabind/string costs.
 local pairs, type, tostring, table_sort, table_concat = pairs, type, tostring, table.sort, table.concat
 local RegisterScriptCallback = RegisterScriptCallback
+local xtrace, xlog, xprofiler = xtrace, xlog, xprofiler
+local ap_core_mcm = ap_core_mcm
 local CALLBACK = ap_core_const.CALLBACK
 local TRACE = ap_core_const.TRACE
 

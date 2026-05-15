@@ -4,6 +4,8 @@
 local pairs, type = pairs, type
 local tostring, math_floor, string_format = tostring, math.floor, string.format
 local RegisterScriptCallback = RegisterScriptCallback
+local xtime, xsquad, xttltable, xprofiler, xcreature = xtime, xsquad, xttltable, xprofiler, xcreature
+local ap_core_debug = ap_core_debug
 
 local CALLBACK = ap_core_const.CALLBACK
 

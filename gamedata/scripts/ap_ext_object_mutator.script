@@ -1,6 +1,9 @@
 --- ap_ext_object_mutator: Runtime combat modifiers for alpha mutants and high-rank stalkers
 
 local os_clock, RegisterScriptCallback, pairs, next, math_random = os.clock, RegisterScriptCallback, pairs, next, math.random
+local xtable, xcreature = xtable, xcreature
+local ap_core_debug, ap_ext_tracker = ap_core_debug, ap_ext_tracker
+
 local CALLBACK = ap_core_const.CALLBACK
 local TRACE = ap_core_const.TRACE
 local ALPHA_LOOT = ap_ext_const.ALPHA_LOOT

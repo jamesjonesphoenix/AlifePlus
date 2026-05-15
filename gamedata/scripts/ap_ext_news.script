@@ -10,6 +10,8 @@ local string_format, string_gsub, string_find = string.format, string.gsub, stri
 local table_concat = table.concat
 local game_translate_string = game.translate_string
 local xobject_se = xobject.se
+local xtime, xlevel, xpda, xttltable = xtime, xlevel, xpda, xttltable
+local ap_core_debug, ap_core_record = ap_core_debug, ap_core_record
 
 local TRACE, CONSEQUENCE, REASON = ap_core_const.TRACE, ap_core_const.CONSEQUENCE, ap_core_const.REASON
 local alignment_human = ap_ext_const.alignment_human

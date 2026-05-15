@@ -1,6 +1,7 @@
 --- ap_core_consumer: Routes cause events to consequence handlers via shuffle
 local pairs, RegisterScriptCallback = pairs, RegisterScriptCallback
 local math_random, table_remove = math.random, table.remove
+local ap_core_debug, ap_core_broker, ap_core_limiter, ap_core_util = ap_core_debug, ap_core_broker, ap_core_limiter, ap_core_util
 
 local RESULT = ap_core_const.RESULT
 local CALLBACK = ap_core_const.CALLBACK

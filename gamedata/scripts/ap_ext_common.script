@@ -1,6 +1,8 @@
 --- ap_ext_common: Shared ext-domain dispatch patterns. Today: chase pattern (recursive on_arrive).
 
 local ipairs = ipairs
+local xobject, xsmart, xlevel = xobject, xsmart, xlevel
+local ap_core_debug, ap_core_broker, ap_core_util = ap_core_debug, ap_core_broker, ap_core_util
 
 local RESULT = ap_core_const.RESULT
 local PHASE = ap_core_const.CONSEQUENCE_PHASE

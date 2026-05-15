@@ -4,6 +4,8 @@
 --- MARKER_LINGER_SEC after the record evicts / entity dies / squad unscripts.
 local pairs, clock, RegisterScriptCallback = pairs, os.clock, RegisterScriptCallback
 local table_concat = table.concat
+local xobject, xlevel, xpda = xobject, xlevel, xpda
+local ap_core_debug, ap_core_record = ap_core_debug, ap_core_record
 
 local CALLBACK = ap_core_const.CALLBACK
 local cfg = ap_core_mcm.cfg

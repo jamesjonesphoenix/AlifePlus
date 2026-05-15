@@ -1,5 +1,8 @@
 --- ap_core_util: Event pub/sub, squad/smart finders
 local pairs, type, next, tostring, table_concat = pairs, type, next, tostring, table.concat
+local xbus, xsquad, xsmart, xconst = xbus, xsquad, xsmart, xconst
+local ap_core_debug, ap_core_broker = ap_core_debug, ap_core_broker
+
 local PHASE = ap_core_const.CONSEQUENCE_PHASE
 local TRACE = ap_core_const.TRACE
 

@@ -2,6 +2,10 @@
 --- All RULES + SCAN live in ap_ext_causes_area; consequences are action-only per radiant invariant 5.
 --- conquer/swarm: additive shared spawn (conquer_smart). infest: exclusive spawn (infest_smart).
 
+local xobject, xtime = xobject, xtime
+local ap_core_debug, ap_core_broker, ap_core_record, ap_core_consumer = ap_core_debug, ap_core_broker, ap_core_record, ap_core_consumer
+local ap_ext_tracker, ap_ext_smart_mutator = ap_ext_tracker, ap_ext_smart_mutator
+
 local RESULT = ap_core_const.RESULT
 local REASON = ap_core_const.REASON
 local CAUSE = ap_core_const.CAUSE

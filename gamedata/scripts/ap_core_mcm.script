@@ -1,5 +1,7 @@
 --- ap_core_mcm: MCM defaults, config reader, and menu builder
 local type, RegisterScriptCallback = type, RegisterScriptCallback
+local xmcm = xmcm
+local ap_core_const = ap_core_const
 
 defaults = {
     -- Event Pipeline (gate order: alife_ratio -> distributor -> per-cause -> per-consequence)

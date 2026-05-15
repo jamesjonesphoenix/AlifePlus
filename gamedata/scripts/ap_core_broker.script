@@ -1,6 +1,8 @@
 --- ap_core_broker: Squad scripting lifecycle, ownership registry, arrival, protection
 local pairs, tostring, type = pairs, tostring, type
 local table_remove, RegisterScriptCallback = table.remove, RegisterScriptCallback
+local xobject, xsquad, xsmart, xtime, xtable = xobject, xsquad, xsmart, xtime, xtable
+local ap_core_debug = ap_core_debug
 
 local CALLBACK = ap_core_const.CALLBACK
 local RESULT = ap_core_const.RESULT

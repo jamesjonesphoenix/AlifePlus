@@ -3,6 +3,10 @@
 --- one specific cause per call.
 
 local table_sort, pairs = table.sort, pairs
+local xobject, xsmart, xtime, xlevel, xcreature = xobject, xsmart, xtime, xlevel, xcreature
+local ap_core_debug, ap_core_limiter, ap_core_producer, ap_core_util = ap_core_debug, ap_core_limiter, ap_core_producer, ap_core_util
+local ap_ext_util, ap_ext_tracker = ap_ext_util, ap_ext_tracker
+
 local CAUSE = ap_core_const.CAUSE
 local CAUSE_TYPE = ap_core_const.CAUSE_TYPE
 local CAUSE_CATEGORY = ap_core_const.CAUSE_CATEGORY

@@ -2,6 +2,10 @@
 --- CAUSES table holds 14 specific causes (answers). Picker emits one specific cause per call.
 
 local table_sort = table.sort
+local xsmart, xtime, xlevel = xsmart, xtime, xlevel
+local ap_core_debug, ap_core_limiter, ap_core_producer, ap_core_util = ap_core_debug, ap_core_limiter, ap_core_producer, ap_core_util
+local ap_ext_util, ap_ext_tracker = ap_ext_util, ap_ext_tracker
+
 local CAUSE = ap_core_const.CAUSE
 local CAUSE_TYPE = ap_core_const.CAUSE_TYPE
 local CAUSE_CATEGORY = ap_core_const.CAUSE_CATEGORY
