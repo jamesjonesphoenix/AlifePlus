@@ -1,6 +1,6 @@
 # AlifePlus Integration
 
-This file is for mods that want to react to AlifePlus, drive squads through it, or add their own causes and consequences. Everything you call goes through *ap_api*. *ap_core_\** modules are internal — using them directly is not supported across versions.
+This file is for mods that want to react to AlifePlus, drive squads through it, or add their own causes and consequences. Everything you call goes through *ap_api*. *ap_core_\** modules are internal. Using them directly is not supported across versions.
 
 > [!IMPORTANT]
 > Always feature-detect. *ap_api* may exist but lack a specific function; check the function before calling it. Every example below follows this convention.
@@ -14,7 +14,7 @@ This file is for mods that want to react to AlifePlus, drive squads through it, 
 | *register_owner* | *name*: string; *fn*: function(squad) → bool | bool | Replaces existing filter on name match. |
 | *unregister_owner* | *name*: string | bool | *true* if removed. |
 | *get_owner* | *squad*: userdata | string \| nil | Owner name or *nil*. |
-| *get_scripted_squads* | — | table | Shallow-copy map keyed by squad id. Fresh per call. |
+| *get_scripted_squads* | none | table | Shallow-copy map keyed by squad id. Fresh per call. |
 | *get_scripted_squad* | *squad_id*: number | table \| nil | Shallow copy of one entry. |
 | *release_squad* | *squad_id*: number | bool | *false* if AP wasn't scripting it. |
 | *script_squad* | *squad*: userdata; *smart*: userdata; *opts*: { *rush*, *on_arrive*, *on_arrive_args*, *pre_release_gulag* } | { code, id, dst, dst_id } | Full lifecycle: engine target + reassert + marker + TTL + gulag. |
@@ -57,7 +57,7 @@ That's the master gate. Every example below assumes it.
 
 ## Listen to AP events
 
-Zero AP code dependency — subscribe via xbus. Good for telemetry, journals, sound triggers, anything that reads AP events without participating in the pipeline.
+Zero AP code dependency. Subscribe via xbus. Good for telemetry, journals, sound triggers, anything that reads AP events without participating in the pipeline.
 
 ```lua
 xbus.subscribe("cause:massacre", function(data)
@@ -66,7 +66,7 @@ xbus.subscribe("cause:massacre", function(data)
 end, "my_mod")
 ```
 
-Cause names are listed in *ap_core_const.CAUSE* — *CAUSE.MASSACRE*, *CAUSE.STASH_LOOT*, *CAUSE.AREA_INFEST*, etc. Each cause's payload shape lives in its generator file (*ap_ext_cause_\**.script and *ap_ext_causes_\**.script).
+Cause names are listed in *ap_core_const.CAUSE*: *CAUSE.MASSACRE*, *CAUSE.STASH_LOOT*, *CAUSE.AREA_INFEST*, etc. Each cause's payload shape lives in its generator file (*ap_ext_cause_\**.script and *ap_ext_causes_\**.script).
 
 > [!TIP]
 > This path requires only xlibs (xbus). You don't need *ap_api* at all if you only listen.
@@ -131,7 +131,7 @@ local name    = rec.subject_name  -- engine-resolved string, no translation need
 ```
 
 > [!TIP]
-> *get_record({ squad_id = X, assigned = true })* hits a live index — O(1). Other query shapes are full FIFO scans.
+> *get_record({ squad_id = X, assigned = true })* hits a live index. O(1). Other query shapes are full FIFO scans.
 
 Record entry fields (every translatable field stores a localization key; resolve via *get_text*):
 
@@ -324,7 +324,7 @@ CONSEQUENCE.MASSACRE_INVESTIGATE = "consequence:massacre_investigate"
 ACTION.MASSACRE_INVESTIGATE      = "action:massacre_investigate"
 ```
 
-Strings live in *gamedata/configs/text/eng/ui_st_ap_consequence.xml* and *gamedata/configs/text/rus/ui_st_ap_consequence.xml*. *get_text* is *game.translate_string* under the hood — it works for any localization key on the record (action, consequence, faction, species).
+Strings live in *gamedata/configs/text/eng/ui_st_ap_consequence.xml* and *gamedata/configs/text/rus/ui_st_ap_consequence.xml*. *get_text* is *game.translate_string* under the hood. It works for any localization key on the record (action, consequence, faction, species).
 
 Foreign mods adding new consequences add matching *&lt;string id="..."&gt;* entries in their own *ui_st_&lt;modname&gt;.xml* (eng + rus).
 

@@ -1,5 +1,5 @@
 AlifePlus: эмерджентная A-Life для STALKER Anomaly, автор Damian
-- Версия: 1.5.5 (xlibs 1.5.0)
+- Версия: 1.6.0 (xlibs 1.5.1)
 - Манифест: https://github.com/damiansirbu-stalker/AlifePlus/blob/main/doc/manifesto.md
 - Руководство по интеграции: https://github.com/damiansirbu-stalker/AlifePlus/blob/main/doc/integration.md
 - Журнал изменений: https://github.com/damiansirbu-stalker/AlifePlus/blob/main/doc/changelog

@@ -89,7 +89,7 @@ local function _run_handler(entry, event_data)
     return entry.handler(event_data)
 end
 
--- @complexity O(1) | 0 luabind
+-- @cost O(1) | 0 luabind
 local function _on_success(entry_name, is_radiant, event_data)
     if is_radiant then ap_core_limiter.increment_global_consequence_counter() end
     ap_core_limiter.increment_consequence_counter(entry_name)

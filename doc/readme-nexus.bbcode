@@ -1,6 +1,6 @@
-Version: 1.5.5 (xlibs 1.5.0)
+Version: 1.6.0 (xlibs 1.5.1)
 
-[url=https://github.com/damiansirbu-stalker/AlifePlus]GitHub[/url] | [url=https://github.com/damiansirbu-stalker/AlifePlus/blob/main/doc/manifesto.md]Manifesto[/url] | [url=https://github.com/damiansirbu-stalker/AlifePlus/blob/main/doc/integration-guide.md]Integration Guide[/url] | [url=https://github.com/damiansirbu-stalker/AlifePlus/blob/main/doc/changelog]Changelog[/url] | [url=https://github.com/damiansirbu-stalker/AlifePlus/blob/main/doc/readme_ru.txt]На русском[/url] | [url=https://github.com/damiansirbu-stalker/AlifePlus/issues]Bugs, suggestions[/url]
+[url=https://github.com/damiansirbu-stalker/AlifePlus]GitHub[/url] | [url=https://github.com/damiansirbu-stalker/AlifePlus/blob/main/doc/manifesto.md]Manifesto[/url] | [url=https://github.com/damiansirbu-stalker/AlifePlus/blob/main/doc/integration.md]Integration Guide[/url] | [url=https://github.com/damiansirbu-stalker/AlifePlus/blob/main/doc/changelog]Changelog[/url] | [url=https://github.com/damiansirbu-stalker/AlifePlus/blob/main/doc/readme_ru.txt]На русском[/url] | [url=https://github.com/damiansirbu-stalker/AlifePlus/issues]Bugs, suggestions[/url]
 
 [b]! Please use the RESET button in MCM when updating to a new version ![/b]
 
@@ -134,7 +134,7 @@ Events chain deterministically. Causes dispatch consequences. Consequences chang
 [b]Cause families:[/b]
 [list]
 [*]Reactive causes: triggered by combat, wounds, deaths, or item use.
-[*]Radiant causes: each squad observes its surroundings, evaluating opportunities, threats, and unmet drives, and acting on what it finds.
+[*]Radiant causes: triggered by movement, location, and needs.
 [/list]
 
 AlifePlus is first and foremost a framework. Core and ext are separated by a hard rule. Core is the pipeline: gates, protection, rate limiting, tracing, squad lifecycle, and PDA routing. Ext is the domain: causes, consequences, alignment, personality, news, mutant infestation, and territory conquest. Core never imports ext. All domain logic reaches the framework through registered function references.
@@ -152,7 +152,7 @@ Protection runs at the producer, cause, consequence, and squad layers. Story NPC
 
 New causes and consequences plug in without modifying core code. A consequence describes what should happen, not how to plumb it. The framework handles the rest.
 
-Other mods integrate at any level without conflict. AlifePlus uses only engine-native mechanisms (the engine's scripted-target slot, the simulation board, the engine job system). Any mod that respects the engine's own APIs will not conflict. See the [url=https://github.com/damiansirbu-stalker/AlifePlus/blob/main/doc/integration-guide.md]integration guide[/url] for examples, API reference, and a concrete two-mod collaboration scenario.
+Other mods integrate at any level without conflict. AlifePlus uses only engine-native mechanisms (the engine's scripted-target slot, the simulation board, the engine job system). Any mod that respects the engine's own APIs will not conflict. See [url=https://github.com/damiansirbu-stalker/AlifePlus/blob/main/doc/integration.md]integration.md[/url] on the project site for examples, API reference, and a concrete two-mod collaboration scenario.
 
 [line]
 
@@ -272,7 +272,11 @@ Stalkers have human needs. Drives inspired by Maslow-Hull are scored by how long
 [*][b]Social[/b] - The stalker finds a campfire or safe location and shares cigarettes and drinks.
 [/list]
 
-[b]Cross-map sibling rows:[/b] Supply, Job Explore, and Social each ship a paired off-map row. The off-map row weights discipline traits, so disciplined stalkers travel cross-map for resupply, scouting, or company while territorial ones stay home. Capped per source map within a sliding 48 game-hour window to keep cross-map traffic in check.
+[b]Cross-map sibling rows:[/b] Supply, Job Explore, and Social each ship a paired off-map row. Greedy nomads (Loners, Bandits, Mercs, Renegades) chase trade. Peaceful curious factions (Ecologists, Clear Sky) scout neighbor maps. Peaceful sociable factions (Ecologists, Freedom, Loners) visit other camps. Army, Monolith, and Zombified squads never travel off-map.
+
+Reach grows with player progression. Stalkers reach the next map once Yantar X-16 is shut down, the next after the Brain Scorcher is deactivated at Radar, and master-rank squad commanders push one map further. Each step is tunable under MCM > World > Off-map.
+
+Squads return home after a few in-zone days. Travellers stuck off-map are released after a week to keep level populations clean. Dispatches are also capped per source map within a sliding two-day window so no level bleeds traffic forever.
 
 NPCs consume real items from their inventory on arrival. A guard smokes a cigarette on duty. Stalkers go to traders to swap artefacts for ammo, grenades, or medical supplies.
 
@@ -385,7 +389,7 @@ Profiling is built into the pipeline rather than bolted on. Every span is timed 
 [*]Other mods can integrate at any level: listen to events, register new behaviors, or coordinate squad control.
 [*]AlifePlus uses only engine-native mechanisms (the engine's scripted-target slot, the simulation board, the engine job system).
 [*]AlifePlus does not need third-party "bridge" or "synergy" patches. Mods that adopt the AP framework through the official API are supported. Unauthorized patches that claim compatibility are not endorsed and will cause instability and save corruption.
-[*]See the [url=https://github.com/damiansirbu-stalker/AlifePlus/blob/main/doc/integration-guide.md]integration guide[/url] for API reference and examples.
+[*]See [url=https://github.com/damiansirbu-stalker/AlifePlus/blob/main/doc/integration.md]integration.md[/url] on the project site for API reference and examples.
 [/list]
 
 [line]
