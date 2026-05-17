@@ -1,6 +1,6 @@
 --- ap_ext_cause_massacre: Tracks stalker death clusters near smarts, publishes cause:massacre at threshold
 
-local xsquad, xtime, xlevel, xcreature, xttltable = xsquad, xtime, xlevel, xcreature, xttltable
+local xsquad, xsmart, xtime, xlevel, xcreature, xttltable = xsquad, xsmart, xtime, xlevel, xcreature, xttltable
 local ap_core_debug, ap_core_limiter, ap_core_util, ap_core_producer = ap_core_debug, ap_core_limiter, ap_core_util, ap_core_producer
 
 local CAUSE = ap_core_const.CAUSE
@@ -27,7 +27,9 @@ local function _on_squad_npc_death(trace, squad, se_victim, se_killer)
 
     local smart = xsquad.get_squad_smart(squad)
     if not smart then return { code = RESULT.FAILED_RULES, reason = REASON.NO_SMART } end
-    if xsquad.is_squad_at_base(squad) then return { code = RESULT.FAILED_RULES, reason = REASON.AT_BASE } end
+    if xsmart.is_base(smart) and xsmart.get_smart_faction(smart) == squad.player_id then
+        return { code = RESULT.FAILED_RULES, reason = REASON.AT_BASE }
+    end
 
     local count = ap_core_util.count_until_threshold(_deaths, smart.id, cfg.cause_massacre_threshold)
     if not count then return { code = RESULT.FAILED_RULES, reason = REASON.BELOW_THRESHOLD } end

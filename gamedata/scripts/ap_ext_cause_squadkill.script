@@ -1,6 +1,6 @@
 --- ap_ext_cause_squadkill: Publishes cause:squadkill when squad's last member dies
 
-local xsquad, xlevel = xsquad, xlevel
+local xsquad, xsmart, xlevel = xsquad, xsmart, xlevel
 local ap_core_debug, ap_core_limiter, ap_core_producer = ap_core_debug, ap_core_limiter, ap_core_producer
 
 local CAUSE = ap_core_const.CAUSE
@@ -24,7 +24,10 @@ local function _on_squad_npc_death(trace, squad, npc, killer)
     end
 
     if squad:npc_count() > 1 then return { code = RESULT.FAILED_RULES, reason = REASON.SQUAD_ALIVE } end
-    if xsquad.is_squad_at_base(squad) then return { code = RESULT.FAILED_RULES, reason = REASON.AT_BASE } end
+    local smart = xsquad.get_squad_smart(squad)
+    if smart and xsmart.is_base(smart) and xsmart.get_smart_faction(smart) == squad.player_id then
+        return { code = RESULT.FAILED_RULES, reason = REASON.AT_BASE }
+    end
 
     local victim_faction = squad:get_squad_community()
     if not _alignment_human[victim_faction] then return { code = RESULT.FAILED_RULES, reason = REASON.WRONG_ALIGNMENT, community = victim_faction } end
