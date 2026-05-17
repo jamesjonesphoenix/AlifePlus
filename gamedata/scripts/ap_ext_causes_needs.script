@@ -17,7 +17,6 @@ local RESULT = ap_core_const.RESULT
 local REASON = ap_core_const.REASON
 local RANGE_RADIO = ap_core_const.RANGE_RADIO
 local HOURS_TO_SECONDS = ap_core_const.HOURS_TO_SECONDS
-local OFFMAP_BASE_REACH = ap_core_const.OFFMAP_BASE_REACH
 local RANK_MASTER = ap_core_const.RANK_MASTER
 local PERSONALITY = ap_ext_const.PERSONALITY
 
@@ -88,7 +87,7 @@ end
 -- commander adds reach via MCM-tunable bonuses.
 -- @cost O(1) | 2 alife_info reads + commander rank (3-4 luabind)
 local function _resolve_offmap_hops(squad)
-    local hops = OFFMAP_BASE_REACH
+    local hops = cfg.offmap_base_hops
     if has_alife_info(STORY_FLAG.X16_OFF) then hops = hops + cfg.offmap_extra_map_x16 end
     if has_alife_info(STORY_FLAG.RADAR_OFF) then hops = hops + cfg.offmap_extra_map_radar end
     if xsquad.get_commander_rank(squad) >= RANK_MASTER then hops = hops + cfg.offmap_extra_map_rank end

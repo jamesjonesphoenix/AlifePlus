@@ -86,10 +86,15 @@ defaults = {
     -- World: offmap balance cap (dispatches per source map per OFFMAP_WINDOW_SEC)
     cause_max_offmap = 2,
 
-    -- World: offmap adjacency reach bonuses (BFS hops added per story / rank milestone)
+    -- World: offmap adjacency reach (base hops + bonuses per story / rank milestone)
+    offmap_base_hops = 0,
     offmap_extra_map_x16 = 1,
     offmap_extra_map_radar = 1,
     offmap_extra_map_rank = 1,
+
+    -- World: offmap lifecycle timings (in-zone hours)
+    offmap_return_home_hours = 72,
+    offmap_despawn_hours = 168,
 
     -- Cause: Instincts (5 drives, slumber multi-answer)
     cause_scatter_enabled = true,
@@ -392,9 +397,12 @@ local _key_to_tab = {
     cause_job_explore_offmap_enabled = "causes/needs",
     cause_social_offbase_enabled = "causes/needs",
     cause_max_offmap = "world/offmap",
+    offmap_base_hops = "world/offmap",
     offmap_extra_map_x16 = "world/offmap",
     offmap_extra_map_radar = "world/offmap",
     offmap_extra_map_rank = "world/offmap",
+    offmap_return_home_hours = "world/offmap",
+    offmap_despawn_hours = "world/offmap",
     cause_scatter_enabled = "causes/instincts",
     cause_feed_enabled = "causes/instincts",
     cause_roam_enabled = "causes/instincts",
@@ -630,9 +638,12 @@ function on_mcm_load()
                             _slide("ui_mcm_ap_world_offmap_title"),
                             _desc("ui_mcm_ap_world_offmap_desc"),
                             _track("cause_max_offmap", 1, 10, 1),
+                            _track("offmap_base_hops", 0, 3, 1),
                             _track("offmap_extra_map_x16", 0, 3, 1),
                             _track("offmap_extra_map_radar", 0, 3, 1),
                             _track("offmap_extra_map_rank", 0, 3, 1),
+                            _track("offmap_return_home_hours", 1, 336, 1),
+                            _track("offmap_despawn_hours", 24, 720, 1),
                         },
                     },
                 },
