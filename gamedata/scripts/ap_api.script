@@ -127,8 +127,9 @@ function script_squad(squad, smart, opts) return ap_core_broker.script_squad(squ
 
 --- Script a squad to pursue the player directly (no arrival detection).
 --- @param squad userdata Squad server object
+--- @param opts table|nil { actor_relation_check = true } to release chaser if faction relation no longer enemy
 --- @return table { code = RESULT.X, id, dst, dst_id }
-function script_actor_target(squad) return ap_core_broker.script_actor_target(squad) end
+function script_actor_target(squad, opts) return ap_core_broker.script_actor_target(squad, opts) end
 
 --- Resolve an action enum value to its localized phrase.
 --- e.g. ACTION.MASSACRE_INVESTIGATE ("action:massacre_investigate") -> "Investigating a Massacre Site".

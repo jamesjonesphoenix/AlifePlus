@@ -12,9 +12,10 @@ local cfg = ap_core_mcm.cfg
 
 --- Dispatch chasers via engine actor targeting (no arrival detection; engine handles pursuit).
 --- Used when the chase target is the player.
-function move_actor_chasers(squads, moved)
+--- @param opts table|nil Forwarded to script_actor_target (e.g. { actor_relation_check = true })
+function move_actor_chasers(squads, moved, opts)
     for _, chaser in ipairs(squads) do
-        local res = ap_core_broker.script_actor_target(chaser)
+        local res = ap_core_broker.script_actor_target(chaser, opts)
         if res and res.code == RESULT.SUCCESS then moved[#moved + 1] = chaser end
     end
 end

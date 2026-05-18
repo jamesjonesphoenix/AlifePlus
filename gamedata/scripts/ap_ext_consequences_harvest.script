@@ -81,7 +81,7 @@ local function _handler_rob(event_data)
         local dst_smart = nil
         ap_core_debug.observe(trace, PHASE.MOVE_SQUAD, function()
             if taker_is_player then
-                _move_actor_chasers(robbers, moved)
+                _move_actor_chasers(robbers, moved, { actor_relation_check = true })
             else
                 dst_smart = ap_core_util.find_smart(target_squad.position, {
                     level_id = level_id, max_distance = ap_core_const.RANGE_RADIO,
