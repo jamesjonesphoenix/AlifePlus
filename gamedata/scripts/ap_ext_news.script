@@ -10,7 +10,7 @@ local string_format, string_gsub, string_find = string.format, string.gsub, stri
 local table_concat = table.concat
 local game_translate_string = game.translate_string
 local xobject_se = xobject.se
-local xtime, xlevel, xpda, xttltable = xtime, xlevel, xpda, xttltable
+local xtime, xlevel, xpda, xprofiler, xttltable = xtime, xlevel, xpda, xprofiler, xttltable
 local ap_core_debug, ap_core_record = ap_core_debug, ap_core_record
 
 local TRACE, CONSEQUENCE, REASON = ap_core_const.TRACE, ap_core_const.CONSEQUENCE, ap_core_const.REASON
@@ -33,6 +33,7 @@ local SCOPE_OWN, SCOPE_ALLIES, SCOPE_WORLD = "own", "allies", "world"
 local _templates_by_consequence = {}
 local _locale = nil
 local _reported_cons_ids = nil
+local _pending_dispatch = nil
 
 -- Load a numbered template pool: walk prefix_001..N until miss/empty
 local function _load_pool(prefix)
@@ -250,24 +251,33 @@ local function _pick_speaker(actor_comm, scope, channel_status)
     }
 end
 
--- Routes through dynamic_news_manager.PushToChannel when initialized; falls back to
--- xpda.send during the ~27s cold-start window. Engine-side drops (enable_news, NewsToggle,
--- is_pda_charged, counter cap) are not duplicated here.
-local function _dispatch(trace, picked, msg)
-    return ap_core_debug.observe(trace, OP_DISPATCH, function()
-        local dnm = dynamic_news_manager and dynamic_news_manager.get_dynamic_news
-                    and dynamic_news_manager.get_dynamic_news() or nil
-        if dnm and dnm.PushToChannel then
-            dnm:PushToChannel(picked.channel, {
-                Mg = msg, Se = picked.name, Ic = picked.icon,
-                Snd = "news", It = "npc",
-            })
-            return { code = TRACE.OK, path = "queued",
-                sender = picked.name, channel = picked.channel, msg = msg }
-        end
+-- Engine dispatch. Routes through dynamic_news_manager.PushToChannel when initialized;
+-- falls back to xpda.send during the ~27s cold-start window. Engine-side drops (enable_news,
+-- NewsToggle, is_pda_charged, counter cap) are not duplicated here.
+-- Called from compose_tick AFTER the OP_COMPOSE observe span closes, so vanilla engine cost
+-- (PushToChannel: UI texture lookup, sound init, shared_str ops) is NOT attributed to AP
+-- measurements. Engine time is captured separately and surfaced as engine_ms on the
+-- OP_DISPATCH log line.
+local function _do_engine_dispatch(trace, picked, msg)
+    local dnm = dynamic_news_manager and dynamic_news_manager.get_dynamic_news
+                and dynamic_news_manager.get_dynamic_news() or nil
+    local use_queued = dnm and dnm.PushToChannel
+    local engine_timer = xprofiler.new_if(ap_core_debug.enabled())
+    engine_timer:start()
+    if use_queued then
+        dnm:PushToChannel(picked.channel, {
+            Mg = msg, Se = picked.name, Ic = picked.icon,
+            Snd = "news", It = "npc",
+        })
+    else
         xpda.send(picked.name, msg, picked.icon)
-        return { code = TRACE.OK, path = "fallback",
-            sender = picked.name, channel = picked.channel, msg = msg }
+    end
+    engine_timer:stop()
+    ap_core_debug.observe(trace, OP_DISPATCH, function()
+        return { code = TRACE.OK,
+            path = use_queued and "queued" or "fallback",
+            sender = picked.name, channel = picked.channel, msg = msg,
+            engine_ms = engine_timer:get_ms() }
     end)
 end
 
@@ -316,16 +326,25 @@ local function _compose_tick_impl(trace)
         return { code = TRACE.NO_SENDER, scope = cfg.news_scope,
             actor_comm = actor_comm or "?", channels = _format_channels(channel_status) }
     end
-    _dispatch(trace, picked, msg)
+    _pending_dispatch = { trace = trace, picked = picked, msg = msg }
     _reported_cons_ids:set(entry.cons_id, true)
     return { code = TRACE.SENT, sender = picked.name }
 end
 
---- compose_tick: news pipeline tick. Wraps end-to-end compose in observe so it
---- nests in the trace tree with the rest of the pipeline.
+--- compose_tick: news pipeline tick. AP-side compose runs under OP_COMPOSE observe;
+--- engine dispatch (vanilla dnm:PushToChannel / xpda.send) runs AFTER the span closes
+--- so vanilla cost is not attributed to AP timings. Dispatch is emitted as a peer
+--- OP_DISPATCH log line (same trace, same tid) carrying engine_ms as a side-stat.
 function compose_tick()
     if not cfg.news_enabled then return { code = TRACE.NONE } end
-    return ap_core_debug.observe(nil, OP_COMPOSE, _compose_tick_impl)
+    _pending_dispatch = nil
+    local result = ap_core_debug.observe(nil, OP_COMPOSE, _compose_tick_impl)
+    local pending = _pending_dispatch
+    if pending then
+        _pending_dispatch = nil
+        _do_engine_dispatch(pending.trace, pending.picked, pending.msg)
+    end
+    return result
 end
 
 local function _next_delay()
