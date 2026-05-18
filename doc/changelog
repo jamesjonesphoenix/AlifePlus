@@ -1,3 +1,11 @@
+next
+  Summary: per-level cache for level-scoped finds
+  Core:
+    Added: ap_core_cache module. Per-level indexes over SIMBOARD.smarts_by_names (sync at first update) and treasure_manager.caches (xslice step=3, ~2s warmup). Consumers fetch via smarts_on_level / stashes_on_level and pass as opts.source to xlibs finders.
+  Performance:
+    Changed: Smart-driven causes (HEAL_SHELTER, SUPPLY_TRADER, JOB_OUTPOST, area, instincts) walk only the actor-level smarts on level-scoped scans. ap_core_util.find_smart pulls the source from ap_core_cache.smarts_on_level.
+    Changed: STASH radiant cause walks only the actor-level stashes after the bucket build completes. ap_ext_causes_stash gates on cache readiness; yields no cause during the ~2s xslice warmup, fires normally after.
+
 1.6.0
   Summary: off-map travel, news rework, faction-relation fixes
   Off-map travel:
