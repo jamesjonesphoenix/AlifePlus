@@ -2,7 +2,7 @@
 --- classifies empty/non-empty, branches by alignment + items count, publishes specific cause.
 
 local xsquad, xsmart, xtime, xlevel, xstash, xtable = xsquad, xsmart, xtime, xlevel, xstash, xtable
-local ap_core_debug, ap_core_limiter, ap_core_producer, ap_core_util = ap_core_debug, ap_core_limiter, ap_core_producer, ap_core_util
+local ap_core_debug, ap_core_limiter, ap_core_producer, ap_core_util, ap_core_cache = ap_core_debug, ap_core_limiter, ap_core_producer, ap_core_util, ap_core_cache
 local ap_ext_util, ap_ext_tracker = ap_ext_util, ap_ext_tracker
 
 local CAUSE = ap_core_const.CAUSE
@@ -134,7 +134,14 @@ local function _on_smart(trace, squad)
     local level_id = xlevel.get_level_id(squad)
     if not level_id then return { code = RESULT.FAILED_RULES, reason = REASON.NO_LEVEL_ID } end
 
-    local stashes = xstash.find_stashes(squad.position, { max_distance = RANGE_EYE, level_id = level_id, max_count = 1 })
+    -- Gate on ap_core_cache: nil = stash bucket still warming up (first ~2s of session) OR level has no
+    -- stashes. Both outcomes yield no cause; the next squad radiant tick a few seconds later sees the
+    -- bucket ready. Skipping the find_stashes call here avoids the un-bucketed global walk (today's 14ms
+    -- max breaches the 4ms ceiling).
+    local source = ap_core_cache.stashes_on_level(level_id)
+    if not source then return { code = RESULT.FAILED_RULES, reason = REASON.NO_STASH_NEARBY } end
+
+    local stashes = xstash.find_stashes(squad.position, { max_distance = RANGE_EYE, level_id = level_id, max_count = 1, source = source })
     local stash = stashes[1]
     if not stash then return { code = RESULT.FAILED_RULES, reason = REASON.NO_STASH_NEARBY } end
 

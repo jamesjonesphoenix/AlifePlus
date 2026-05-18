@@ -1,7 +1,7 @@
 --- ap_core_util: Event pub/sub, squad/smart finders
 local pairs, type, next, tostring, table_concat = pairs, type, next, tostring, table.concat
 local xbus, xsquad, xsmart, xconst = xbus, xsquad, xsmart, xconst
-local ap_core_debug, ap_core_broker = ap_core_debug, ap_core_broker
+local ap_core_debug, ap_core_broker, ap_core_cache = ap_core_debug, ap_core_broker, ap_core_cache
 
 local PHASE = ap_core_const.CONSEQUENCE_PHASE
 local TRACE = ap_core_const.TRACE
@@ -100,15 +100,24 @@ function find_squads_observed(trace, position, opts)
 end
 
 --- Find nearest smart terrain matching filter criteria
+--- When opts.level_id is set, injects ap_core_cache.smarts_on_level as opts.source so xsmart iterates
+--- the per-level bucket instead of the global SIMBOARD.smarts_by_names walk. Cache returns nil before
+--- actor_on_first_update has run; in that window the call falls through to the global walk (correct,
+--- one-time cost on a small pool).
 --- @param pos vector Origin position
 --- @param opts table Options (forwarded to xsmart.find_smart)
 --- @return table|nil Smart server object or nil
 function find_smart(pos, opts)
-    if not ap_core_debug.enabled() then
+    local source = opts and opts.level_id and ap_core_cache.smarts_on_level(opts.level_id)
+    if not ap_core_debug.enabled() and not source then
         return xsmart.find_smart(pos, opts)
     end
     local local_opts = {}
     if opts then for k, v in pairs(opts) do local_opts[k] = v end end
+    if source then local_opts.source = source end
+    if not ap_core_debug.enabled() then
+        return xsmart.find_smart(pos, local_opts)
+    end
     local original_filter = local_opts.filter
     local checked, rejected_filter = 0, 0
     local_opts.filter = function(smart)
@@ -144,13 +153,22 @@ end
 
 --- Find first matching smart (distance-free) with FIND_DESTINATION observe wrapper.
 --- Use when the caller has no comparable position frame (cross-level dispatch).
+--- Injects ap_core_cache.smarts_on_level as opts.source when opts.level_id is set.
 --- @param trace table Trace from event_data._trace
 --- @param opts table Options (forwarded to xsmart.find_first_smart)
 --- @return table|nil Smart server object or nil
 function find_first_smart_observed(trace, opts)
     local smart
+    local source = opts and opts.level_id and ap_core_cache.smarts_on_level(opts.level_id)
     ap_core_debug.observe(trace, PHASE.FIND_DESTINATION, function()
-        smart = xsmart.find_first_smart(opts)
+        if source then
+            local local_opts = {}
+            for k, v in pairs(opts) do local_opts[k] = v end
+            local_opts.source = source
+            smart = xsmart.find_first_smart(local_opts)
+        else
+            smart = xsmart.find_first_smart(opts)
+        end
         if not smart then return { code = TRACE.EMPTY } end
         return { code = TRACE.OK, id = smart.id }
     end)

@@ -1,0 +1,112 @@
+--- ap_core_cache: Per-level indexes over SIMBOARD-managed pools.
+--- Owns: smart bucket (sync at actor_on_first_update); stash bucket (xslice step=3 from actor_on_first_update).
+--- Consumers fetch the per-level table and pass it as opts.source to xsmart.find_smart / xstash.find_stashes,
+--- bypassing the global pool walk. Vertex-to-level is invariant via game.graph; smart/stash positions
+--- are LTX-baked and never move, so no invalidation is needed (Lua VM restart on level transition
+--- wipes module state; rebuilds on next actor_on_first_update). The stash bucket returns nil during
+--- the xslice warmup (~2s of session); ap_ext_causes_stash checks nil and yields no cause that tick.
+
+local pairs, RegisterScriptCallback = pairs, RegisterScriptCallback
+local xlevel, xsmart, xobject, xslice = xlevel, xsmart, xobject, xslice
+
+local CALLBACK = ap_core_const.CALLBACK
+
+local STASH_BUILD_QUEUE = "ap_core_cache_stashes"
+local STASH_BUILD_STEP = 3
+
+local _smarts_by_level = nil
+local _stashes_by_level = nil
+
+-- Walk all registered smarts once, bucket by level_id. Sync: 100 smarts x 4 luabind cold ~= 1.2ms,
+-- fits the 4ms ceiling. Vertex cache (xlevel.script:39-49) warms during the walk.
+-- @cost O(n) smarts | per smart: 1 luabind trivial (m_game_vertex_id) + 0-3 luabind (xlevel.get_level_id cold)
+local function _build_smart_bucket()
+    if _smarts_by_level then return end
+    local caches = {}
+    for smart in xsmart.smart_iter() do
+        local level_id = xlevel.get_level_id(smart)
+        if not level_id then goto continue end
+        local bucket = caches[level_id]
+        if not bucket then
+            bucket = {}
+            caches[level_id] = bucket
+        end
+        bucket[smart.id] = smart
+        ::continue::
+    end
+    _smarts_by_level = caches
+    ap_core_debug.debug("[CORE.CACHE] smart bucket built")
+end
+
+--- Get the per-level smart bucket for direct iteration via xsmart.find_smart opts.source.
+--- Returns nil before actor_on_first_update has fired, or when SIMBOARD was empty at build time.
+--- @safety SAFE - pure Lua hash read, nil-guarded
+--- @cost O(1) | 0 luabind
+--- @param level_id number Engine level_id
+--- @return table|nil { [smart_id] = smart, ... } or nil if bucket not built
+function smarts_on_level(level_id)
+    return _smarts_by_level and _smarts_by_level[level_id]
+end
+
+-- Bucket one stash into _stashes_by_level. Returns true to drain (xslice survivor protocol).
+-- @cost O(1) | 2-4 luabind (alife_object medium + m_game_vertex_id trivial + xlevel.get_level_id 0-3)
+local function _bucket_one_stash(id)
+    local se = xobject.se(id)
+    if not se then return true end
+    local level_id = xlevel.get_level_id(se)
+    if not level_id then return true end
+    local entry = _stashes_by_level[level_id]
+    if not entry then
+        entry = {}
+        _stashes_by_level[level_id] = entry
+    end
+    entry[id] = true
+    return true
+end
+
+local function _on_stash_build_done()
+    ap_core_debug.debug("[CORE.CACHE] stash bucket built")
+end
+
+-- Snapshot treasure_manager.caches keys into an array, start xslice. Per-frame: 3 stashes x ~4 luabind
+-- ~= 0.04ms, well under the 4ms ceiling. ~500 stashes -> ~167 frames -> ~2.8s wall-clock at 60fps.
+-- @cost O(n) stashes for snapshot | 0 luabind (pure Lua array build); xslice ticks pay the alife_object cost
+local function _build_stash_bucket()
+    if _stashes_by_level then return end
+    if not treasure_manager or not treasure_manager.caches then return end
+    if xslice.is_active(STASH_BUILD_QUEUE) then return end
+    _stashes_by_level = {}
+    local queue = {}
+    for stash_id in pairs(treasure_manager.caches) do
+        queue[#queue + 1] = stash_id
+    end
+    xslice.start(STASH_BUILD_QUEUE, queue, {
+        step = STASH_BUILD_STEP,
+        func = _bucket_one_stash,
+        on_done = _on_stash_build_done,
+    })
+end
+
+--- Get the per-level stash bucket for direct iteration via xstash.find_stashes opts.source.
+--- Returns nil during the xslice warmup window (~2s after actor_on_first_update). Consumers
+--- gate on nil and yield no cause for that radiant tick; the next tick a few seconds later
+--- sees the bucket ready.
+--- @safety SAFE - pure Lua hash read, nil-guarded
+--- @cost O(1) | 0 luabind
+--- @param level_id number Engine level_id
+--- @return table|nil { [stash_id] = true, ... } or nil if bucket not built / level has no stashes
+function stashes_on_level(level_id)
+    if not _stashes_by_level then return nil end
+    if xslice.is_active(STASH_BUILD_QUEUE) then return nil end
+    return _stashes_by_level[level_id]
+end
+
+local function _on_actor_first_update()
+    _build_smart_bucket()
+    _build_stash_bucket()
+end
+
+function on_game_start()
+    RegisterScriptCallback(CALLBACK.ACTOR_ON_FIRST_UPDATE, _on_actor_first_update)
+    ap_core_debug.info("[CORE.CACHE] Initialized")
+end
