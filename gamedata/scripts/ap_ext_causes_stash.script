@@ -10,8 +10,7 @@ local CAUSE_TYPE = ap_core_const.CAUSE_TYPE
 local CAUSE_CATEGORY = ap_core_const.CAUSE_CATEGORY
 local CATEGORY = CAUSE_CATEGORY.OPPORTUNITIES
 local CAP_KEY = "cause_max_opportunities"
-local SCAN_KEY = "scan_radiant"
-local SCAN_MAX = 5
+local MAX_SCANS_PER_GENERATOR = ap_core_const.RADIANT_MAX_SCANS_PER_GENERATOR
 local RESULT = ap_core_const.RESULT
 local REASON = ap_core_const.REASON
 local RANGE_EYE = ap_core_const.RANGE_EYE
@@ -95,14 +94,14 @@ local function _try_picked_cause(trace, squad, level_id, opts)
         if not ap_ext_util.check_personality(pcfg.traits, squad.player_id, { name = cause_const }) then
             return { code = RESULT.FAILED_RULES, reason = REASON.LOW_PERSONALITY }
         end
-        if not ap_core_limiter.check_cause_rate_limit(SCAN_KEY, SCAN_MAX) then
+        if opts.budget.remaining <= 0 then
             return { code = RESULT.FAILED_RULES, reason = REASON.BUDGET_EXHAUSTED }
         end
+        opts.budget.remaining = opts.budget.remaining - 1
         local dst = ap_core_util.find_smart_observed(trace, opts.stash.position, {
             level_id = level_id, filter = _build_dst_filter(squad.player_id),
         })
         if not dst then return { code = RESULT.FAILED_SCAN, reason = REASON.NO_SMART } end
-        ap_core_limiter.increment_cause_counter(SCAN_KEY)
         dst_smart_id = dst.id
     end
 
@@ -147,8 +146,9 @@ local function _on_smart(trace, squad)
     if not cause_const then return { code = RESULT.FAILED_RULES, reason = REASON.NO_BRANCH, community = squad.player_id } end
 
     local now = xtime.game_sec()
+    local budget = { remaining = MAX_SCANS_PER_GENERATOR }
     local result = ap_core_debug.observe(trace, cause_const, _try_picked_cause, squad, level_id,
-        { now = now, stash = stash, items_count = items_count, cause_const = cause_const })
+        { now = now, stash = stash, items_count = items_count, cause_const = cause_const, budget = budget })
     if not result or not result.cause then return result end
 
     ap_core_limiter.increment_cause_counter(CATEGORY)

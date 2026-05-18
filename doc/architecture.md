@@ -120,7 +120,7 @@ Five gates (header at ap_core_producer.script:214):
 2. is_protected. Full eligibility check via ap_core_broker.is_protected. Runs on ~10 squads/sec from PACER_1. Checks ownership, scripted, permanent, active_role, task_target. Short-circuits early.
 3. RATIO. Bresenham integer admission gate. Off-map outnumber on-map ~50-100:1 per squad (online fires at frame rate, offline via scheduler round-robin). Cross-multiplication: throttled_count * |r| <= (10 - |r|) * favored_count. At default ratio 8 admits ~4 on-map per 1 off-map. squad.online (C++ m_bOnline, refreshed by check_online_status() before the callback) is the source. Separate counter pairs for radiant and reactive (_radiant_ct, _reactive_ct). Counters reset at 32768. Must run after is_protected so it only balances eligible squads.
 4. PACER_2. Budget limiter. os.clock() with cfg.distributor_interval_sec (default 5s, ~12 triggers/min). Every PACER_2 admit produces an EVAL.
-5. EVAL (cascade). Shuffles registered cause generators in-place inside a reusable buffer, walks them in random order. Each generator self-gates the per-CAUSE_CATEGORY rate (check_cause_rate_limit at the top of the predicate); the producer does not rate-check. First generator to publish stops the cascade. Per-tick budget RADIANT_MAX_CHECKS_PER_TICK = 5; consumed inside generators, one slot per cause attempt.
+5. EVAL (cascade). Shuffles registered cause generators in-place inside a reusable buffer, walks them in random order. Each generator self-gates the per-CAUSE_CATEGORY rate (check_cause_rate_limit at the top of the predicate); the producer does not rate-check. First generator to publish stops the cascade. Each generator's `_on_smart` carries its own internal SCAN budget RADIANT_MAX_SCANS_PER_GENERATOR = 2 (`ap_core_const.script:146`); RULES rejections are free and the generator can cascade through all of its causes, but only causes that pass RULES and enter their world SCAN consume a slot. Budget is a local Lua counter, resets every `_on_smart` call.
 
 Shuffling ensures fair distribution regardless of how many generators apply to a given squad's alignment.
 
@@ -194,7 +194,7 @@ DISABLED is the rules-layer skip for a consequence whose MCM toggle is off. Sema
 4. Consequence shuffle. The consumer shuffles registered consequences before iterating so order is not fixed. Reactive causes have multiple consequences (e.g. massacre_investigate and massacre_scavenge); shuffling matters. Radiant causes have one consequence each (1:1 shared noun), so the shuffle is a no-op.
 5. Radiant: at most one consequence runs per cause. 1:1 shared noun. The consumer runs it or skips it; no loop, no alternatives.
 6. Reactive: all run independently. All consequences for the cause run regardless of results. Multiple consequences can fire from a single event.
-7. Loop stop (reactive only). The reactive loop stops when REACTIVE_MAX_CONSEQUENCES_PER_CAUSE = 5 consequences have actually run. Other results (FAILED_RULES, FAILED_SCAN, FAILED_ACTION, DISABLED, rate-limited) skip and continue.
+7. Loop stop (reactive only). The reactive loop stops when REACTIVE_MAX_CONSEQUENCES_PER_CAUSE = 2 consequences have actually run. Other results (FAILED_RULES, FAILED_SCAN, FAILED_ACTION, DISABLED, rate-limited) skip and continue.
 
 ### Rate limiting
 
@@ -684,7 +684,7 @@ Picker flow inside _on_smart:
 1. Score every drive via Hull (_find_overdue_drives for instincts, _find_overdue_needs for needs).
 2. Sort overdue drives descending by drive score.
 3. Walk overdue drives top-down. For each drive, walk CAUSES entries with matching parent drive. Per cause: RULES (per-cause enable, alignment subset, personality roll), then SCAN (filter + find_smart_observed). First cause that publishes wins. Stop.
-4. Producer enforces RADIANT_MAX_CHECKS_PER_TICK across all generators.
+4. Each generator's `_on_smart` caps its own internal cascade at RADIANT_MAX_SCANS_PER_GENERATOR SCAN reaches; RULES rejections are free.
 
 The DTO field is per-drive. When any of a drive's answers fires, the drive's timestamp resets (Hull drive reduction). Multiple answers compete to satisfy one drive.
 
@@ -899,7 +899,7 @@ Five result codes: SUCCESS, FAILED_RULES, FAILED_SCAN, FAILED_ACTION, DISABLED. 
 3. The cause generator owns RULES (toggle, alignment, personality, threshold) and SCAN (find_smart). The consequence is action-only - resolve squad and smart from the payload, route the squad, record the event, return SUCCESS.
 4. The generator cascades internally (cause-to-cause within the generator, top-down) and externally (generator-to-generator at the producer). Hull scoring runs first for bundled generators (needs, instincts) to produce the candidate list; state-classifier generators (stash, area) skip Hull and pick directly from world peek.
 5. No fallbacks inside a single cause. One SCAN with one filter. Variant outcomes are separate causes.
-6. Per-tick cause-check cap: RADIANT_MAX_CHECKS_PER_TICK = 5. One check = one cause attempt (RULES + optional SCAN, regardless of where it exits). Internal tuning, not MCM.
+6. Per-generator SCAN budget: RADIANT_MAX_SCANS_PER_GENERATOR = 2. A slot is consumed only when a cause passes RULES and reaches its world SCAN (find_smart / find_squads). RULES rejections (toggle, alignment, personality, threshold, period) are free and do not count. Budget is local to one `_on_smart` invocation and resets on the next call. Internal tuning, not MCM.
 7. Stalker and mutant get separate causes for the same world state - needs (stalker) and instincts (mutant) are distinct families with distinct DTOs.
 8. CONFIGS factory is the default consequence file shape. _set is vestigial for radiant.
 9. on_arrive: the DTO reset is unconditional (online or offline - the abstract state advances either way). World mutation (item consume, trade, inventory operations) runs only when online.
@@ -915,7 +915,7 @@ Five result codes: SUCCESS, FAILED_RULES, FAILED_SCAN, FAILED_ACTION, DISABLED. 
 4. Consequence shapes: RESPOND (find responder squads, dispatch each) or TRANSFORM (act directly on the cause-target entity, no responder loop). RESPOND consequences may run two SCANs - destination SCAN (find_smart) and responder SCAN (find_squads) - typically destination first since responder SCAN may use destination to exclude already-arrived squads.
 5. Responder SCAN returns up to a per-consequence configurable max_count (default 2).
 6. Stalker and mutant get separate consequences subscribed to the same cause. massacre fires both massacre_investigate (stalkers) and massacre_scavenge (mutants) independently.
-7. Per-publish consequence cap: REACTIVE_MAX_CONSEQUENCES_PER_CAUSE = 5. One unit = one consequence run, independent of how many responders the consequence cascaded through.
+7. Per-publish consequence cap: REACTIVE_MAX_CONSEQUENCES_PER_CAUSE = 2. One unit = one consequence run, independent of how many responders the consequence cascaded through.
 8. _set is the natural file shape for hand-written quirks (varying SCAN filters, varying actions, varying per-responder logic). CONFIGS factory only when consequence bodies are uniform.
 
 ---

@@ -11,8 +11,7 @@ local CAUSE_TYPE = ap_core_const.CAUSE_TYPE
 local CAUSE_CATEGORY = ap_core_const.CAUSE_CATEGORY
 local CATEGORY = CAUSE_CATEGORY.NEEDS
 local CAP_KEY = "cause_max_needs"
-local SCAN_KEY = "scan_radiant"
-local SCAN_MAX = 5
+local MAX_SCANS_PER_GENERATOR = ap_core_const.RADIANT_MAX_SCANS_PER_GENERATOR
 local RESULT = ap_core_const.RESULT
 local REASON = ap_core_const.REASON
 local RANGE_RADIO = ap_core_const.RANGE_RADIO
@@ -133,7 +132,8 @@ local function _find_overdue_needs(dto, now, identity)
 end
 
 -- Per-cause RULES + SCAN. Returns result table with code/reason; observe() logs every call.
-local function _try_cause(trace, squad, level_id, entry)
+-- budget: per-_on_smart table { remaining = N }. RULES rejections free; SCAN reaches consume one slot.
+local function _try_cause(trace, squad, level_id, entry, budget)
     if not cfg["cause_" .. entry.name .. "_enabled"] then
         return { code = RESULT.FAILED_RULES, reason = REASON.DISABLED }
     end
@@ -143,7 +143,7 @@ local function _try_cause(trace, squad, level_id, entry)
     if not ap_ext_util.check_personality(entry.personality, squad.player_id, { name = entry.name }) then
         return { code = RESULT.FAILED_RULES, reason = REASON.LOW_PERSONALITY }
     end
-    if not ap_core_limiter.check_cause_rate_limit(SCAN_KEY, SCAN_MAX) then
+    if budget.remaining <= 0 then
         return { code = RESULT.FAILED_RULES, reason = REASON.BUDGET_EXHAUSTED }
     end
     local filter = _build_filter(entry, squad.player_id)
@@ -164,6 +164,7 @@ local function _try_cause(trace, squad, level_id, entry)
         opts.level_id = nil
         opts.max_distance = nil
     end
+    budget.remaining = budget.remaining - 1
     local smart
     if entry.offmap then
         smart = ap_core_util.find_first_smart_observed(trace, opts)
@@ -171,7 +172,6 @@ local function _try_cause(trace, squad, level_id, entry)
         smart = ap_core_util.find_smart_observed(trace, squad.position, opts)
     end
     if not smart then return { code = RESULT.FAILED_SCAN, reason = REASON.NO_SMART } end
-    ap_core_limiter.increment_cause_counter(SCAN_KEY)
     if entry.offmap then ap_core_limiter.increment_offmap_counter(level_id) end
     return { code = RESULT.SUCCESS, smart = smart }
 end
@@ -206,7 +206,7 @@ end
 -- result on SUCCESS, nil otherwise. observe() wraps _try_cause so every attempt logs.
 -- period_mismatch needs are walked only at DEBUG (see _find_overdue_needs); each cause emits
 -- a failed_rules:wrong_period observe line so dormant/active drops are no longer silent.
-local function _try_one_need_cause(trace, squad, level_id, overdue_entry, entry, need_name)
+local function _try_one_need_cause(trace, squad, level_id, overdue_entry, entry, need_name, budget)
     if entry.need ~= need_name then return nil end
     if overdue_entry.period_mismatch then
         ap_core_debug.observe(trace, entry.cause, function()
@@ -214,16 +214,16 @@ local function _try_one_need_cause(trace, squad, level_id, overdue_entry, entry,
         end)
         return nil
     end
-    local cause_result = ap_core_debug.observe(trace, entry.cause, _try_cause, squad, level_id, entry)
+    local cause_result = ap_core_debug.observe(trace, entry.cause, _try_cause, squad, level_id, entry, budget)
     if not cause_result or cause_result.code ~= RESULT.SUCCESS then return nil end
     return _make_result(squad, level_id, overdue_entry, entry, cause_result.smart)
 end
 
 --- Walk CAUSES belonging to one overdue need; first cause that publishes wins.
-local function _try_need(trace, squad, level_id, overdue_entry)
+local function _try_need(trace, squad, level_id, overdue_entry, budget)
     local need_name = overdue_entry.need.need
     for j = 1, #CAUSES do
-        local result = _try_one_need_cause(trace, squad, level_id, overdue_entry, CAUSES[j], need_name)
+        local result = _try_one_need_cause(trace, squad, level_id, overdue_entry, CAUSES[j], need_name, budget)
         if result then return result end
     end
     return nil
@@ -252,9 +252,10 @@ local function _on_smart(trace, squad)
 
     _shuffle_causes()
 
+    local budget = { remaining = MAX_SCANS_PER_GENERATOR }
     local result
     for i = 1, #overdue do
-        if not result then result = _try_need(trace, squad, level_id, overdue[i]) end
+        if not result then result = _try_need(trace, squad, level_id, overdue[i], budget) end
     end
     if not result then return { code = RESULT.FAILED_RULES, reason = REASON.NO_BRANCH, community = squad.player_id } end
 

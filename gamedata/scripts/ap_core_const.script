@@ -138,8 +138,12 @@ WOUNDED_CALLBACKS = {
 }
 
 --- Pipeline caps (internal tuning, not MCM).
---- REACTIVE_MAX_CONSEQUENCES_PER_CAUSE: consumer ceiling on consequences fired per cause publish.
-REACTIVE_MAX_CONSEQUENCES_PER_CAUSE = 5
+--- REACTIVE_MAX_CONSEQUENCES_PER_CAUSE: consumer ceiling on consequences fired per reactive cause publish.
+--- RADIANT_MAX_SCANS_PER_GENERATOR: ceiling on SCAN reaches inside a single radiant generator
+---   invocation (one _on_smart call). RULES rejections stay free; only causes that pass RULES and
+---   enter their world SCAN (find_smart / find_squads) consume a slot. Resets every _on_smart call.
+REACTIVE_MAX_CONSEQUENCES_PER_CAUSE = 2
+RADIANT_MAX_SCANS_PER_GENERATOR = 2
 
 --- Result codes: consequence handler return values (template method phases)
 --- Handlers return SUCCESS, FAILED_RULES, FAILED_SCAN, FAILED_ACTION.

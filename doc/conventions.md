@@ -89,7 +89,7 @@ Two tables in the generator file:
 - **NEEDS / INSTINCTS** (one entry per drive); Hull weight, threshold cfg key, period gating, DTO field name.
 - **CAUSES** (one entry per answer); cause const, short name (cfg key suffix), parent drive name, alignment subset, personality, filter, optional `find_opts` builder.
 
-Picker flow: score every drive via Hull, sort overdue list by drive descending, walk overdue drives top-down. For each drive, walk CAUSES with matching parent drive, run RULES + SCAN per cause; first that publishes wins. Cap is enforced by the producer (RADIANT_MAX_CHECKS_PER_TICK).
+Picker flow: score every drive via Hull, sort overdue list by drive descending, walk overdue drives top-down. For each drive, walk CAUSES with matching parent drive, run RULES + SCAN per cause; first that publishes wins. Cap is enforced inside `_on_smart` (RADIANT_MAX_SCANS_PER_GENERATOR): a SCAN reach consumes a slot, RULES rejections are free.
 
 cfg key layout:
 - `cause_<drive>_threshold`; Hull threshold, one cfg key per drive (shared by every answer under that drive)
