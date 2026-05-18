@@ -1,10 +1,25 @@
---- ap_core_cache: Per-level indexes over SIMBOARD-managed pools.
---- Owns: smart bucket (sync at actor_on_first_update); stash bucket (xslice step=3 from actor_on_first_update).
---- Consumers fetch the per-level table and pass it as opts.source to xsmart.find_smart / xstash.find_stashes,
---- bypassing the global pool walk. Vertex-to-level is invariant via game.graph; smart/stash positions
---- are LTX-baked and never move, so no invalidation is needed (Lua VM restart on level transition
---- wipes module state; rebuilds on next actor_on_first_update). The stash bucket returns nil during
---- the xslice warmup (~2s of session); ap_ext_causes_stash checks nil and yields no cause that tick.
+--- ap_core_cache: Per-level smart and stash indexes for level-scoped finders.
+--- Two buckets, both built at actor_on_first_update: _smarts_by_level via a sync walk
+--- of xsmart.smart_iter (one tick); _stashes_by_level via xslice step=3 over
+--- treasure_manager.caches (~2s wall clock for ~500 stashes). Consumers pass the
+--- per-level table as opts.source to xsmart.find_smart and xstash.find_stashes so the
+--- finders skip the global pool walk.
+---
+--- No invalidation. Smarts and stashes are stationary. Both spawn from LTX with a
+--- fixed m_tGraphID and never reach the synchronize_location path that mutates it
+--- (alife_dynamic_object.cpp:93-126), so level_id is fixed for the life of the entity.
+--- Lifecycle: on_game_start fires once per session from the CALifeSimulator ctor
+--- (alife_simulator.cpp:72-75); level transitions don't destruct the simulator so
+--- module state persists. actor_on_first_update does re-fire per net_spawn
+--- (bind_stalker.script:15, 37), but the `if _xxx_by_level then return end` guard at
+--- the top of each builder makes the second+ call a no-op. Real rebuild only happens
+--- on new-game and load-save.
+---
+--- Stash warmup: the bucket grows monotonically while xslice drains. stashes_on_level
+--- exposes the current state directly: nil if no stashes on that level have been bucketed
+--- yet, partial otherwise, full once xslice finishes (~2s). Consumers walk whatever's there;
+--- cost scales with bucket size, never the full ~500 stash pool, so the partial walk always
+--- fits the 4ms ceiling.
 
 local pairs, RegisterScriptCallback = pairs, RegisterScriptCallback
 local xlevel, xsmart, xobject, xslice = xlevel, xsmart, xobject, xslice
@@ -17,8 +32,9 @@ local STASH_BUILD_STEP = 3
 local _smarts_by_level = nil
 local _stashes_by_level = nil
 
--- Walk all registered smarts once, bucket by level_id. Sync: 100 smarts x 4 luabind cold ~= 1.2ms,
--- fits the 4ms ceiling. Vertex cache (xlevel.script:39-49) warms during the walk.
+-- Walk all registered smarts once, bucket by level_id. Sync: ~300-500 smarts in GAMMA,
+-- ~3 luabind trivial per smart (m_game_vertex_id, vertex, level_id), ~1-2ms total. Fits
+-- the 4ms ceiling. Vertex cache (xlevel.script:39-49) warms during the walk.
 -- @cost O(n) smarts | per smart: 1 luabind trivial (m_game_vertex_id) + 0-3 luabind (xlevel.get_level_id cold)
 local function _build_smart_bucket()
     if _smarts_by_level then return end
@@ -88,16 +104,15 @@ local function _build_stash_bucket()
 end
 
 --- Get the per-level stash bucket for direct iteration via xstash.find_stashes opts.source.
---- Returns nil during the xslice warmup window (~2s after actor_on_first_update). Consumers
---- gate on nil and yield no cause for that radiant tick; the next tick a few seconds later
---- sees the bucket ready.
+--- Returns whatever's currently bucketed for the level: nil if nothing yet, partial during
+--- xslice warmup, full after. The bucket grows monotonically; consumers walk what's there
+--- and treat nil/empty as "no candidate this tick".
 --- @safety SAFE - pure Lua hash read, nil-guarded
 --- @cost O(1) | 0 luabind
 --- @param level_id number Engine level_id
---- @return table|nil { [stash_id] = true, ... } or nil if bucket not built / level has no stashes
+--- @return table|nil { [stash_id] = true, ... } or nil if nothing bucketed for this level yet
 function stashes_on_level(level_id)
     if not _stashes_by_level then return nil end
-    if xslice.is_active(STASH_BUILD_QUEUE) then return nil end
     return _stashes_by_level[level_id]
 end
 

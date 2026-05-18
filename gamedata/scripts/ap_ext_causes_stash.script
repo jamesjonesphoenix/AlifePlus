@@ -134,10 +134,9 @@ local function _on_smart(trace, squad)
     local level_id = xlevel.get_level_id(squad)
     if not level_id then return { code = RESULT.FAILED_RULES, reason = REASON.NO_LEVEL_ID } end
 
-    -- Gate on ap_core_cache: nil = stash bucket still warming up (first ~2s of session) OR level has no
-    -- stashes. Both outcomes yield no cause; the next squad radiant tick a few seconds later sees the
-    -- bucket ready. Skipping the find_stashes call here avoids the un-bucketed global walk (today's 14ms
-    -- max breaches the 4ms ceiling).
+    -- ap_core_cache returns whatever's bucketed for this level: nil during warmup if nothing
+    -- on this level has been processed yet, partial mid-build, full after xslice finishes.
+    -- nil = no candidate this tick; next tick has more.
     local source = ap_core_cache.stashes_on_level(level_id)
     if not source then return { code = RESULT.FAILED_RULES, reason = REASON.NO_STASH_NEARBY } end
 
