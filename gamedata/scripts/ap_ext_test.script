@@ -151,9 +151,8 @@ end
 
 local KIT_EQUIPMENT_ITEMS = {
     -- weapon + ammo + knife
-    { sec = "wpn_saiga12s_kobra",    count = 1 },
-    { sec = "ammo_12x76_zhekan",     count = 120 },
-    { sec = "ammo_12x76_dart",       count = 60 },
+    { sec = "wpn_mossberg590",       count = 1 },
+    { sec = "ammo_12x70_buck",       count = 180 },
     { sec = "wpn_knife5",            count = 1 },
     -- armor + backpack
     { sec = "scientific_outfit",     count = 1 },
