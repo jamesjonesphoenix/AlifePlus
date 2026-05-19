@@ -307,6 +307,7 @@ REASON = {
     STASH_NOT_EMPTY   = "stash_not_empty",
     FRIENDLY_FACTION  = "friendly_faction",
     LOW_PERSONALITY   = "low_personality",
+    LOW_TACTICS       = "low_tactics",
     STALKER_EXCLUDED  = "stalker_excluded",
     ALL_FILTERED      = "all_filtered",
 }

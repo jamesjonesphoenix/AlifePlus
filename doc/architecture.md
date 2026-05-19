@@ -22,12 +22,13 @@ Built on xlibs. _ap_deps asserts xlibs presence and version on load. See convent
 - Cause generator: function that picks and emits one cause per call, or none. One generator per family. Files named ap_ext_cause_<family>.script for single-cause, ap_ext_causes_<family>.script for multi-cause.
 - Cause type: RADIANT (squad-tick driven, 1:1 with consequence) or REACTIVE (engine-event driven, 1:N with consequences). Defined in ap_core_const.CAUSE_TYPE.
 - Cause category: REACTIONS, NEEDS, INSTINCTS, OPPORTUNITIES. Behavioral axis parallel to cause type. Drives per-category rate-limit grouping and MCM organization. Defined in ap_core_const.CAUSE_CATEGORY.
-- RULES: business checks that need no world scan. Toggle, alignment, species, personality, payload field, threshold. Cheap. Always cheapest-first.
+- RULES: business checks that need no world scan. Toggle, alignment, species, personality, payload field, threshold, tactics. Cheap. Always cheapest-first.
 - SCAN: world lookup. find_smart, find_squads, find_stashes. Two flavors: destination SCAN (locates a target smart) and responder SCAN (locates responder squads).
 - ACTION: the consequence's effect. script_squad / script_actor_target, state mutation, news add, on_arrive callback.
 - Hull(<drive>): Hull's drive reduction theory (1943). Score = weight * (elapsed / threshold)^2 (ap_ext_causes_needs.script:96-98). Squared exponent makes overdue drives compete strongly. Used by NEEDS (9 stalker drives) and INSTINCTS (5 mutant drives).
 - MVT(<cause>): Charnov's marginal value theorem (1976). Binary patch-recovery gate: elapsed > threshold. Used by stash and area causes (6 OPPORTUNITY fields).
 - personality(<TRAITS>): probability check on a faction or species. avg(traits) clamped to [PERSONALITY_FLOOR, PERSONALITY_CEILING], rolled per dispatch. Inverted traits resolve as 1 - base before averaging.
+- tactics(<reason>): post-SCAN soft check on radiant decisions. Score starts at 1.0; each tactical concern subtracts a weight. math_random() > score returns FAILED_RULES with reason LOW_TACTICS. Conditions: last-of-faction at source (-0.20), smart already targeted by another scripted squad (-0.20). Radiant only; reactive bypasses (event responses are not voluntary picks). Implemented in `ap_ext_util.is_tactically_eligible`.
 - Cross-DTO read: any cause generator may read any DTO; only the owning generator writes.
 - Producer (ap_core_producer): runs the gate chain, evaluates cause generators, publishes to xbus.
 - Consumer (ap_core_consumer): subscribes to xbus events, dispatches to consequence handlers.
@@ -81,7 +82,7 @@ Consequence files (11, always plural): ap_ext_consequences_alpha, ap_ext_consequ
 | File | Role |
 |------|------|
 | ap_ext_const | Domain const tables: CAUSE_CATEGORY, alignment_*, PERSONALITY traits, mutant species displays, range tiers |
-| ap_ext_util | Domain gates: alignment / species / personality checks, FIFO-cached species resolution |
+| ap_ext_util | Domain gates: alignment / species / personality / tactics checks, FIFO-cached species resolution |
 | ap_ext_common | Shared chase pattern: move_actor_chasers / make_move_smart_chasers / make_on_arrive |
 | ap_ext_tracker | Domain state: kill counts, alphas, alpha-dead grace, stalker NEEDS DTO, mutant INSTINCTS DTO, squad OPPORTUNITY DTO |
 | ap_ext_smart_mutator | Runtime smart terrain mutations: territory conquest (shared spawn) and mutant infestation (exclusive spawn) |
@@ -339,7 +340,7 @@ AP detects both via `xsmart.has_jobs_for` and releases the squad cleanly. Mechan
 
 ### SIMBOARD bookkeeping
 
-AP-routed transitions update `SIMBOARD:assign_squad_to_smart` at dispatch, release, and on a drift-repair pass in the 20s scripted-squad scan. `SIMBOARD.smarts[id].squads` therefore reflects actual squad placement for AP-routed squads. `has_capacity`, garrison floor, and faction-quota predicates all read truth.
+AP-routed transitions update `SIMBOARD:assign_squad_to_smart` at two hooks: dispatch (`script_squad` and `_dispatch_return_home`, clearing the source roster with `nil` target before engine `sim_squad_scripted:specific_update` bumps `squad.smart_id` to the new target) and commit (`_commit_arrival`, adding the destination roster entry after `xsmart.has_jobs_for` accepts). `SIMBOARD.smarts[id].squads` therefore reflects actual squad placement for AP-routed squads. `has_capacity`, garrison floor, and faction-quota predicates all read truth.
 
 ### Off-map transit
 
@@ -347,7 +348,7 @@ A cause can flag a destination as off-map. The flag changes selection rules and 
 
 The engine handles the cross-level move through its own per-squad routing, including the offline/online transition machinery for the level swap. At the destination the gulag binds jobs identically to on-map arrivals.
 
-AlifePlus stacks multiple layers of safety on top of that engine capability. A per-source-level rate counter caps off-map dispatches over a sliding window, so no single level depopulates through repeated outflow. Adjacency narrowing restricts candidate smarts to BFS-reachable neighbor levels, with source level excluded. Cross-level filtering runs only on the data the engine still exposes for off-actor-level smarts. A per-session despawn budget (`offmap_despawn_hours`, default 168 game-hours) cleans up any session the engine fails to complete, offline-only and respecting registered owners + permanent / active-role / task-target protections. SIMBOARD bookkeeping stays current at dispatch, release, and drift-repair, so cross-level capacity and garrison queries return accurate counts. The same arrival and mid-hold release checks that protect on-map dispatch run unchanged on off-map dispatch.
+AlifePlus stacks multiple layers of safety on top of that engine capability. A per-source-level rate counter caps off-map dispatches over a sliding window, so no single level depopulates through repeated outflow. Adjacency narrowing restricts candidate smarts to BFS-reachable neighbor levels, with source level excluded. Cross-level filtering runs only on the data the engine still exposes for off-actor-level smarts. A per-session despawn budget (`offmap_despawn_hours`, default 168 game-hours) cleans up any session the engine fails to complete, offline-only and respecting registered owners + permanent / active-role / task-target protections. SIMBOARD bookkeeping stays current via the dispatch + commit hook pair, so cross-level capacity and garrison queries return accurate counts. The same arrival and mid-gulag release checks that protect on-map dispatch run unchanged on off-map dispatch.
 
 | Layer | Mechanism | Site |
 |-------|-----------|------|
@@ -355,10 +356,10 @@ AlifePlus stacks multiple layers of safety on top of that engine capability. A p
 | Adjacency narrowing | filter narrows to BFS neighbor set; source level excluded by `xlevel.get_neighbor_levels` removing `source_id` from visited; hop count from `_resolve_offmap_hops` (X-16 + Brain Scorcher + master rank) | `ap_ext_causes_needs.script:151-166`, `xlevel.script:273-287` |
 | Cross-level filter | prop-only predicates (`xsmart.is_base`, `_is_unclaimed`); `has_animated_stalker_jobs` omitted because `stalker_jobs` is nil for off-actor-level smarts (`smart_terrain.script:462`) | `ap_ext_causes_needs.script:290-334` (offmap CAUSES entries) |
 | Destination selection | `xsmart.find_smart` over the narrowed neighbor set; cross-frame distance ranking is arbitrary-but-deterministic across foreign-level candidates | `xsmart.script:296`, via `ap_core_util.find_smart_observed` at `ap_ext_causes_needs.script:167` |
-| SIMBOARD bookkeeping | `SIMBOARD:assign_squad_to_smart` called at dispatch, release, and drift-repair, so cross-level capacity / garrison / faction-quota queries read truth | `ap_core_broker.script` dispatch + release + scan |
+| SIMBOARD bookkeeping | `SIMBOARD:assign_squad_to_smart` called at dispatch (source clear via nil target) and commit (destination add), so cross-level capacity / garrison / faction-quota queries read truth | `ap_core_broker.script` `script_squad` + `_dispatch_return_home` + `_commit_arrival` |
 | Lifetime budget | offmap entries skip the generic `SCRIPTED_SQUAD_TTL`; `_check_offmap_despawn` fires at `cfg.offmap_despawn_hours` (offline only, respects owner / permanent / active-role / task-target) | `ap_core_broker.script:346-389` |
-| Arrival check | shared `_try_arrival_gulag` (`xsmart.has_jobs_for`); binding check short-circuits for off-level smarts so the gulag hold runs to expiry | `ap_core_broker.script:538-548` |
-| Mid-hold check | shared `_update_pre_release_gulag` (`xsmart.has_jobs_for`); short-circuits for off-actor-level smarts | `ap_core_broker.script:604-627` |
+| Arrival check | shared `_commit_arrival` (`_no_jobs_for_squad` predicate wrapping `xsmart.has_jobs_for`); check short-circuits for off-actor-level smarts so the gulag hold runs to expiry | `ap_core_broker.script` `_commit_arrival` |
+| Mid-gulag check | shared `_update_gulag` (`_no_jobs_for_squad`); short-circuits for off-actor-level smarts | `ap_core_broker.script` `_update_gulag` |
 
 Save persistence: the offmap counter exports / imports via xttltable in `ap_core_limiter` SAVE_STATE / LOAD_STATE. The 48-hour window survives save/load and time-skip (game-time clock).
 

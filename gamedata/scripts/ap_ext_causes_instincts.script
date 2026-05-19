@@ -181,6 +181,9 @@ local function _try_cause(trace, squad, level_id, species, entry, budget)
         smart = ap_core_util.find_smart_observed(trace, squad.position, opts)
     end
     if not smart then return { code = RESULT.FAILED_SCAN, reason = REASON.NO_SMART } end
+    if not ap_ext_util.is_tactically_eligible(squad, smart) then
+        return { code = RESULT.FAILED_RULES, reason = REASON.LOW_TACTICS }
+    end
     return { code = RESULT.SUCCESS, smart = smart }
 end
 

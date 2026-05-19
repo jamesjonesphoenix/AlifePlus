@@ -49,6 +49,7 @@ Territory and population:
 - Stalkers and mutants claim empty outposts.
 - Conquests decay if nobody holds them.
 - Mutants infest lairs and buildings as nests.
+- Radiant dispatches weigh tactical soundness. A squad that would leave its base undefended by its faction, or pile onto a destination another scripted squad already targets, scores low and usually stays.
 
 Alpha mutants:
 - Alpha mutants emerge from combat and accumulate kills.

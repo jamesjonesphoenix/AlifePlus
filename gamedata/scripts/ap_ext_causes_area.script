@@ -123,6 +123,9 @@ local function _eligible_conquer(trace, squad, now, level_id, budget)
     local smart = ap_core_util.find_smart_observed(trace, squad.position,
         { level_id = level_id, filter = _build_conquer_filter(), max_distance = RANGE_EYE })
     if not smart then return { code = RESULT.FAILED_SCAN, reason = REASON.NO_SMART } end
+    if not ap_ext_util.is_tactically_eligible(squad, smart) then
+        return { code = RESULT.FAILED_RULES, reason = REASON.LOW_TACTICS }
+    end
     return {
         cause = CAUSE.AREA_CONQUER,
         squad_id = squad.id,
@@ -153,6 +156,9 @@ local function _eligible_swarm(trace, squad, species, now, level_id, budget)
     local smart = ap_core_util.find_smart_observed(trace, squad.position,
         { level_id = level_id, filter = _make_swarm_filter(squad.player_id), max_distance = RANGE_EYE })
     if not smart then return { code = RESULT.FAILED_SCAN, reason = REASON.NO_SMART } end
+    if not ap_ext_util.is_tactically_eligible(squad, smart) then
+        return { code = RESULT.FAILED_RULES, reason = REASON.LOW_TACTICS }
+    end
     return {
         cause = CAUSE.AREA_SWARM,
         squad_id = squad.id,
@@ -192,6 +198,9 @@ local function _eligible_infest(trace, squad, species, now, level_id, budget)
     local smart = ap_core_util.find_smart_observed(trace, squad.position,
         { level_id = level_id, filter = filter, max_distance = RANGE_EYE })
     if not smart then return { code = RESULT.FAILED_SCAN, reason = REASON.NO_SMART } end
+    if not ap_ext_util.is_tactically_eligible(squad, smart) then
+        return { code = RESULT.FAILED_RULES, reason = REASON.LOW_TACTICS }
+    end
     return {
         cause = CAUSE.AREA_INFEST,
         squad_id = squad.id,

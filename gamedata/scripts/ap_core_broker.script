@@ -553,6 +553,24 @@ function get_scripted_squads()
     return _ap_scripted_squads
 end
 
+--- Check if any AP-scripted squad is already targeting the given smart (optionally excluding one id)
+--- Iterates _ap_scripted_squads, short-circuits on first match. Catches in-flight + still-scripted
+--- post-arrival squads that wouldn't yet appear in SIMBOARD.smarts[id].squads.
+--- @safety SAFE - pure Lua iteration over module-local table
+--- @cost O(n) scripted squads, short-circuits | 0 luabind (pure Lua compares)
+--- @param smart_id number Destination smart server entity ID
+--- @param exclude_squad_id number|nil Squad id to skip
+--- @return boolean True when at least one matching scripted squad found
+function is_smart_targeted(smart_id, exclude_squad_id)
+    if not smart_id then return false end
+    for squad_id, data in pairs(_ap_scripted_squads) do
+        if squad_id ~= exclude_squad_id and data.target_smart_id == smart_id then
+            return true
+        end
+    end
+    return false
+end
+
 --- Release a squad from AP scripted control by id. Public wrapper around _unscript_squad.
 --- @safety SAFE - nil-guarded, releases engine target if entity is live
 --- @cost O(1) | 1 luabind (xobject.se) + 1 luabind (xsquad.release_squad), 0 if entity gone

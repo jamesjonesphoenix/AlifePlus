@@ -1,8 +1,11 @@
---- ap_ext_util: Ext-layer utilities (period gates, alignment gates, personality gates)
+--- ap_ext_util: Ext-layer utilities (period gates, alignment gates, personality gates, tactics gate)
 local math_random = math.random
 
 local PERSONALITY = ap_ext_const.PERSONALITY
 local _alignment_mutant_night = ap_ext_const.alignment_mutant_night
+
+local TACTICS_WEIGHT_LAST_OF_FACTION = 0.20
+local TACTICS_WEIGHT_SMART_TARGETED  = 0.20
 
 -- inv_<trait> -> <trait> lookup; resolves the INV_ prefix without a per-call string.match.
 local _INV_TO_BASE = {
@@ -93,6 +96,26 @@ function check_personality(traits, community, opts)
         ap_core_debug.debug("[UTIL] PERSONALITY_BLOCKED consequence=%s community=%s avg=%.2f chance=%.2f roll=%.2f", opts.name or "?", community, avg, chance, roll)
     end
     return passed
+end
+
+--- Roll a tactical-soundness check against random; true when candidate passes
+--- Score starts at 1.0; subtracts WEIGHT_LAST_OF_FACTION when removing squad leaves its source
+--- unguarded by its faction; subtracts WEIGHT_SMART_TARGETED when another scripted squad already
+--- targets the destination. Radiant only; reactive consequences bypass.
+--- @safety SAFE - xsmart.has_squad_of_faction + ap_core_broker.is_smart_targeted (both nil-guarded)
+--- @cost typically <5 luabind total (xsmart short-circuits; is_smart_targeted is pure Lua)
+--- @param squad se_squad Candidate squad
+--- @param smart smart_terrain Destination smart resolved by find_smart
+--- @return boolean True when math_random() <= computed score
+function is_tactically_eligible(squad, smart)
+    local score = 1.0
+    if squad.smart_id and not xsmart.has_squad_of_faction(squad.smart_id, squad.player_id, squad.id) then
+        score = score - TACTICS_WEIGHT_LAST_OF_FACTION
+    end
+    if ap_core_broker.is_smart_targeted(smart.id, squad.id) then
+        score = score - TACTICS_WEIGHT_SMART_TARGETED
+    end
+    return math_random() <= score
 end
 
 --- Wild smart: not a base, no trader job. AP-domain classifier shared by area/instincts

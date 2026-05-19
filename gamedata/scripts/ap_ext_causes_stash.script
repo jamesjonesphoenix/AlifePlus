@@ -102,6 +102,9 @@ local function _try_picked_cause(trace, squad, level_id, opts)
             level_id = level_id, filter = _build_dst_filter(squad.player_id),
         })
         if not dst then return { code = RESULT.FAILED_SCAN, reason = REASON.NO_SMART } end
+        if not ap_ext_util.is_tactically_eligible(squad, dst) then
+            return { code = RESULT.FAILED_RULES, reason = REASON.LOW_TACTICS }
+        end
         dst_smart_id = dst.id
     end
 
