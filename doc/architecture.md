@@ -676,7 +676,7 @@ Runtime combat modifiers for alpha mutants and high-rank stalkers. Two independe
 
 Alpha mutants (monster_on_before_hit). Outgoing hit power bonus and incoming hit power absorption via _mutator_alpha_hit_power_dealt[npc_id] / _mutator_alpha_hit_power_taken[npc_id] hash tables, populated at promote time. Panic immunity (set_custom_panic_threshold(0)) applied lazily on first hit. O(1) lookup, 0.5s throttle, early exit when tables empty. Alpha level: min(10, floor(kills / cause_alpha_kills_per_level)). Loot items injected via monster_on_loot_init callback with per-species bonus pools, managed in ap_ext_tracker.
 
-Stalker rank (npc_on_before_hit). Outgoing hit power bonus and incoming hit power reduction for veteran+ stalkers (rank 12000+). Linear scaling from veteran to legend. Reads engine character_rank(); never manipulates it.
+Stalker rank (npc_on_before_hit). Outgoing hit power bonus and incoming hit power reduction for veteran+ stalkers (rank 12000+). Linear scaling from veteran to legend. Reads engine character_rank(); never manipulates it. Asymmetric actor coverage by callback scope: the taken arm reaches actor-fired bullets (npc_on_before_hit fires when any attacker hits a stalker, actor included), but the dealt arm does NOT reach actor-victim hits (engine routes those to actor_on_before_hit, which the mutator does not subscribe to). Net effect: shooting a master/legend deals less damage to them; a master/legend shooting the actor deals vanilla damage. Wiring an `actor_on_before_hit` handler reading `shit.draftsman:character_rank()` would close the asymmetry.
 
 ---
 

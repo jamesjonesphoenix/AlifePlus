@@ -1586,31 +1586,31 @@
     <text>Stalker Rank</text>
   </string>
   <string id="ui_mcm_ap_mutators_rank_desc">
-    <text>Combat modifiers for veteran+ stalkers (rank 12000+). Based on engine rank earned through kills. Scales linearly from veteran to legend.</text>
+    <text>Combat modifiers for veteran+ stalkers (rank 12000+) in NPC-vs-NPC combat. Dealt bonus only fires when the victim is another stalker; bullets fired AT the actor are NOT modified. Taken reduction fires on all incoming hits to veteran+ stalkers, including those from the actor. Scales linearly from veteran (rank 12000) to legend (rank 27000+).</text>
   </string>
   <string id="ui_mcm_ap_mutators_rank_mutator_rank_hit_power_dealt_enabled">
     <text>Hit power bonus enabled</text>
   </string>
   <string id="ui_mcm_ap_mutators_rank_mutator_rank_hit_power_dealt_enabled_desc">
-    <text>Veteran+ stalker attacks land harder. A legend at max bonus hits significantly harder.</text>
+    <text>Veteran+ stalker attacks against other stalkers land harder. NPC-vs-NPC only. Bullets fired at the actor are NOT modified by this setting.</text>
   </string>
   <string id="ui_mcm_ap_mutators_rank_mutator_rank_hit_power_dealt_mult">
     <text>Maximum hit power bonus</text>
   </string>
   <string id="ui_mcm_ap_mutators_rank_mutator_rank_hit_power_dealt_mult_desc">
-    <text>Maximum hit power bonus at legend rank. At 0.15: veteran = +3%, legend = +15%.</text>
+    <text>Maximum dealt-side hit power bonus at legend rank. Applies only when victim is a stalker NPC. At 0.15: veteran = +3%, legend = +15%. Internal 0.5s throttle limits burst-fire stacking.</text>
   </string>
   <string id="ui_mcm_ap_mutators_rank_mutator_rank_hit_power_taken_enabled">
     <text>Hit power reduction enabled</text>
   </string>
   <string id="ui_mcm_ap_mutators_rank_mutator_rank_hit_power_taken_enabled_desc">
-    <text>Incoming hits against veteran+ stalkers land softer. A legend at max reduction takes significantly less.</text>
+    <text>Incoming hits against veteran+ stalkers land softer. Applies to all attackers, including the actor; shooting a master/legend deals less damage to them.</text>
   </string>
   <string id="ui_mcm_ap_mutators_rank_mutator_rank_hit_power_taken_mult">
     <text>Maximum hit power reduction</text>
   </string>
   <string id="ui_mcm_ap_mutators_rank_mutator_rank_hit_power_taken_mult_desc">
-    <text>Maximum hit power reduction at legend rank. At 0.15: veteran = -3%, legend = -15%.</text>
+    <text>Maximum taken-side hit power reduction at legend rank. Applies to all attackers, including the actor. At 0.15: veteran = -3%, legend = -15%. Internal 0.5s throttle limits burst-fire stacking.</text>
   </string>
   <!-- ==================== MUTATORS / AREA CONQUEST ==================== -->
   <string id="ui_mcm_ap_mutators_conquest_title">
