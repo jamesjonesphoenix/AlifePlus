@@ -106,10 +106,12 @@ local function _arrive_loot(squad, args)
         return
     end
 
+    local max_take = random(cfg.consequence_stash_loot_min_items, cfg.consequence_stash_loot_max_items)
     ap_core_debug.observe(nil, PHASE.COMPLETE_STASH_LOOT, function(trace)
         local taken = 0
         local cursor = 1
         for i = 1, #sections do
+            if taken >= max_take then break end
             local sec = sections[i]
             if xtrade.is_eligible(sec, exclude) then
                 local keep = xtrade.keep_count(sec)
@@ -171,7 +173,7 @@ end
 
 --- Walk the arrived squad's online members. For each section where the squad holds more
 --- copies than the vanilla keep count, deposit the surplus into the stash via
---- `xtrade.drop_item` + `xstash.fill_stash`. Total deposits capped by the MCM-configurable
+--- `xtrade.release_item` + `xstash.fill_stash`. Total deposits capped by the MCM-configurable
 --- items-per-stash range. Vanilla `treasure_manager` materializes the items when the player
 --- opens the stash. AP never calls `alife_create_item`; AP records sections that came from
 --- the squad's actual engine-spawned inventory.
@@ -191,7 +193,7 @@ local function _arrive_fill(squad, args)
 
     local secs = {}
     for i = 1, #picks do
-        secs[i] = xtrade.drop_item(picks[i], exclude)
+        secs[i] = xtrade.release_item(picks[i], exclude)
     end
 
     if not xstash.fill_stash(stash_id, secs, false) then

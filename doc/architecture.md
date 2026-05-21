@@ -11,6 +11,8 @@ Two layers: core (ap_core_*) and ext (ap_ext_*). Core never imports ext. All dom
 
 Built on xlibs. _ap_deps asserts xlibs presence and version on load. See conventions.md for naming, result codes, MCM, logging.
 
+Part of a three-mod alife family: **AlifePlus** extends A-Life with new behaviors (this mod), **AlifeBalance** tunes existing rates and counts, **AlifeGuard** keeps alife state clean.
+
 ![System Overview](img/system-overview.png)
 
 ---
@@ -44,6 +46,7 @@ Project-wide constraints that hold across all pipelines and modules.
 - Cross-DTO read, single-writer write. Any cause generator may read any DTO; only the owning generator writes.
 - Performance budget. Every measured flow (each bracketed `ap_core_debug.observe` label in the log: `[CONSEQUENCE_PHASE.FIND_TARGETS]`, `[CONSEQUENCE_PHASE.FIND_DESTINATION]`, `[STASH]`, ...) targets 0.1ms average per call and has a hard 4ms ceiling per call. No exceptions, including cold start, save load, and level transition. Any preload (index build, cache warm, registry walk) that would breach 4ms in a single tick must be frame-spread (xslice or equivalent), with the search path falling back to the un-indexed walk until the build completes. A flow that averages above 0.1ms, or that ever exceeds 4ms in a single call, is a regression and requires a perf task. See `doc/standards/code-standards.md` "Performance budget".
 - Item transfer only. AlifePlus never invents items. When AP materializes a section, the section comes from a config slot the engine's design surface defines (`character_desc [supplies]`, `trade_*.ltx [supplies_N]`, `gulag_job_trade_buy_sell.ltx [buy_sell_supplier]`, `treasure_manager` tier configs); never from an AP-curated pool. Some of these slots are engine-implemented in C++, some are script-level conventions on engine primitives, some ship empty in vanilla — AP uses the slots that exist regardless.
+- Money flows match vanilla. NPCs gain money when they sell items at supply traders (`floor(cost * buy_sell[4])`) and spend money when they buy ammo (`floor(cost * buy_sell[5])`). Same cost formulas vanilla `axr_trade_manager` uses. No money moves through stash loot, stash fill, or any other AP path — only the supply_trader consequence touches NPC money.
 
 ---
 

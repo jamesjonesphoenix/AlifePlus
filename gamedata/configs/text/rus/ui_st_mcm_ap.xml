@@ -856,6 +856,18 @@
   <string id="ui_mcm_ap_consequences_stash_loot_consequence_stash_loot_protect_toolkits_desc">
     <text>Когда включено, NPC пропускают тайники, содержащие наборы инструментов, ремонтные комплекты, инструменты крафта и мастерские наборы. Весь тайник остаётся нетронутым.</text>
   </string>
+  <string id="ui_mcm_ap_consequences_stash_loot_consequence_stash_loot_min_items">
+    <text>Мин. предметов</text>
+  </string>
+  <string id="ui_mcm_ap_consequences_stash_loot_consequence_stash_loot_min_items_desc">
+    <text>Минимальное число предметов, которые отряд забирает из тайника.</text>
+  </string>
+  <string id="ui_mcm_ap_consequences_stash_loot_consequence_stash_loot_max_items">
+    <text>Макс. предметов</text>
+  </string>
+  <string id="ui_mcm_ap_consequences_stash_loot_consequence_stash_loot_max_items_desc">
+    <text>Максимальное число предметов, которые отряд забирает из тайника.</text>
+  </string>
   <!-- ==================== CONSEQUENCES / STASH FILL ==================== -->
   <string id="ui_mcm_ap_consequences_stash_fill_title">
     <text>Заполнение\nтайника</text>
@@ -1287,7 +1299,7 @@
     <text>Закуп у торговца</text>
   </string>
   <string id="ui_mcm_ap_consequences_supply_trader_tag">
-    <text>Описание: Отряд идёт к торговцу продать артефакты и пополнить запасы\nПричина: Доступен закуп у торговца</text>
+    <text>Описание: Отряд идёт к торговцу продать предметы за деньги и пополнить боеприпасы\nПричина: Доступен закуп у торговца</text>
   </string>
   <string id="ui_mcm_ap_consequences_supply_trader_consequence_supply_trader_enabled">
     <text>Включено</text>

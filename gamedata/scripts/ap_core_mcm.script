@@ -179,6 +179,8 @@ defaults = {
     consequence_stash_loot_enabled = true,
     consequence_stash_loot_rush = false,
     consequence_stash_loot_protect_toolkits = true,
+    consequence_stash_loot_min_items = 1,
+    consequence_stash_loot_max_items = 2,
 
     -- Consequence: Stash Fill
     consequence_stash_fill_enabled = true,
@@ -457,6 +459,8 @@ local _key_to_tab = {
     consequence_stash_loot_enabled = "consequences/stash_loot",
     consequence_stash_loot_rush = "consequences/stash_loot",
     consequence_stash_loot_protect_toolkits = "consequences/stash_loot",
+    consequence_stash_loot_min_items = "consequences/stash_loot",
+    consequence_stash_loot_max_items = "consequences/stash_loot",
     consequence_stash_fill_enabled = "consequences/stash_fill",
     consequence_stash_fill_rush = "consequences/stash_fill",
     consequence_stash_fill_min_items = "consequences/stash_fill",
@@ -949,6 +953,8 @@ function on_mcm_load()
                             _check("consequence_stash_loot_enabled"),
                             _check("consequence_stash_loot_rush"),
                             _check("consequence_stash_loot_protect_toolkits"),
+                            _track("consequence_stash_loot_min_items", 1, 5, 1),
+                            _track("consequence_stash_loot_max_items", 1, 10, 1),
                         },
                     },
                     {

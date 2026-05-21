@@ -17,6 +17,7 @@ Structural invariants make this possible:
 [*]Event-driven contract: nothing runs unless the engine says something happened.
 [*]Physical simulation guarantee: consequences use entities already in the simulation, never spawned, teleported, or fabricated.
 [*]Item transfer only: items move between carriers (NPCs, stashes, traders). AlifePlus never invents items. When AP needs to materialize an item, it reads the section from a vanilla config slot the engine recognizes, never from an AP-only list.
+[*]Money flows match vanilla: NPCs gain money when they sell items at supply traders, spend money when they buy ammo. No money moves through stash loot, stash fill, or any other AP flow.
 [/list]
 
 The economy follows the same logic. Real items move between real stalkers, and real needs drive their decisions.
