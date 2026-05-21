@@ -1,7 +1,6 @@
 --- ap_ext_consequences_stash: STASH family consequences (loot + ambush + fill). CONFIGS factory.
 
-local random = math.random
-local alife_release_id = alife_release_id
+local random, alife_release_id = math.random, alife_release_id
 local xobject, xtime, xstash = xobject, xtime, xstash
 local ap_core_debug, ap_core_broker, ap_core_record, ap_core_consumer = ap_core_debug, ap_core_broker, ap_core_record, ap_core_consumer
 local STASH_FILL_ELIGIBLE = ap_ext_const.ITEMS.STASH_FILL_ELIGIBLE
@@ -68,39 +67,40 @@ local function _arrive_ambush(squad, args)
     ap_ext_tracker.reset_squad_opportunity(squad.id, args.dto_field, xtime.game_sec())
 end
 
---- Walk the arrived squad's online members' inventories, snapshot up to N notable items the
---- stash does NOT already hold (rule 2 via the `seen` set), release the items from squad
---- (engine deletes the server objects), and append the section names to the stash cache string
---- via `xstash.fill_stash`. Vanilla `treasure_manager` materializes the items when the player
---- opens the stash. AP never calls `alife_create_item`; AP records sections that came from the
---- squad's actual engine-spawned inventory.
+-- Snapshot up to max_items eligible items across the squad's online members' inventories.
+-- @complexity O(members * items_per_member) | iterate_inventory walks each online member once
+local function _collect_picks(squad, max_items)
+    local picks = {}
+    if not squad.squad_members or squad:npc_count() == 0 then return picks end
+    local function add_pick(_owner, item)
+        if #picks >= max_items then return end
+        local sec = item:section()
+        if not sec or not STASH_FILL_ELIGIBLE[sec] then return end
+        picks[#picks + 1] = { id = item:id(), sec = sec }
+    end
+    for member_se in squad:squad_members() do
+        if #picks >= max_items then break end
+        local member_go = xobject.go(member_se.id)
+        if not member_go then goto next_member end
+        member_go:iterate_inventory(add_pick, member_go)
+        ::next_member::
+    end
+    return picks
+end
+
+--- Walk the arrived squad's online members' inventories, snapshot up to N items matching
+--- STASH_FILL_ELIGIBLE, release the items from squad (engine deletes the server objects), and
+--- append the section names to the stash cache string via `xstash.fill_stash`. Vanilla
+--- `treasure_manager` materializes the items when the player opens the stash. AP never calls
+--- `alife_create_item`; AP records sections that came from the squad's actual engine-spawned
+--- inventory.
 local function _arrive_fill(squad, args)
     if not args then return end
     ap_ext_tracker.reset_squad_opportunity(squad.id, args.dto_field, xtime.game_sec())
     local stash_id = args.stash_id
 
     local max_items = random(cfg.consequence_stash_fill_min_items, cfg.consequence_stash_fill_max_items)
-    local existing = xstash.get_stash_items(stash_id) or {}
-    local seen = {}
-    for i = 1, #existing do seen[existing[i]] = true end
-
-    local picks = {}
-    if squad.squad_members and squad:npc_count() > 0 then
-        for member_se in squad:squad_members() do
-            if #picks >= max_items then break end
-            local member_go = xobject.go(member_se.id)
-            if member_go then
-                member_go:iterate_inventory(function(_owner, item)
-                    if #picks >= max_items then return end
-                    local sec = item:section()
-                    if not sec or seen[sec] then return end
-                    if not STASH_FILL_ELIGIBLE[sec] then return end
-                    picks[#picks + 1] = { id = item:id(), sec = sec }
-                    seen[sec] = true
-                end, member_go)
-            end
-        end
-    end
+    local picks = _collect_picks(squad, max_items)
 
     if #picks == 0 then
         ap_core_debug.debug(LOG_FILL .. " arrive: stash=%d squad=%d no_eligible_items", stash_id, squad.id)

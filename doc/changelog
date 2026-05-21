@@ -10,6 +10,9 @@ next
   Combat:
     Removed: Alpha hit power bonus, alpha hit power reduction, alpha panic immunity, and alpha bonus loot. Alpha mutants now take vanilla damage, can flee from damage, and drop only their species' default loot. Alpha promotion still tracks the killer as a target for AlphaKill hunters.
     Removed: Veteran+ stalker hit power scaling (dealt and taken). Master and legend stalkers deal and absorb vanilla damage.
+  Economy:
+    Trade: NPCs arriving at supply trader smarts now sell eligible items for money and buy ammo for their best weapon up to vanilla restock caps. Cost formulas read from gulag_job_trade_buy_sell.ltx, the same file vanilla axr_trade_manager reads.
+    Stash Fill: stashes filled by scripted squads now contain every eligible item the visiting squad carries, capped only by the configured items-per-stash range. Previously fill contributed at most 1 item per section type and skipped sections already present in the stash.
   MCM:
     Added: Mutators > Area Swarm. Mutant occupation of empty smart terrains has its own decay, cap, and spawn count, independent of Area Conquest.
     Removed: Mutators > Alpha and Mutators > Stalker Rank pages. Alpha Promote loot toggle.

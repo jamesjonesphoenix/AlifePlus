@@ -1,9 +1,6 @@
 --- ap_ext_consequences_needs: Action-only consequences for human needs (14 entries, all 1:1 with cause).
 
-local alife_release_id, alife_create_item = alife_release_id, alife_create_item
-local pairs, ini_file = pairs, ini_file
-local parse_list = parse_list
-local xobject, xsmart, xtime = xobject, xsmart, xtime
+local alife_release_id, xobject, xsmart, xtime, xtrade = alife_release_id, xobject, xsmart, xtime, xtrade
 local ap_core_debug, ap_core_broker, ap_core_record, ap_core_consumer = ap_core_debug, ap_core_broker, ap_core_record, ap_core_consumer
 
 local CAUSE = ap_core_const.CAUSE
@@ -21,24 +18,6 @@ local LOG_INIT = ap_core_debug.bracket(CAUSE_CATEGORY.NEEDS)
 
 local cfg = ap_core_mcm.cfg
 
---- Vanilla trade config (`gulag_job_trade_buy_sell.ltx [buy_sell]` = supplier + bartender + medic).
---- Same file/section vanilla `axr_trade_manager` reads. Cached on first call. The set tells us
---- which sections are tradable at a trader smart; the items themselves come from the visitor's
---- existing inventory (sell side) or `alife_create_item(sec, ...)` for the buy side, where `sec`
---- is read from this same config — never an AP-curated pool.
-local _buy_sell_valid_cache
-
-local function _get_buy_sell_valid()
-    if _buy_sell_valid_cache ~= nil then return _buy_sell_valid_cache end
-    local ini = ini_file("items\\trade\\gulag_job_trade_buy_sell.ltx")
-    if not ini or not ini:section_exist("buy_sell") then
-        _buy_sell_valid_cache = false
-        return nil
-    end
-    _buy_sell_valid_cache = utils_data.collect_section(ini, "buy_sell", true)
-    return _buy_sell_valid_cache
-end
-
 --- Try each section via npc:object, release first match. Returns consumed section or nil.
 local function _consume(go, sections)
     for i = 1, #sections do
@@ -48,62 +27,15 @@ local function _consume(go, sections)
     return nil
 end
 
-local function _is_equipped(go, item_id)
-    for i = 1, 12 do
-        local slot = go:item_in_slot(i)
-        if slot and slot:id() == item_id then return true end
-    end
-    return false
-end
-
---- Trade visitor inventory against trader at smart.
---- Sell: visitor inventory items that match vanilla `buy_sell` config are transferred to the trader
---- (rule 2: skip if trader already holds that section). Best weapon and equipped slots are excluded.
---- Buy: one ammo section matching visitor's `best_weapon():ammo_class` and present in `buy_sell` is
---- materialized via `alife_create_item` (rule 2: skip if visitor already holds it). Section is read
---- from a vanilla config, satisfying the engine-design-surface invariant in architecture.md.
+--- Trade visitor inventory against trader at smart. Resolves trader via xsmart.get_npc_for_job
+--- then delegates to xtrade.trade for the full vanilla sell+buy cycle (vanilla cost formulas,
+--- best_weapon and slot-equipped skipped on sell, best_weapon ammo restocked to buy_sell[3]).
 local function _arrive_trade(visitor_go, smart_id)
-    local valid = _get_buy_sell_valid()
-    if not valid then return {}, {} end
     local smart_se = smart_id and xobject.se(smart_id)
     local trader_go = smart_se and xsmart.get_npc_for_job(smart_se, xsmart.JOB_TYPE_TRADER)
     if not trader_go then return {}, {} end
-
-    -- SELL: transfer eligible items visitor -> trader
-    local sold = {}
-    local bw = visitor_go:best_weapon()
-    local bw_id = bw and bw:id()
-    local bw_sec = bw and bw:section()
-    visitor_go:iterate_inventory(function(_owner, item)
-        local sec = item:section()
-        if not sec or not valid[sec] then return end
-        local item_id = item:id()
-        if bw_id and item_id == bw_id then return end
-        if _is_equipped(visitor_go, item_id) then return end
-        if trader_go:object(sec) then return end                 -- rule 2 on trader
-        visitor_go:transfer_item(item, trader_go)
-        sold[#sold + 1] = sec
-    end, visitor_go)
-
-    -- BUY: one ammo for visitor's best weapon
-    local bought = {}
-    if bw_sec then
-        local bw_ammos = parse_list(ini_sys, bw_sec, "ammo_class", true)
-        if bw_ammos then
-            for ammo_sec in pairs(bw_ammos) do
-                if valid[ammo_sec] and not visitor_go:object(ammo_sec) then  -- rule 2 on visitor
-                    local visitor_se = xobject.se(visitor_go:id())
-                    if visitor_se then
-                        alife_create_item(ammo_sec, visitor_se)
-                        bought[#bought + 1] = ammo_sec
-                        break
-                    end
-                end
-            end
-        end
-    end
-
-    return sold, bought
+    local result = xtrade.trade(visitor_go, trader_go)
+    return result.sold, result.bought
 end
 
 local CONFIGS = {
