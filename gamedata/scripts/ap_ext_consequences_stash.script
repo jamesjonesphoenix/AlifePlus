@@ -202,26 +202,32 @@ local function _arrive_fill(squad, args)
         return
     end
 
-    local max_items = random(cfg.consequence_stash_fill_min_items, cfg.consequence_stash_fill_max_items)
-    local picks = _collect_fill_picks(squad, max_items)
+    ap_core_debug.observe(nil, PHASE.COMPLETE_STASH_FILL, function(trace)
+        local max_items = random(cfg.consequence_stash_fill_min_items, cfg.consequence_stash_fill_max_items)
+        local picks = _collect_fill_picks(squad, max_items)
+        if #picks == 0 then
+            return { code = TRACE.NO_ITEMS, stash = stash_id, squad = squad.id }
+        end
 
-    if #picks == 0 then
-        ap_core_debug.debug(LOG_FILL .. " arrive: stash=%d squad=%d no_surplus", stash_id, squad.id)
-        return
-    end
+        local secs = {}
+        for i = 1, #picks do
+            local itm = picks[i]
+            secs[i] = itm:section()
+            alife_release_id(itm:id())
+        end
 
-    local secs = {}
-    for i = 1, #picks do
-        local itm = picks[i]
-        secs[i] = itm:section()
-        alife_release_id(itm:id())
-    end
+        local ok
+        ap_core_debug.observe(trace, PHASE.FILL_STASH, function()
+            ok = xstash.fill_stash(stash_id, secs, false)
+            return { code = ok and TRACE.OK or TRACE.NONE }
+        end)
 
-    if not xstash.fill_stash(stash_id, secs, false) then
-        ap_core_debug.warn(LOG_FILL .. " arrive: stash=%d squad=%d fill_failed", stash_id, squad.id)
-        return
-    end
-    ap_core_debug.debug(LOG_FILL .. " arrive: stash=%d squad=%d items=%d", stash_id, squad.id, #secs)
+        if not ok then
+            ap_core_debug.warn(LOG_FILL .. " arrive: stash=%d squad=%d fill_failed", stash_id, squad.id)
+            return { code = TRACE.NONE, stash = stash_id, squad = squad.id, reason = "fill_failed" }
+        end
+        return { code = TRACE.OK, stash = stash_id, squad = squad.id, items = #secs }
+    end)
 end
 
 local CONFIGS = {

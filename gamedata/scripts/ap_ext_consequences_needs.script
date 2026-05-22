@@ -116,7 +116,8 @@ local function _dispatch_arrive(trace, go, args)
         ap_core_debug.observe(trace, PHASE.ARRIVE, function()
             local sold, bought = _arrive_trade(go, args.dst_smart_id)
             local fired = (#sold > 0) or (#bought > 0)
-            return { code = fired and TRACE.OK or TRACE.NONE, sold = sold, bought = bought }
+            return { code = fired and TRACE.OK or TRACE.NONE,
+                sold = table.concat(sold, ","), bought = table.concat(bought, ",") }
         end)
         return "trade"
     end

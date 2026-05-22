@@ -771,12 +771,28 @@ local _pending_buf = {}
 
 local function _update_scripted_squads()
     ResetTimeEvent(TIMER_EV, UPDATE_SCRIPTED_SQUADS, UPDATE_SCRIPTED_SQUADS_SEC)
+    local t0 = ap_core_debug.enabled() and os.clock() or nil
+    local now = t0 and xtime.game_sec()
     local count = 0
-    for squad_id in pairs(_ap_scripted_squads) do
+    for squad_id, data in pairs(_ap_scripted_squads) do
         count = count + 1
         _pending_buf[count] = squad_id
+        if t0 then
+            if data.scripted_target then
+                ap_core_debug.debug("[SQUAD] tracked: id=%d target=%s on_arrive=%s age=%ds offmap=%s arrived=%s interruptable=%s",
+                    squad_id, data.scripted_target, tostring(data.on_arrive or "-"),
+                    now - (data.tracked_at or now),
+                    tostring(data.offmap or false), tostring(data.arrived or false),
+                    tostring(data.interruptable or false))
+            else
+                ap_core_debug.debug("[SQUAD] tracked: id=%d offmap_dwell home=%s arrived_age=%ds return_in=%ds left_home=%s",
+                    squad_id, tostring(data.home_level or "-"),
+                    data.arrived_at and (now - data.arrived_at) or -1,
+                    data.return_home_at and (data.return_home_at - now) or -1,
+                    tostring(data.left_home or false))
+            end
+        end
     end
-    local t0 = ap_core_debug.enabled() and os.clock() or nil
     for i = 1, count do
         _update_scripted_squad(_pending_buf[i])
         _pending_buf[i] = nil
