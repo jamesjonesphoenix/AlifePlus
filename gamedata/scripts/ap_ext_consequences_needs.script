@@ -12,19 +12,41 @@ local ACTION = ap_core_const.ACTION
 local PHASE = ap_core_const.CONSEQUENCE_PHASE
 local TRACE = ap_core_const.TRACE
 local PRE_RELEASE_GULAG = ap_core_const.PRE_RELEASE_GULAG
-local NEEDS_SECTIONS = ap_ext_const.NEEDS_SECTIONS
 
 local LOG_INIT = ap_core_debug.bracket(CAUSE_CATEGORY.NEEDS)
 
 local cfg = ap_core_mcm.cfg
 
---- Try each section via npc:object, release first match. Returns consumed section or nil.
-local function _consume(go, sections)
-    for i = 1, #sections do
-        local item = go:object(sections[i])
-        if item then alife_release_id(item:id()) return sections[i] end
-    end
-    return nil
+--- Per-need vanilla section predicates. HUNGER reads the engine-side _ITM bucket built by
+--- _g.script:Parse_ITM (kind == i_food / i_drink / i_mutant_cooked). HEAL / REST / SOCIAL /
+--- OUTPOST read vanilla item_rewards.ltx via xobject.in_reward_set. The curated lists are
+--- maintained by Anomaly, not by AP; addons that ship items_*.ltx overlays or set the right
+--- kind on new sections are picked up automatically.
+local NEED_MATCH = {
+    HUNGER  = function(sec) return IsItem("eatable", sec) ~= nil end,
+    HEAL    = function(sec) return xobject.in_reward_set(sec, "items_health")
+                                or xobject.in_reward_set(sec, "items_bleed") end,
+    REST    = function(sec) return xobject.in_reward_set(sec, "items_rad") end,
+    SOCIAL  = function(sec) return xobject.in_reward_set(sec, "items_rad") end,
+    OUTPOST = function(sec) return xobject.in_reward_set(sec, "items_rad") end,
+}
+
+--- Walk online inventory once, release the first item the per-need predicate accepts.
+--- alife_release_id is event-queued (anomaly/_g.script:2229-2237 -> alife():release) so mid-
+--- iteration calls inside iterate_inventory are safe.
+local function _consume(npc_id, need)
+    local match = NEED_MATCH[need]
+    if not match then return nil end
+    local consumed
+    xobject.iterate_online_inventory(npc_id, function(_, item)
+        local sec = item:section()
+        if match(sec) then
+            alife_release_id(item:id())
+            consumed = sec
+            return true
+        end
+    end)
+    return consumed
 end
 
 --- Trade visitor inventory against trader at smart. Resolves trader via xsmart.get_trader_at_smart
@@ -43,13 +65,13 @@ end
 
 local CONFIGS = {
     { consequence = CONSEQUENCE.HUNGER_CAMPFIRE, action = ACTION.HUNGER_CAMPFIRE,   event = CAUSE.HUNGER_CAMPFIRE,  name = "hunger_campfire",
-      section_key = "HUNGER",  pre_release_gulag = PRE_RELEASE_GULAG.HUNGER_CAMPFIRE },
+      need = "HUNGER",  pre_release_gulag = PRE_RELEASE_GULAG.HUNGER_CAMPFIRE },
     { consequence = CONSEQUENCE.SLEEP_CAMPFIRE, action = ACTION.SLEEP_CAMPFIRE,     event = CAUSE.SLEEP_CAMPFIRE,   name = "sleep_campfire",
       pre_release_gulag = PRE_RELEASE_GULAG.SLEEP_CAMPFIRE },
     { consequence = CONSEQUENCE.REST_CAMPFIRE, action = ACTION.REST_CAMPFIRE,       event = CAUSE.REST_CAMPFIRE,    name = "rest_campfire",
-      section_key = "REST",    pre_release_gulag = PRE_RELEASE_GULAG.REST_CAMPFIRE },
+      need = "REST",    pre_release_gulag = PRE_RELEASE_GULAG.REST_CAMPFIRE },
     { consequence = CONSEQUENCE.HEAL_SHELTER, action = ACTION.HEAL_SHELTER,         event = CAUSE.HEAL_SHELTER,     name = "heal_shelter",
-      section_key = "HEAL",    pre_release_gulag = PRE_RELEASE_GULAG.HEAL_SHELTER },
+      need = "HEAL",    pre_release_gulag = PRE_RELEASE_GULAG.HEAL_SHELTER },
     { consequence = CONSEQUENCE.SHELTER_INDOOR, action = ACTION.SHELTER_INDOOR,     event = CAUSE.SHELTER_INDOOR,   name = "shelter_indoor",
       pre_release_gulag = PRE_RELEASE_GULAG.SHELTER_INDOOR },
     { consequence = CONSEQUENCE.SHELTER_OUTDOOR, action = ACTION.SHELTER_OUTDOOR,   event = CAUSE.SHELTER_OUTDOOR,  name = "shelter_outdoor",
@@ -63,7 +85,7 @@ local CONFIGS = {
     { consequence = CONSEQUENCE.MONEY_HUNT, action = ACTION.MONEY_HUNT,             event = CAUSE.MONEY_HUNT,       name = "money_hunt",
       pre_release_gulag = PRE_RELEASE_GULAG.MONEY_HUNT },
     { consequence = CONSEQUENCE.JOB_OUTPOST, action = ACTION.JOB_OUTPOST,           event = CAUSE.JOB_OUTPOST,      name = "job_outpost",
-      section_key = "OUTPOST", pre_release_gulag = PRE_RELEASE_GULAG.JOB_OUTPOST },
+      need = "OUTPOST", pre_release_gulag = PRE_RELEASE_GULAG.JOB_OUTPOST },
     { consequence = CONSEQUENCE.JOB_EXPLORE, action = ACTION.JOB_EXPLORE,           event = CAUSE.JOB_EXPLORE,      name = "job_explore",
       pre_release_gulag = PRE_RELEASE_GULAG.JOB_EXPLORE },
     { consequence = CONSEQUENCE.JOB_EXPLORE_OFFMAP, action = ACTION.JOB_EXPLORE_OFFMAP, event = CAUSE.JOB_EXPLORE_OFFMAP, name = "job_explore_offmap",
@@ -71,11 +93,11 @@ local CONFIGS = {
     { consequence = CONSEQUENCE.JOB_RESEARCH, action = ACTION.JOB_RESEARCH,         event = CAUSE.JOB_RESEARCH,     name = "job_research",
       pre_release_gulag = PRE_RELEASE_GULAG.JOB_RESEARCH },
     { consequence = CONSEQUENCE.SOCIAL_CAMPFIRE, action = ACTION.SOCIAL_CAMPFIRE,   event = CAUSE.SOCIAL_CAMPFIRE,  name = "social_campfire",
-      section_key = "SOCIAL",  pre_release_gulag = PRE_RELEASE_GULAG.SOCIAL_CAMPFIRE },
+      need = "SOCIAL",  pre_release_gulag = PRE_RELEASE_GULAG.SOCIAL_CAMPFIRE },
     { consequence = CONSEQUENCE.SOCIAL_BASE, action = ACTION.SOCIAL_BASE,           event = CAUSE.SOCIAL_BASE,      name = "social_base",
-      section_key = "SOCIAL",  pre_release_gulag = PRE_RELEASE_GULAG.SOCIAL_BASE },
+      need = "SOCIAL",  pre_release_gulag = PRE_RELEASE_GULAG.SOCIAL_BASE },
     { consequence = CONSEQUENCE.SOCIAL_OFFBASE, action = ACTION.SOCIAL_OFFBASE,     event = CAUSE.SOCIAL_OFFBASE,   name = "social_offbase",
-      section_key = "SOCIAL",  pre_release_gulag = PRE_RELEASE_GULAG.SOCIAL_OFFBASE, offmap = true },
+      need = "SOCIAL",  pre_release_gulag = PRE_RELEASE_GULAG.SOCIAL_OFFBASE, offmap = true },
 }
 
 --- Dispatch arrive action (online only): consume sections or trade exchange.
@@ -83,10 +105,9 @@ local function _dispatch_arrive(trace, go, args)
     if cfg["consequence_" .. args.name .. "_arrive_action_enabled"] == false then
         return "disabled"
     end
-    local sections = args.section_key and NEEDS_SECTIONS[args.section_key]
-    if sections then
+    if args.need then
         ap_core_debug.observe(trace, PHASE.ARRIVE, function()
-            local consumed = _consume(go, sections)
+            local consumed = _consume(go:id(), args.need)
             return { code = consumed and TRACE.OK or TRACE.NONE, consumed = consumed }
         end)
         return "consume"
@@ -139,7 +160,7 @@ local function _make_handler(entry)
                     rush = cfg["consequence_" .. entry.name .. "_rush"],
                     on_arrive = entry.consequence,
                     on_arrive_args = { dto_field = event_data.dto_field, name = entry.name,
-                        section_key = entry.section_key, arrive_fn = entry.arrive_fn,
+                        need = entry.need, arrive_fn = entry.arrive_fn,
                         dst_name = smart:name(), dst_smart_id = smart.id },
                     pre_release_gulag = entry.pre_release_gulag,
                     offmap = entry.offmap,

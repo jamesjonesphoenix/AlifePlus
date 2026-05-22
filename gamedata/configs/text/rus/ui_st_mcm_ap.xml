@@ -850,12 +850,6 @@
   <string id="ui_mcm_ap_consequences_stash_loot_consequence_stash_loot_rush_desc">
     <text>Скриптованные отряды двигаются на максимальной скорости. Отключите для более медленного, реалистичного движения.</text>
   </string>
-  <string id="ui_mcm_ap_consequences_stash_loot_consequence_stash_loot_protect_toolkits">
-    <text>Защищать наборы инструментов</text>
-  </string>
-  <string id="ui_mcm_ap_consequences_stash_loot_consequence_stash_loot_protect_toolkits_desc">
-    <text>Когда включено, NPC пропускают тайники, содержащие наборы инструментов, ремонтные комплекты, инструменты крафта и мастерские наборы. Весь тайник остаётся нетронутым.</text>
-  </string>
   <string id="ui_mcm_ap_consequences_stash_loot_consequence_stash_loot_min_items">
     <text>Мин. предметов</text>
   </string>

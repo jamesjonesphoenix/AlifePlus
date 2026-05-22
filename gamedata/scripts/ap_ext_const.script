@@ -248,17 +248,3 @@ function on_game_start()
     SCATTER_FROM[2] = xtable.merge(alignment_mutant_aberrant)
 end
 
---- Item section lists for needs arrive_fn `_consume` (vanilla sections).
---- HUNGER/REST/HEAL/SOCIAL/OUTPOST are the only consume needs; the visitor finds the first
---- matching item in inventory and releases it. SUPPLY_TRADER does not appear here — that
---- arrive path goes through `_arrive_trade` and reads vanilla's `gulag_job_trade_buy_sell.ltx`
---- `[buy_sell]` config to know which sections are trader-tradable.
-NEEDS_SECTIONS = {
-    HUNGER = { "bread", "breadold", "kolbasa", "conserva", "tushonka", "vodka", "energy_drink", "water_drink", "beer" },
-    REST = { "cigarettes", "cigarettes_lucky", "cigarettes_russian", "vodka", "vodka2", "vodka_quality", "beer" },
-    HEAL = { "medkit", "medkit_army", "medkit_scientic", "bandage", "stimpack", "stimpack_army", "stimpack_scientic" },
-    SOCIAL = { "cigarettes", "cigarettes_lucky", "cigarettes_russian", "vodka", "vodka2", "vodka_quality", "beer" },
-    OUTPOST = { "cigarettes", "cigarettes_lucky", "cigarettes_russian" },
-}
-
-

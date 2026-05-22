@@ -1,6 +1,6 @@
 --- ap_ext_consequences_stash: STASH family consequences (loot + ambush + fill). CONFIGS factory.
 
-local random = math.random
+local random, alife_release_id = math.random, alife_release_id
 local xobject, xtime, xstash, xtrade = xobject, xtime, xstash, xtrade
 local ap_core_debug, ap_core_broker, ap_core_record, ap_core_consumer = ap_core_debug, ap_core_broker, ap_core_record, ap_core_consumer
 
@@ -21,36 +21,47 @@ local LOG_FILL = ap_core_debug.bracket(CONSEQUENCE.STASH_FILL)
 
 local cfg = ap_core_mcm.cfg
 
---- Sections AP treats as too valuable for NPC handling: toolkits, repair kits, gunsmith/outfit
---- kits, drugkit, ammokit, basickit/advancedkit/expertkit. Vanilla [buy_sell] includes most of
---- these at sell_mult 0.5; GAMMA treats them as core gameplay items so AP keeps them out of
---- both directions (squad will not take them from stashes, will not deposit them into stashes).
---- Same set drives the macro guard (skip the whole stash if any protected section is inside)
---- and the per-section filter passed to xtrade.is_eligible.
-local LOOT_PROTECT_SET = {
-    ["toolkit_1"] = true, ["toolkit_2"] = true, ["toolkit_3"] = true,
-    ["toolkit_p"] = true, ["toolkit_s"] = true, ["toolkit_r5"] = true, ["toolkit_r7"] = true,
-    ["light_repair_kit"] = true, ["medium_repair_kit"] = true, ["heavy_repair_kit"] = true,
-    ["exo_repair_kit"] = true, ["helmet_repair_kit"] = true,
-    ["itm_gunsmith_toolkit"] = true, ["itm_outfit_toolkit"] = true,
-    ["itm_drugkit"] = true, ["itm_ammokit"] = true,
-    ["itm_basickit"] = true, ["itm_advancedkit"] = true, ["itm_expertkit"] = true,
+--- Reward sets accepted for stash fill. Vanilla treasure_manager re-materializes stashed items
+--- from section names only (no condition / ammo count / uses persisted through the cache string),
+--- so fill must restrict to sections where engine-default re-spawn is acceptable: consumables
+--- (food / drink / medical / bandages / rad-cure including tobacco and alcohol) and ammo (full
+--- box re-spawn is count drift, not condition laundering).
+local FILL_REWARD_SETS = {
+    "items_food", "items_drink",
+    "items_health", "items_bleed", "items_medical", "items_rad",
+    "items_ammo",
 }
 
--- Active exclude set for xtrade calls; nil when MCM protect toggle is off.
--- @complexity O(1) | cfg field read
-local function _build_exclude()
-    if cfg.consequence_stash_loot_protect_toolkits then return LOOT_PROTECT_SET end
-    return nil
+local _fill_eligible_cache = {}
+-- True if sec is in any FILL_REWARD_SETS entry. Per-section cache after first probe.
+-- @complexity O(1) cached | first probe: up to 7 in_reward_set calls; cached: 1 hash lookup
+local function _is_fill_eligible(sec)
+    local cached = _fill_eligible_cache[sec]
+    if cached ~= nil then return cached end
+    for i = 1, #FILL_REWARD_SETS do
+        if xobject.in_reward_set(sec, FILL_REWARD_SETS[i]) then
+            _fill_eligible_cache[sec] = true
+            return true
+        end
+    end
+    _fill_eligible_cache[sec] = false
+    return false
 end
 
--- True if any section in the list is in LOOT_PROTECT_SET; used as macro guard before loot.
--- @complexity O(n) sections | n typically 5-15
-local function _has_protected(sections)
-    for i = 1, #sections do
-        if LOOT_PROTECT_SET[sections[i]] then return true end
-    end
-    return false
+local _loot_eligible_cache = {}
+-- True if sec is in vanilla [buy_sell] and not a crafting workflow item (tool / kit / part /
+-- upgrade by vanilla _g.script:Parse_ITM kind classification). Crafting items stay in player
+-- stashes; NPCs leave them alone via engine-side classifiers, not an AP section list.
+-- @complexity O(1) cached | first probe: 1 xtrade.is_eligible + 3 IsItem; cached: 1 hash lookup
+local function _is_loot_eligible(sec)
+    local cached = _loot_eligible_cache[sec]
+    if cached ~= nil then return cached end
+    local v = xtrade.is_eligible(sec, nil)
+        and not IsItem("tool", sec)
+        and not IsItem("part", sec)
+        and not IsItem("upgrade", sec)
+    _loot_eligible_cache[sec] = v
+    return v
 end
 
 -- Walk squad members. Returns (member_ids, counts).
@@ -74,12 +85,13 @@ local function _scan_squad(squad)
     return member_ids, counts
 end
 
---- Walk the stash sections. For each section that is eligible (in vanilla [buy_sell] and not
---- in the AP exclude set) and below the squad's keep count, create one copy on a squad member
---- via `xtrade.give_item` (round-robin across all members, online or offline). Then clear the
---- stash via `xstash.loot_stash`; sections the squad did not take are destroyed. Macro guard
---- runs first: if any section is in `LOOT_PROTECT_SET` and the MCM toggle is on, the entire
---- stash is left alone.
+--- Walk the stash sections. For each section the squad finds loot-eligible (vanilla [buy_sell]
+--- membership minus crafting workflow items via `_is_loot_eligible`) and below the squad's
+--- per-section vanilla keep count, create one copy on a squad member via `xtrade.give_item`
+--- (round-robin). Then clear the stash via `xstash.loot_stash`; sections the squad did not
+--- take are destroyed. Crafting items (tools, kits, weapon parts, upgrades) are filtered by
+--- vanilla `_g.script:Parse_ITM` kind classification, not by an AP-curated section list, so
+--- addon-added crafting items GAMMA depends on are protected automatically.
 local function _arrive_loot(squad, args)
     if not args then return end
     ap_ext_tracker.reset_squad_opportunity(squad.id, args.dto_field, xtime.game_sec())
@@ -90,10 +102,6 @@ local function _arrive_loot(squad, args)
     end
     local sections = xstash.get_stash_items(stash_id)
     if not sections or #sections == 0 then return end
-    if cfg.consequence_stash_loot_protect_toolkits and _has_protected(sections) then
-        ap_core_debug.debug(LOG_LOOT .. " arrive: stash=%d protected", stash_id)
-        return
-    end
 
     local cmd_id = squad:commander_id()
     local st = cmd_id and db.storage[cmd_id]
@@ -103,7 +111,6 @@ local function _arrive_loot(squad, args)
         return
     end
 
-    local exclude = _build_exclude()
     local member_ids, counts = _scan_squad(squad)
     if #member_ids == 0 then
         ap_core_debug.debug(LOG_LOOT .. " arrive: stash=%d squad=%d no_members", stash_id, squad.id)
@@ -117,10 +124,10 @@ local function _arrive_loot(squad, args)
         for i = 1, #sections do
             if taken >= max_take then break end
             local sec = sections[i]
-            if xtrade.is_eligible(sec, exclude) then
+            if _is_loot_eligible(sec) then
                 local keep = xtrade.keep_count(sec)
                 if keep and (counts[sec] or 0) < keep then
-                    if xtrade.give_item(member_ids[cursor], sec, exclude) then
+                    if xtrade.give_item(member_ids[cursor], sec, nil) then
                         counts[sec] = (counts[sec] or 0) + 1
                         cursor = (cursor % #member_ids) + 1
                         taken = taken + 1
@@ -141,20 +148,19 @@ local function _arrive_ambush(squad, args)
     ap_ext_tracker.reset_squad_opportunity(squad.id, args.dto_field, xtime.game_sec())
 end
 
--- Pick items to deposit: only those where squad's count exceeds keep_count, capped at max_items.
--- Two passes: count online inventory by section, compute per-section surplus, then walk items
--- again and pick up to surplus per section. Offline members are invisible via the engine API
--- (no Lua hook for offline inventory iteration); xobject.iterate_online_inventory returns nil
--- for them, so they silently contribute nothing on either pass.
+-- Pick items to deposit: only fill-eligible sections where the squad's count exceeds vanilla
+-- keep_count, capped at max_items. Two passes: count online inventory by section, compute
+-- per-section surplus, then walk items again and pick up to surplus per section. Offline
+-- members contribute nothing on either pass (xobject.iterate_online_inventory nil-returns).
 -- @complexity O(members * items_per_member) | online members walked twice
-local function _collect_fill_picks(squad, max_items, exclude)
+local function _collect_fill_picks(squad, max_items)
     local picks = {}
     local member_ids, counts = _scan_squad(squad)
     if #member_ids == 0 then return picks end
 
     local surplus = {}
     for sec, count in pairs(counts) do
-        if xtrade.is_eligible(sec, exclude) then
+        if _is_fill_eligible(sec) then
             local keep = xtrade.keep_count(sec) or 0
             local diff = count - keep
             if diff > 0 then surplus[sec] = diff end
@@ -176,12 +182,14 @@ local function _collect_fill_picks(squad, max_items, exclude)
     return picks
 end
 
---- Walk the arrived squad's online members. For each section where the squad holds more
---- copies than the vanilla keep count, deposit the surplus into the stash via
---- `xtrade.release_item` + `xstash.fill_stash`. Total deposits capped by the MCM-configurable
---- items-per-stash range. Vanilla `treasure_manager` materializes the items when the player
---- opens the stash. AP never calls `alife_create_item`; AP records sections that came from
---- the squad's actual engine-spawned inventory.
+--- Walk the arrived squad's online members. For each fill-eligible section where the squad
+--- holds more copies than the vanilla keep count, deposit the surplus into the stash via
+--- `alife_release_id` + `xstash.fill_stash`. Total deposits capped by the MCM-configurable
+--- items-per-stash range. Vanilla `treasure_manager` materializes items at engine defaults
+--- when the player opens the stash; the cache string persists section names only, so fill
+--- accepts only stateless items (food / drink / medical / bandages / rad-cure / ammo) where
+--- default re-spawn is acceptable. Weapons, outfits, artefacts, grenades are filtered out by
+--- `_is_fill_eligible`; their condition / charge state would otherwise be lost to the cache.
 local function _arrive_fill(squad, args)
     if not args then return end
     ap_ext_tracker.reset_squad_opportunity(squad.id, args.dto_field, xtime.game_sec())
@@ -195,8 +203,7 @@ local function _arrive_fill(squad, args)
     end
 
     local max_items = random(cfg.consequence_stash_fill_min_items, cfg.consequence_stash_fill_max_items)
-    local exclude = _build_exclude()
-    local picks = _collect_fill_picks(squad, max_items, exclude)
+    local picks = _collect_fill_picks(squad, max_items)
 
     if #picks == 0 then
         ap_core_debug.debug(LOG_FILL .. " arrive: stash=%d squad=%d no_surplus", stash_id, squad.id)
@@ -205,7 +212,9 @@ local function _arrive_fill(squad, args)
 
     local secs = {}
     for i = 1, #picks do
-        secs[i] = xtrade.release_item(picks[i], exclude)
+        local itm = picks[i]
+        secs[i] = itm:section()
+        alife_release_id(itm:id())
     end
 
     if not xstash.fill_stash(stash_id, secs, false) then
