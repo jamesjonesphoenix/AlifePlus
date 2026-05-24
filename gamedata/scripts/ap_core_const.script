@@ -305,6 +305,7 @@ REASON = {
     NO_BASE           = "no_base",
     NO_TARGET_SQUAD   = "no_target_squad",
     STASH_NOT_EMPTY   = "stash_not_empty",
+    FILL_FAILED       = "fill_failed",
     FRIENDLY_FACTION  = "friendly_faction",
     LOW_PERSONALITY   = "low_personality",
     LOW_TACTICS       = "low_tactics",

@@ -1,5 +1,6 @@
 --- ap_ext_consequences_stash: STASH family consequences (loot + ambush + fill). CONFIGS factory.
 
+local pairs = pairs
 local random, alife_release_id = math.random, alife_release_id
 local xobject, xtime, xstash, xtrade = xobject, xtime, xstash, xtrade
 local ap_core_debug, ap_core_broker, ap_core_record, ap_core_consumer = ap_core_debug, ap_core_broker, ap_core_record, ap_core_consumer
@@ -71,13 +72,12 @@ end
 -- @complexity O(members * items_per_member) | iterates each online member once
 local function _scan_squad(squad)
     local member_ids, counts = {}, {}
-    if not squad.squad_members or squad:npc_count() == 0 then
-        return member_ids, counts
-    end
+    if not squad or not squad.squad_members then return member_ids, counts end
     local function count_item(_, item)
         local sec = item:section()
         if sec then counts[sec] = (counts[sec] or 0) + 1 end
     end
+    if squad:npc_count() == 0 then return member_ids, counts end
     for member_se in squad:squad_members() do
         member_ids[#member_ids + 1] = member_se.id
         xobject.iterate_online_inventory(member_se.id, count_item)
@@ -124,16 +124,14 @@ local function _arrive_loot(squad, args)
         for i = 1, #sections do
             if taken >= max_take then break end
             local sec = sections[i]
-            if _is_loot_eligible(sec) then
-                local keep = xtrade.keep_count(sec)
-                if keep and (counts[sec] or 0) < keep then
-                    if xtrade.give_item(member_ids[cursor], sec, nil) then
-                        counts[sec] = (counts[sec] or 0) + 1
-                        cursor = (cursor % #member_ids) + 1
-                        taken = taken + 1
-                    end
-                end
-            end
+            if not _is_loot_eligible(sec) then goto continue end
+            local keep = xtrade.keep_count(sec)
+            if not keep or (counts[sec] or 0) >= keep then goto continue end
+            if not xtrade.give_item(member_ids[cursor], sec, nil) then goto continue end
+            counts[sec] = (counts[sec] or 0) + 1
+            cursor = (cursor % #member_ids) + 1
+            taken = taken + 1
+            ::continue::
         end
         ap_core_debug.observe(trace, PHASE.LOOT_STASH, function()
             return xstash.loot_stash(stash_id)
@@ -160,11 +158,11 @@ local function _collect_fill_picks(squad, max_items)
 
     local surplus = {}
     for sec, count in pairs(counts) do
-        if _is_fill_eligible(sec) then
-            local keep = xtrade.keep_count(sec) or 0
-            local diff = count - keep
-            if diff > 0 then surplus[sec] = diff end
-        end
+        if not _is_fill_eligible(sec) then goto continue end
+        local keep = xtrade.keep_count(sec) or 0
+        local diff = count - keep
+        if diff > 0 then surplus[sec] = diff end
+        ::continue::
     end
 
     local function pick_surplus(_, item)
@@ -224,7 +222,7 @@ local function _arrive_fill(squad, args)
 
         if not ok then
             ap_core_debug.warn(LOG_FILL .. " arrive: stash=%d squad=%d fill_failed", stash_id, squad.id)
-            return { code = TRACE.NONE, stash = stash_id, squad = squad.id, reason = "fill_failed" }
+            return { code = TRACE.NONE, stash = stash_id, squad = squad.id, reason = REASON.FILL_FAILED }
         end
         return { code = TRACE.OK, stash = stash_id, squad = squad.id, items = #secs }
     end)

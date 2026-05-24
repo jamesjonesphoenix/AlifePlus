@@ -57,21 +57,27 @@ local _personality_by_cause = {
     [CAUSE.STASH_AMBUSH] = { traits = _personality_ambush },
 }
 
---- Branch picker. Empty stash + fill-eligible alignment -> CAUSE.STASH_FILL.
---- Non-empty + outlaw + items_count >= cause_stash_ambush_min_items -> CAUSE.STASH_AMBUSH.
---- Non-empty + loot-eligible alignment -> CAUSE.STASH_LOOT. Each branch checks its own
---- per-cause toggle; a disabled branch falls through to the next eligible branch.
-local function _pick_branch(community, is_empty, items_count)
+--- World-state classifier. Emits ordered list of eligible sibling causes; caller cascades
+--- the list on RULES (threshold + personality), first to pass reaches the 1 SCAN slot.
+--- Empty stash + fill-eligible alignment -> [STASH_FILL].
+--- Non-empty + outlaw + items_count >= cause_stash_ambush_min_items -> [STASH_AMBUSH, STASH_LOOT]
+---   when the squad is also loot-eligible (outlaws are both); ambush preferred, loot as fallback.
+--- Non-empty + loot-eligible (non-outlaw) -> [STASH_LOOT].
+local function _pick_branches(community, is_empty, items_count, out)
     if is_empty then
-        if _alignment_fill[community] and cfg.cause_stash_fill_enabled then return CAUSE.STASH_FILL end
-        return nil
+        if _alignment_fill[community] and cfg.cause_stash_fill_enabled then
+            out[#out + 1] = CAUSE.STASH_FILL
+        end
+        return out
     end
     if _alignment_outlaw[community] and items_count >= cfg.cause_stash_ambush_min_items
         and cfg.cause_stash_ambush_enabled then
-        return CAUSE.STASH_AMBUSH
+        out[#out + 1] = CAUSE.STASH_AMBUSH
     end
-    if _alignment_loot[community] and cfg.cause_stash_loot_enabled then return CAUSE.STASH_LOOT end
-    return nil
+    if _alignment_loot[community] and cfg.cause_stash_loot_enabled then
+        out[#out + 1] = CAUSE.STASH_LOOT
+    end
+    return out
 end
 
 -- Per-cause threshold + personality + SCAN for the cause picked by _pick_branch.
@@ -153,14 +159,20 @@ local function _on_smart(trace, squad)
     local is_empty = items == nil
     local items_count = items and #items or 0
 
-    local cause_const = _pick_branch(squad.player_id, is_empty, items_count)
-    if not cause_const then return { code = RESULT.FAILED_RULES, reason = REASON.NO_BRANCH, community = squad.player_id } end
+    local branches = _pick_branches(squad.player_id, is_empty, items_count, {})
+    if #branches == 0 then return { code = RESULT.FAILED_RULES, reason = REASON.NO_BRANCH, community = squad.player_id } end
 
     local now = xtime.game_sec()
     local budget = { remaining = MAX_SCANS_PER_GENERATOR }
-    local result = ap_core_debug.observe(trace, cause_const, _try_picked_cause, squad, level_id,
-        { now = now, stash = stash, items_count = items_count, cause_const = cause_const, budget = budget })
-    if not result or not result.cause then return result end
+    local result
+    for i = 1, #branches do
+        if not result then
+            local r = ap_core_debug.observe(trace, branches[i], _try_picked_cause, squad, level_id,
+                { now = now, stash = stash, items_count = items_count, cause_const = branches[i], budget = budget })
+            if r and r.cause then result = r end
+        end
+    end
+    if not result then return { code = RESULT.FAILED_RULES, reason = REASON.NO_BRANCH, community = squad.player_id } end
 
     ap_core_limiter.increment_cause_counter(CATEGORY)
     return result
