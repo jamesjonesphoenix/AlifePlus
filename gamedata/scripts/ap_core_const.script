@@ -144,7 +144,7 @@ WOUNDED_CALLBACKS = {
 ---   invocation (one _on_smart call). RULES rejections stay free; only causes that pass RULES and
 ---   enter their world SCAN (find_smart / find_squads) consume a slot. Resets every _on_smart call.
 REACTIVE_MAX_CONSEQUENCES_PER_CAUSE = 2
-RADIANT_MAX_SCANS_PER_GENERATOR = 2
+RADIANT_MAX_SCANS_PER_GENERATOR = 1
 
 --- Result codes: consequence handler return values (template method phases)
 --- Handlers return SUCCESS, FAILED_RULES, FAILED_SCAN, FAILED_ACTION.
