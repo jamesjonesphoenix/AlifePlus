@@ -77,8 +77,8 @@ end
 
 local function _is_not_base_or_lair(smart) return not xsmart.is_base(smart) and not xsmart.is_lair(smart) end
 local function _is_unclaimed(smart)
-    local fac = xsmart.get_smart_faction(smart)
-    return fac == "none"
+    if xsmart.get_controlling_faction(smart) ~= "none" then return false end
+    return not next(xsmart.get_declared_factions(smart))
 end
 
 -- Resolve total BFS hops for off-map adjacency search.
@@ -98,7 +98,7 @@ local function _build_filter(entry, community)
     return function(smart)
         if entry.filter and not entry.filter(smart) then return false end
         if entry.exclude_enemy and community then
-            local fac = xsmart.get_smart_faction(smart)
+            local fac = xsmart.get_controlling_faction(smart)
             if fac ~= "none" and game_relations.is_factions_enemies(community, fac) then return false end
         end
         return true

@@ -328,8 +328,9 @@ A single engine field: `squad.scripted_target` via `xsquad.acquire_squad` / `rel
 |--------|---------------|--------|
 | `smart.stalker_jobs` / `monster_jobs` | `xsmart.has_animated_stalker_jobs` | scan-time predicate per cause: reject stub-only smarts (job_type_id in {0, 1}) |
 | `smart.npc_info[id].job` | `xsmart.has_jobs_for` | arrival + mid-hold predicate: detect engine binding failure |
-| `smart.props` | `xsmart.has_faction`, `accepts_mutant` | scan-time faction gate (mirrors engine target_precondition gate 1) |
-| `SIMBOARD.smarts[id].squads` | `xsmart.has_capacity` | sim-routing intent (not physical occupancy; see SIMBOARD bookkeeping below) |
+| `smart.props` | `xsmart.accepts_faction` | scan-time faction gate (engine target_precondition Tier 1; covers stalker + mutant) |
+| `smart.faction` / `owning_faction` | `xsmart.get_controlling_faction` | runtime holder check (enemy gates, at-base detection, is-unclaimed) |
+| `SIMBOARD.smarts[id].squads` | `xsmart.has_squad_of_faction` | sim-routing intent (not physical occupancy; see SIMBOARD bookkeeping below) |
 
 Cause-side filters live in `ap_ext_causes_*.script`; each cause picks the predicate set that matches the activity (surge shelter, lair, base/unclaimed, has-anomaly, etc.).
 
@@ -343,7 +344,7 @@ AP detects both via `xsmart.has_jobs_for` and releases the squad cleanly. Mechan
 
 ### SIMBOARD bookkeeping
 
-AP-routed transitions update `SIMBOARD:assign_squad_to_smart` at two hooks: dispatch (`script_squad` and `_dispatch_return_home`, clearing the source roster with `nil` target before engine `sim_squad_scripted:specific_update` bumps `squad.smart_id` to the new target) and commit (`_commit_arrival`, adding the destination roster entry after `xsmart.has_jobs_for` accepts). `SIMBOARD.smarts[id].squads` therefore reflects actual squad placement for AP-routed squads. `has_capacity`, garrison floor, and faction-quota predicates all read truth.
+AP-routed transitions update `SIMBOARD:assign_squad_to_smart` at two hooks: dispatch (`script_squad` and `_dispatch_return_home`, clearing the source roster with `nil` target before engine `sim_squad_scripted:specific_update` bumps `squad.smart_id` to the new target) and commit (`_commit_arrival`, adding the destination roster entry after `xsmart.has_jobs_for` accepts). `SIMBOARD.smarts[id].squads` therefore reflects actual squad placement for AP-routed squads. `has_squad_of_faction`, garrison floor, and faction-quota predicates all read truth.
 
 ### Off-map transit
 

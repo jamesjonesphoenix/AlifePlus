@@ -31,7 +31,7 @@ local _personality_ambush = { PERSONALITY.GREED, PERSONALITY.AGGRESSION }
 
 local function _build_dst_filter(community)
     return function(smart)
-        local fac = xsmart.get_smart_faction(smart)
+        local fac = xsmart.get_controlling_faction(smart)
         if fac ~= "none" and game_relations.is_factions_enemies(community, fac) then return false end
         return true
     end
@@ -134,7 +134,7 @@ local function _on_smart(trace, squad)
     if not squad then return { code = RESULT.FAILED_RULES, reason = REASON.NIL_ARGS } end
     if not _alignment_human[squad.player_id] then return { code = RESULT.FAILED_RULES, reason = REASON.WRONG_ALIGNMENT, community = squad.player_id } end
     local squad_smart = xsquad.get_squad_smart(squad)
-    if squad_smart and xsmart.is_base(squad_smart) and xsmart.get_smart_faction(squad_smart) == squad.player_id then
+    if squad_smart and xsmart.is_base(squad_smart) and xsmart.get_controlling_faction(squad_smart) == squad.player_id then
         return { code = RESULT.FAILED_RULES, reason = REASON.AT_BASE }
     end
     if not ap_ext_util.is_active_period(squad.player_id) then return { code = RESULT.FAILED_RULES, reason = REASON.WRONG_PERIOD } end

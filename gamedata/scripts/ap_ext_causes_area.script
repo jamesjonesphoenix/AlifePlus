@@ -43,7 +43,7 @@ local _personality_infest  = { PERSONALITY.TERRITORY, PERSONALITY.SURVIVAL }
 
 local _is_wild_smart = ap_ext_util.is_wild_smart
 
--- Human-only. No accepts_mutant; engine's has_jobs_for self-rejects mismatched stalker
+-- Human-only. No accepts_faction; engine's has_jobs_for self-rejects mismatched stalker
 -- communities on arrival (release_no_jobs). xsmart.has_jobs_for cite: stalker job assignment
 -- requires smart.props[community] to be set; mismatch yields nil job, has_jobs_for false.
 local function _build_conquer_filter()
@@ -54,32 +54,32 @@ local function _build_conquer_filter()
     end
 end
 
--- Mutant variant of conquer. Needs upfront accepts_mutant because mob_home stubs are
+-- Mutant variant of conquer. Needs upfront accepts_faction because mob_home stubs are
 -- oversupplied for mutants (gulag_general.script:1018-1022) so has_jobs_for rarely rejects.
 -- Without this gate, dispatched mutant dwells at a species-mismatched smart until pre_release_gulag.
 local function _make_swarm_filter(player_id)
     return function(smart)
         if not xsmart.is_smart_empty(smart) then return false end
         if not _is_wild_smart(smart) then return false end
-        return xsmart.accepts_mutant(smart, player_id)
+        return xsmart.accepts_faction(smart, player_id)
     end
 end
 
 local function _make_lair_filter(player_id)
     return function(smart)
-        return xsmart.is_lair(smart) and _is_wild_smart(smart) and xsmart.accepts_mutant(smart, player_id)
+        return xsmart.is_lair(smart) and _is_wild_smart(smart) and xsmart.accepts_faction(smart, player_id)
     end
 end
 
 local function _make_surge_filter(player_id)
     return function(smart)
-        return xsmart.has_surge_shelter(smart) and _is_wild_smart(smart) and xsmart.accepts_mutant(smart, player_id)
+        return xsmart.has_surge_shelter(smart) and _is_wild_smart(smart) and xsmart.accepts_faction(smart, player_id)
     end
 end
 
 local function _make_lair_or_surge_filter(player_id)
     return function(smart)
-        return (xsmart.is_lair(smart) or xsmart.has_surge_shelter(smart)) and _is_wild_smart(smart) and xsmart.accepts_mutant(smart, player_id)
+        return (xsmart.is_lair(smart) or xsmart.has_surge_shelter(smart)) and _is_wild_smart(smart) and xsmart.accepts_faction(smart, player_id)
     end
 end
 

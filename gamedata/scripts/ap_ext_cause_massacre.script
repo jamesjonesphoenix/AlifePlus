@@ -27,7 +27,7 @@ local function _on_squad_npc_death(trace, squad, se_victim, se_killer)
 
     local smart = xsquad.get_squad_smart(squad)
     if not smart then return { code = RESULT.FAILED_RULES, reason = REASON.NO_SMART } end
-    if xsmart.is_base(smart) and xsmart.get_smart_faction(smart) == squad.player_id then
+    if xsmart.is_base(smart) and xsmart.get_controlling_faction(smart) == squad.player_id then
         return { code = RESULT.FAILED_RULES, reason = REASON.AT_BASE }
     end
 
