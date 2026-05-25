@@ -719,7 +719,7 @@ end
 local function _release_actor_chaser_if_no_longer_enemy(squad_id, squad, data)
     if data.scripted_target ~= "actor" then return false end
     if not data.actor_relation_check then return false end
-    local squad_faction = squad:get_squad_community()
+    local squad_faction = squad.player_id
     if game_relations.is_factions_enemies(squad_faction, get_actor_true_community()) then return false end
     ap_core_debug.debug("[SQUAD] actor_chaser_released_no_longer_enemy: squad=%d faction=%s",
         squad_id, squad_faction)
