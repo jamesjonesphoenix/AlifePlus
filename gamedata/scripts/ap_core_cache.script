@@ -38,7 +38,8 @@
 --- walk via the standard `or SIMBOARD.X` pattern, so consumers stay correct during the
 --- warmup window at the cost of one slow scan until the bucket fills.
 
-local pairs, RegisterScriptCallback = pairs, RegisterScriptCallback
+local pairs, ipairs, tostring, RegisterScriptCallback = pairs, ipairs, tostring, RegisterScriptCallback
+local alife_object = alife_object
 local xcreature, xdata, xlevel, xsmart, xsquad, xobject, xslice =
     xcreature, xdata, xlevel, xsmart, xsquad, xobject, xslice
 local IsStalker, IsTrader = IsStalker, IsTrader
@@ -174,8 +175,14 @@ function stashes_on_level(level_id)
 end
 
 -- Bucket one squad into _squads_by_level. Returns true to drain (xslice survivor protocol).
--- @cost O(1) | 1-3 luabind (xlevel.get_level_id cached or 0-3 cold)
-local function _bucket_one_squad_impl(_, squad)
+-- Re-resolves via alife_object(id): a squad destroyed (death / despawn) between enumeration
+-- and processing returns nil here. Holding a server-entity ref across frames hits pure-virtual
+-- on field reads when the C++ vtable is replaced mid-destruction (same root cause as the
+-- standalone-bucket fix); pcall cannot catch it per doc/library/modding/pcall-safety.md:50-57.
+-- @cost O(1) | 1 alife_object + 1-3 luabind (xlevel.get_level_id cached or 0-3 cold)
+local function _bucket_one_squad_impl(_, id)
+    if not id then return true end
+    local squad = alife_object(id)
     if not squad then return true end
     local level_id = xlevel.get_level_id(squad)
     if not level_id then return true end
@@ -184,28 +191,28 @@ local function _bucket_one_squad_impl(_, squad)
         bucket = {}
         _squads_by_level[level_id] = bucket
     end
-    bucket[squad.id] = true
+    bucket[id] = true
     return true
 end
 
-local function _bucket_one_squad(squad)
-    return ap_core_debug.observe(nil, OBSERVE_BUCKET_SQUAD, _bucket_one_squad_impl, squad)
+local function _bucket_one_squad(id)
+    return ap_core_debug.observe(nil, OBSERVE_BUCKET_SQUAD, _bucket_one_squad_impl, id)
 end
 
 local function _on_squad_build_done()
     ap_core_debug.debug("[CORE.CACHE] squad bucket built")
 end
 
--- Snapshot squad refs into an array, start xslice. Per-tick: 50 squads x ~5us = ~0.25ms.
+-- Snapshot squad IDs into an array, start xslice. Per-tick: 50 squads x ~5us = ~0.25ms.
 -- ~700-800 squads -> ~14-16 ticks -> ~0.25-0.3s wall-clock at 60fps.
--- @cost O(n) squads for snapshot | 1 luabind medium per squad (sim:object via xsquad.iter_squads);
--- xslice ticks pay the per-squad bucketing cost
+-- @cost O(n) squads for snapshot | 1 luabind medium per squad (sim:object via xsquad.iter_squads
+-- + .id read); xslice ticks pay 1 alife_object + per-squad bucketing.
 local function _build_squad_bucket()
     if _squads_by_level then return end
     if xslice.is_active(SQUAD_BUILD_QUEUE) then return end
     _squads_by_level = {}
     local queue = {}
-    for squad in xsquad.iter_squads() do queue[#queue + 1] = squad end
+    for squad in xsquad.iter_squads() do queue[#queue + 1] = squad.id end
     xslice.start(SQUAD_BUILD_QUEUE, queue, {
         step = SQUAD_BUILD_STEP,
         func = _bucket_one_squad,
@@ -311,30 +318,41 @@ local function _unindex_standalone(npc_id)
     end
 end
 
-local function _bucket_one_stalker_impl(_, se)
+-- Re-resolve via alife_object(id) per tick: the queue captures IDs (not refs) so an entity
+-- destroyed between enumeration and processing returns nil here. Holding a CSE_Abstract ref
+-- across frames hits pure-virtual on section_name when the C++ vtable is replaced mid-destruction
+-- (xrCore/xrDebugNew.cpp:1045 "pure virtual function call"). pcall cannot catch this per
+-- doc/library/modding/pcall-safety.md:50-57.
+local function _bucket_one_stalker_impl(_, id)
+    if not id then return true end
+    local se = alife_object(id)
+    if not se then return true end
     _index_standalone(se)
     return true
 end
 
-local function _bucket_one_stalker(se)
-    return ap_core_debug.observe(nil, OBSERVE_BUCKET_STANDALONE, _bucket_one_stalker_impl, se)
+local function _bucket_one_stalker(id)
+    return ap_core_debug.observe(nil, OBSERVE_BUCKET_STANDALONE, _bucket_one_stalker_impl, id)
 end
 
 local function _on_standalone_build_done()
     ap_core_debug.debug("[CORE.CACHE] standalone role bucket built")
 end
 
--- Snapshot all alife stalkers via xcreature.query, start xslice. Per-tick: 50 stalkers
--- x ~5us = ~0.25ms. ~1500-3000 alife stalkers -> ~30-60 ticks -> ~0.5-1s wall-clock.
--- Per-stalker handler is dominated by the section lookup for non-matches (cheap) and
--- the find_smart call for matches (~30-60 of them).
--- @cost O(n) stalkers for snapshot | 1 luabind per stalker (iterate_objects); xslice
--- ticks pay the per-stalker section lookup + find_smart on match.
+-- Snapshot all alife stalker IDs via xcreature.query, start xslice. Per-tick: 50 stalkers
+-- x ~5us = ~0.25ms. Heavily-modded saves can reach 25000+ stalkers; bucketing scales linearly
+-- (~8-10s wall-clock). Per-stalker handler re-resolves via alife_object(id) so entities
+-- destroyed mid-warmup return nil safely.
+-- @cost O(n) stalkers for snapshot | 1 luabind per stalker (iterate_objects + .id read);
+-- xslice ticks pay 1 alife_object + per-stalker section lookup + find_smart on match.
 local function _build_standalone_role_bucket()
     if _standalone_role_npcs then return end
     if xslice.is_active(STANDALONE_BUILD_QUEUE) then return end
     _standalone_role_npcs = {}
-    local queue = xcreature.query():collect()
+    local queue = {}
+    for _, se in ipairs(xcreature.query():collect()) do
+        queue[#queue + 1] = se.id
+    end
     xslice.start(STANDALONE_BUILD_QUEUE, queue, {
         step = STANDALONE_BUILD_STEP,
         func = _bucket_one_stalker,
