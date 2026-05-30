@@ -1,17 +1,32 @@
 next
-  Changed: Premium ammo (AP, EP, PBP, hot-load, hollow-point, steel-core, flechette) gated to veteran rank and above. Novice and experienced NPCs restock FMJ ball ammo only; corpses carry PMM or PS, not the player's premium drops. 18 cartridges covered across the major calibers.
-  Fixed: Trade consumable buy now picks cheapest section first instead of a uniform-random pick. Previously, NPCs with limited cash could roll an expensive medkit section (medkit_ai3 at 27782 RU vs medkit at 2500 RU, 11x spread in vanilla) and return with zero items despite enough cash for several cheap ones. Same fix applied to the ammo tier buy path: on per-section unaffordable or item-create failure, the loop now falls through to the next-cheapest section in the tier instead of exiting the whole function.
-  Fixed: Ammo-slot tier parser now uses a regex match for the tier number (was a last-char string slice that broke for n_tiers > 9 — latent until anyone bumps the tier count).
-  Changed: Stash policy now lives in ap_stash_policy.ltx (DLTX-overridable), parallel to ap_trade_policy.ltx. Single uniform block: per-category min, max entries plus extras_max (top-N by cost picked after the category pass) and fill_max (per-event deposit cap). Replaces the hardcoded STASH_POLICY table and the MCM min/max items knobs.
-  Added: Stash loot untouchable preservation. Stashes containing any quest, anim, or blacklisted section are skipped entirely (no loot, no clear). Quest items always survive even when squads reach the stash.
-  Added: Stash loot "valuable extras" pass. After the per-category min/max pass, the squad takes top-N stash sections by vanilla cost field (N from policy extras_max). Lets squads grab high-value items the category policy does not specifically request.
-  Changed: Stash loot always clears the stash at the end of the loot pass (when not skipped by an untouchable or crafting gate). Sections the squad did not take are destroyed by the clear.
-  Renamed: ap_trade_policy.ltx max_profit → profit_max in both rookie and veteran blocks. DLTX overrides referencing max_profit need to be updated.
-  Removed: MCM Consequences > Stash Loot min/max items sliders. Numbers live in ap_stash_policy.ltx now (per-category min, max plus extras_max).
-  Removed: MCM Consequences > Stash Fill min/max items sliders. Numbers live in ap_stash_policy.ltx now (per-category min, max plus fill_max).
-  Fixed: DLTX trade overrides. Supplier traders now actually restock grenades (F1, RGD5); medics restock AI medkits.
-  Fixed: "Reset ALL to Defaults" button takes effect on the first click. Previously, any slider or checkbox edited in the same MCM session would override the reset on accept, requiring close-reopen-click-again before the reset stuck.
-  Added: "Reset ALL to Stateless Defaults" button in MCM > Development. Resets every setting to its factory default, then disables any functionality that mutates inventory, trade, or world spawn like trading, item consumption, stash filling and looting, smart ownership. AlifePlus dispatch and travel still run. For installs where another mod owns those systems.
+  Summary: Trade rewritten around a per-rank LTX policy with k_ap ammo tiers, a profit cap per rank, and category bands sourced from xinventory. Need arrivals no longer destroy inventory items. Stash loot, stash fill, and the trader buy pass share the same xinventory category model.
+
+  Trade:
+    Changed: Trade now reads ap_trade_policy.ltx, a per-rank LTX file with two blocks for rookie (rank below 12000) and veteran (rank 12000 and above). Each block lists every reachable category with a min, max band. Entry order in the block sets the buy priority. The old [ap_buy_sell_keep] allowlist is gone. DLTX overrides target ap_trade_policy.ltx directly.
+    Changed: Ammo buy resolves per-slot per-tier. Pistol-slot ammo comes from the pistol's ammo_class. Rifle-slot ammo comes from the rifle's ammo_class. Each ammo_class is split into tiers by k_ap (armor-piercing coefficient) with cost as tiebreaker. Within a tier, the cheapest section is picked first.
+    Changed: profit_max per rank caps net cash gain per trade event (rookie 1500 RU, veteran 5000 RU). Cash above the cap goes back to the trader. Replaces the previous NPC cash cap slider, which is removed.
+    Changed: Pre-filter for untouchable (quest, anim, blacklisted) and equipped (slots 1 to 14) runs before policy lookup. Quest items and equipped gear are never touched regardless of policy contents.
+    Fixed: Consumable buy walks cheapest-first instead of a uniform-random pick. NPCs with limited cash no longer roll an expensive medkit section (medkit_ai3 at 27782 RU vs medkit at 2500 RU) and return with zero items.
+    Fixed: Ammo tier buy falls through to the next-cheapest section on per-section unaffordable or create failure. Previously the whole tier exited on the first failed section.
+    Fixed: Ammo-slot tier parser uses a regex match for the tier number. The prior last-char slice broke for tier counts above 9.
+    Changed: Premium ammo (AP, EP, PBP, hot-load, hollow-point, steel-core, flechette) restocks only at veteran rank and above. Novice and experienced NPCs carry FMJ ball ammo. 18 cartridges covered across the major calibers.
+
+  Needs:
+    Removed: Item consumption on arrival at need-satisfying smarts. NPCs reaching a campfire no longer destroy a food item. NPCs reaching a shelter no longer release a medkit or bandage. NPCs reaching an outpost no longer release antirad. The arrival itself satisfies the need. Engine-side medic behavior (medkit, bandage, stim usage in combat) is independent and unchanged.
+
+  Stash:
+    Added: Stash policy lives in ap_stash_policy.ltx, parallel to ap_trade_policy.ltx. Single uniform block with per-category min, max plus extras_max (top-N by cost picked after the category pass) and fill_max (per-event deposit cap). DLTX-overridable. Replaces the hardcoded STASH_POLICY table.
+    Added: Untouchable preservation. Stashes containing any quest, anim, or blacklisted section are skipped (no loot, no clear). Quest items always survive even when squads reach the stash.
+    Added: Extras pass. After the per-category min, max pass, the squad takes top-N stash sections by vanilla cost field (N from extras_max). Squads grab high-value items the category policy did not specifically request.
+    Changed: Loot always clears the stash at the end of the pass when not skipped by the untouchable or crafting gate. Sections the squad did not take are destroyed by the clear.
+    Fixed: Ammo policy rows in ap_stash_policy.ltx now actually fire. The previous loot path resolved every stash ammo section as ammo_not_equipped and never matched the per-tier categories. Stash loot now scans each ammo section against each squad member's equipped pistol and rifle, finds the owner whose weapon takes the round, and assigns the loot to that member.
+
+  MCM:
+    Removed: Consequences > Supply Trader > NPC cash cap slider. Numbers live in ap_trade_policy.ltx now as profit_max per rank.
+    Removed: Consequences > Stash Loot min / max items sliders. Numbers live in ap_stash_policy.ltx now (per-category min, max plus extras_max).
+    Removed: Consequences > Stash Fill min / max items sliders. Numbers live in ap_stash_policy.ltx now (per-category min, max plus fill_max).
+    Fixed: Reset ALL to Defaults button takes effect on the first click. Previously any slider or checkbox edited in the same MCM session would override the reset on accept.
+    Added: Reset ALL to Stateless Defaults button under Development. Resets every setting to factory default then disables trade, item consumption, stash fill, stash loot, smart ownership. AlifePlus dispatch and travel still run. For installs where another mod owns those systems.
 
 1.7.1
   Summary: load-time fps fix for the world-scan caches

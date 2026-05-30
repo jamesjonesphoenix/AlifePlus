@@ -596,17 +596,17 @@ Hull and Maslow were the dominant behavioral models when GSC designed A-Life in 
 
 The nine drives and what happens when they win:
 
-- **Hunger** finds a campfire and eats from inventory: bread, sausage, canned goods.
-- **Sleep** waits for nightfall, finds a campfire, and sleeps through the night.
-- **Rest** finds a campfire, smokes a cigarette, has a drink.
-- **Heal** returns to a friendly base and uses a medkit, bandage, or stimpack.
-- **Shelter** returns to a friendly base when exposed too long.
+- **Hunger** walks to a campfire to eat by the fire.
+- **Sleep** waits for nightfall, walks to a campfire, and sleeps through the night.
+- **Rest** walks to a campfire to rest.
+- **Heal** walks to a friendly base when injured.
+- **Shelter** walks to a friendly base when exposed too long.
 - **Money** searches anomaly fields for artefacts or hunts mutant lairs.
-- **Supply** visits a trader, sells surplus inventory at vanilla prices, and restocks ammo for his equipped pistol and rifle.
+- **Supply** walks to a trader, sells surplus, and restocks per a rank-tiered policy in `ap_trade_policy.ltx`.
 - **Job** guards the base, explores the Zone, researches anomalies. Monolith and Greh worship. Military and Duty drill.
-- **Social** finds a campfire or returns to base, shares cigarettes and drinks.
+- **Social** walks to a campfire or returns to base for company.
 
-NPCs consume inventory items on arrival, classified by vanilla rules: hunger reads engine eatable kind (`i_food` / `i_drink` / `i_mutant_cooked`); heal reads `items_health` plus `items_bleed` reward sets; rest, social, and outpost read `items_rad`. Any addon consumable with the right kind or reward set satisfies the need without per-mod overrides.
+Need satisfaction is the arrival itself. The stalker walks to the smart that matches the need. The engine plays the eating, healing, or social animations bound to that smart's gulag jobs. AlifePlus does not destroy inventory items on arrival. Inventory consumption from combat (medkit usage when wounded, bandage usage on bleed) is the engine's own behavior and runs independently.
 
 X-Ray has all the building blocks but no algorithm connecting them.
 `GetSatiety()` returns hardcoded 0.5 and `ChangeSatiety()` does nothing (`base_monster.h`): hunger was planned and abandoned.
@@ -625,7 +625,7 @@ Their surge death probability table ranges from 1% on sheltered terrain to 85% o
 
 `GetSatiety()` returning 0.5 proves hunger was planned.
 `eStateEat` proves eating was planned.
-Walking to a campfire hungry and eating nothing is fake.
+Vanilla walks NPCs to campfires by job assignment but never connects need to job choice. The walks happen by patrol rotation. Hungry stalkers wander off to checkpoints. AlifePlus picks the destination from the need.
 The artefact economy described in [1] required exchange.
 Free items from a trader is a spawn, not a trade.
 
@@ -639,7 +639,7 @@ Free items from a trader is a spawn, not a trade.
 
 ### Trade
 
-The Supply consequence walks the squad to a trader smart and runs a full NPC buy/sell cycle on arrival, driven by `configs/alifeplus/ap_trade_policy.ltx`. The policy declares per-category min/max counts under two blocks split by rank (`[ap_trade_policy_rookie]` and `[ap_trade_policy_veteran]` at `RANK_VETERAN = 12000`). Category resolution comes from `xinventory.get_category(item, opts)`: medical 5 categories, food, drink, grenade, grenade_ammo, per-slot ammo tiers (`ammo_slot_2_t1/t2`, `ammo_slot_3_t1/t2`, `ammo_not_equipped`), weapon, outfit, helmet, artefact, device, money, crafting, plus the untouchable and equipped sentinels. SELL drops anything where count exceeds the per-category max at `floor(cost * 0.5)`. BUY walks policy entries in declaration order (= priority), filling any category whose count is below min: ammo via a k_ap-sorted tier map (cheapest section in target tier), consumables via random pick from `xinventory.get_category_sections`. After both phases, a profit cap (`profit_max` per rank block) transfers any net gain above the cap back to the trader. Cost reads `system.ltx <sec> cost`; multipliers are inline constants in `ap_ext_trade.script` (`SELL_MULT = 0.5`, `BUY_MULT = 1.0`). Modpack overlays on system.ltx and DLTX patches on `ap_trade_policy.ltx` both honored.
+The Supply consequence walks the squad to a trader smart and runs a full NPC buy/sell cycle on arrival, driven by `configs/alifeplus/ap_trade_policy.ltx`. The policy declares per-category min/max counts under two blocks split by rank (`[ap_trade_policy_rookie]` and `[ap_trade_policy_veteran]` at `RANK_VETERAN = 12000`). Category resolution comes from `xinventory.get_category(item, opts)`: medical 5 categories, food, drink, grenade, grenade_ammo, per-slot ammo tiers (`ammo_slot_2_t1/t2`, `ammo_slot_3_t1/t2`, `ammo_not_equipped`), weapon, outfit, helmet, artefact, device, money, crafting, plus the untouchable and equipped sentinels. SELL drops anything where count exceeds the per-category max at `floor(cost * 0.5)`. BUY walks policy entries in declaration order (= priority), filling any category whose count is below min: ammo via a k_ap-sorted tier map (cheapest section in target tier), consumables via cheapest-first walk over `xinventory.get_category_sections`. After both phases, a profit cap (`profit_max` per rank block) transfers any net gain above the cap back to the trader. Cost reads `system.ltx <sec> cost` via the cached `xinventory.get_cost`. Multipliers are inline constants in `ap_ext_trade.script` (`SELL_MULT = 0.5`, `BUY_MULT = 1.0`). Modpack overlays on system.ltx and DLTX patches on `ap_trade_policy.ltx` are both honored.
 
 X-Ray has the entire trade system written and shipped.
 `axr_trade_manager.script` (Alundaio 2013, Tronex 2019) implements the full NPC buy/sell cycle against `items\trade\gulag_job_trade_buy_sell.ltx`: per-section keep counts, restock targets, sell and buy multipliers, the exact engine cost formula `floor(cost * buy_sell[N])`.

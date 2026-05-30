@@ -27,8 +27,8 @@ Every action has a systemic cause. The simulation runs whether you are there or 
 Structural invariants make this possible:
 - Event-driven contract: nothing runs unless the engine says something happened.
 - Physical simulation guarantee: consequences use entities already in the simulation, never spawned, teleported, or fabricated.
-- Item transfer only: items move between carriers (NPCs, stashes, traders). AlifePlus never invents items. When AP needs to materialize an item, it reads the section from a vanilla config slot the engine recognizes, never from an AP-only list.
-- Money flows match vanilla: NPCs gain money when they sell items at supply traders, spend money when they buy ammo. No money moves through stash loot, stash fill, or any other AP flow.
+- Item transfer only: items move between carriers (NPCs, stashes, traders). AlifePlus never invents new section names. Every materialized item is a section the engine already knows from vanilla configs.
+- Money flows match vanilla: NPCs gain money when they sell items at supply traders, spend money when they buy ammo and consumables. No money moves through stash loot, stash fill, or any other AP flow.
 
 The economy follows the same logic. Real items move between real stalkers, and real needs drive their decisions.
 
@@ -58,10 +58,10 @@ Alpha mutants:
 - Killing an alpha draws same-species hunters.
 
 Trade and needs:
-- Stalkers visit supply traders to sell surplus inventory and restock ammo for their equipped pistol and rifle. Prices, sell caps, and restock targets read from the engine's NPC trade config.
-- Squads loot a stash only if no crafting items are present (toolkits, repair kits, weapon parts, upgrades). They take keep-list items (PDAs, medkits, bandages, drugs, grenades, and matching ammo). Spare guns, food, drink, and artefacts stay.
-- Squads fill stashes only with keep-list items (PDAs, medkits, bandages, drugs, grenades). Food, drink, weapons, outfits, ammo, and artefacts never enter AP-filled stashes.
-- Hunger, fatigue, heal, social, and outpost needs drive campfire and base behavior. Stalkers consume any vanilla-classified food, drink, medkit, bandage, or rad-cure from inventory.
+- Stalkers visit supply traders to sell surplus and restock per a rank-tiered policy. Rookies carry basic ammo, medkits, and bandages. Veterans add premium ammo (AP, hollow-point, flechette), grenades, and larger consumable bands.
+- Squads loot a stash by per-category bands (ammo matching equipped pistols and rifles, medkits, bandages, food, drink, antirad, grenades). Quest items skip the whole stash. An MCM toggle skips stashes containing crafting items. The stash is cleared at the end of the loot pass.
+- Squads fill stashes with squad surplus above each category's max, capped per event. Quest items and equipped gear are never deposited.
+- Hunger, fatigue, heal, social, and outpost needs drive campfire and base behavior. Arrival satisfies the need. Inventory items are not destroyed.
 
 Day/night cycle:
 - Stalkers work and trade by day.
@@ -102,10 +102,10 @@ Example scenario (escalation chain):
 Example scenario (economy loop):
 
 - A loner squad finishes a hunt at an anomaly field ("needs" cause, "money" consequence). They have artefacts, mutant parts, and a spare PMM.
-- They are hungry now ("needs" cause). They stop at the nearest campfire to eat what they carry ("hunger" consequence).
-- After eating they head for Sidorovich at Cordon to sell ("supply" consequence).
+- They are hungry now ("needs" cause). They stop at the nearest campfire to rest by the fire ("hunger" consequence).
+- They head for Sidorovich at Cordon to sell ("supply" consequence).
 - Sidorovich buys the artefacts, mutant parts, the spare PMM, and surplus at engine prices.
-- The loner restocks 5.45 AP for his AK74 and tops up the keep list (medkits, bandages, grenades).
+- The loner restocks ammo for his AK74 and tops up his medkits and bandages, per his rank-tiered policy.
 - The squad has rubles and stocked ammo now. They walk back to the anomaly field for the next hunt.
 - The same loop the player walks, running for everyone.
 
@@ -222,31 +222,35 @@ Needs
   Stalkers have human needs.
   Drives inspired by Maslow-Hull are scored by how long since each was last fulfilled.
   The most deprived need wins.
-  - Hunger - The stalker finds a campfire and eats what he is carrying (bread, sausage, canned goods).
-  - Sleep - The stalker finds a campfire during dormant hours and sleeps.
-  - Rest - The stalker finds a campfire, smokes a cigarette, and has a drink.
-  - Heal - The stalker finds a safe location and uses a medkit, bandage, or stimpack.
-  - Shelter - The stalker finds a safe location when exposed too long.
+  - Hunger - The stalker walks to a campfire to eat by the fire.
+  - Sleep - The stalker walks to a campfire during dormant hours to sleep.
+  - Rest - The stalker walks to a campfire to rest.
+  - Heal - The stalker walks to a shelter when injured.
+  - Shelter - The stalker walks to a safe location when exposed too long.
   - Money - The stalker searches anomaly fields for artefacts or hunts mutant lairs.
-  - Supply - The stalker visits a trader, sells surplus inventory, and restocks ammo for his equipped pistol and rifle. Prices and restock targets come from the engine's NPC trade config.
+  - Supply - The stalker walks to a trader, sells surplus, and restocks per a rank-tiered policy. Veterans add premium ammo, grenades, and larger consumable bands. Rookies carry basic ammo and standard medkits.
   - Job - The stalker guards outposts and checkpoints, explores the Zone, or researches anomalies.
-  - Social - The stalker finds a campfire or safe location and shares cigarettes and drinks.
+  - Social - The stalker walks to a campfire or base for company.
 
   Cross-map sibling rows: Supply and Job Explore each ship a paired off-map row. Greedy nomads (Loners, Bandits, Mercs, Renegades) chase trade. Peaceful curious factions (Ecologists, Clear Sky) scout neighbor maps. Army, Monolith, and Zombified squads never travel off-map.
   Reach grows with player progression. Stalkers reach the next map once Yantar X-16 is shut down, the next after the Brain Scorcher is deactivated at Radar, and master-rank squad commanders push one map further. Each step is tunable under MCM > World > Off-map.
   Squads return home after a few in-zone days. Travellers stuck off-map are released after a week to keep level populations clean. Dispatches are also capped per source map within a sliding two-day window so no level bleeds traffic forever.
 
-  NPCs consume real items from their inventory on arrival.
+  Arrival satisfies the need. Inventory items are not destroyed by the arrival itself. Engine-side combat behavior (medkit, bandage, stim usage in firefights) is independent and unchanged.
 
 Trade
 
   Anomaly ships a full NPC buy/sell system that never fires in play. The math, configs, and scripts are there. The trigger isn't. The existing one requires a patrol-and-signal sequence that almost never lines up, so NPCs carry items they could sell, ammo they could buy, and money they could spend, and never do.
 
-  AlifePlus runs the buy/sell cycle synchronously when a squad arrives at a trader smart. All 20 vanilla trader smarts are covered, from Sidorovich at Cordon to the Monolith trader in Pripyat.
+  AlifePlus runs the buy/sell cycle synchronously when a squad arrives at a trader smart. All 20 vanilla trader smarts are covered, from Sidorovich at Cordon to the Monolith trader in Pripyat. Policy lives in ap_trade_policy.ltx, DLTX-overridable, with two blocks: rookie (rank below 12000) and veteran (rank 12000 and above). Each block lists every reachable category with a min, max band. Entry order in the block sets the buy priority.
 
-  Sell phase. The stalker walks his inventory and asks for each item: keep, or sell? He keeps equipped items (whatever sits in his slots, knife to backpack), quest items, money, the keep list (PDAs, medkits, bandages, drugs, grenades), and ammo that matches his equipped pistol or rifle. Everything else gets sold at the engine's sell price, including spare guns he is not carrying in a slot.
+  Sell phase. The stalker walks his inventory and drops anything whose category count exceeds the policy max. Equipped items (whatever sits in his slots, knife to backpack), quest items, anim items, and money are never touched. The pre-filter catches them before policy lookup. Everything else sells at the engine's cost field, half-price by default.
 
-  Buy phase. The stalker has two shopping lists. First, ammo classes for his equipped pistol and rifle, topped up to the vanilla restock target. Second, every section on the keep list (PDAs, medkits, bandages, drugs, grenades), the same items he refused to sell. Items he won't part with are items he restocks when low. For sections vanilla shipped with restock=0 (grenades, AI medkits), AlifePlus's overlay sets restock=1 so the buy loop actually fires.
+  Buy phase. The stalker walks the policy in declaration order and fills any category whose count falls below the min. Ammo resolves per equipped slot. The pistol's ammo class splits into basic (FMJ ball) and premium (AP) tiers. The rifle's ammo class splits the same way. Within a tier, the cheapest section is picked first so NPCs with limited cash actually fill their slot. Consumables walk cheapest-first from the category's section set.
+
+  Rank gates. Rookies (rank below 12000) buy basic ammo and a baseline of medkits and bandages. Veterans (rank 12000 and above) add premium ammo (AP, EP, PBP, hot-load, hollow-point, steel-core, flechette across 18 cartridges), grenades (F1, RGD5), and larger consumable bands.
+
+  Profit cap. profit_max per rank caps net cash gain per trade event (rookie 1500 RU, veteran 5000 RU). Cash above the cap goes back to the trader.
 
   This closes the in-Zone economy loop. NPCs harvest at anomaly fields, kill mutants for parts, loot or fill stashes. The surplus turns into cash at the next trader visit. The cash funds the ammo the next firefight burns through. The same loop the player walks, running for everyone.
 

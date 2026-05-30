@@ -869,7 +869,7 @@
     <text>Stash\nLoot</text>
   </string>
   <string id="ui_mcm_ap_consequences_stash_loot_tag">
-    <text>Desc: Squad takes keep-list items (PDAs, medkits, bandages, drugs, grenades) and clears the rest; skips stashes that contain crafting items entirely\nCause: Stash Loot Available</text>
+    <text>Desc: Squad takes per-category bands from the stash (ammo matching equipped weapons, medkits, bandages, food, drink, antirad, grenades). Quest items skip the whole stash. Optional MCM toggle skips stashes with crafting items.\nCause: Stash Loot Available</text>
   </string>
   <string id="ui_mcm_ap_consequences_stash_loot_consequence_stash_loot_enabled">
     <text>Enabled</text>
@@ -894,7 +894,7 @@
     <text>Stash\nFill</text>
   </string>
   <string id="ui_mcm_ap_consequences_stash_fill_tag">
-    <text>Desc: Squad deposits surplus keep-list items (PDAs, medkits, bandages, drugs, grenades) into a stash\nCause: Stash Fill Available</text>
+    <text>Desc: Squad deposits squad surplus above each category's max into a stash, capped per event.\nCause: Stash Fill Available</text>
   </string>
   <string id="ui_mcm_ap_consequences_stash_fill_consequence_stash_fill_enabled">
     <text>Enabled</text>
@@ -1308,7 +1308,7 @@
     <text>Supply Trader</text>
   </string>
   <string id="ui_mcm_ap_consequences_supply_trader_tag">
-    <text>Desc: Squad heads to a trader, sells loot for money, restocks pistol/rifle ammo plus keep-list items (PDAs, medkits, bandages, drugs, grenades)\nCause: Supply Trader Available</text>
+    <text>Desc: Squad heads to a trader, sells surplus, and restocks per a rank-tiered policy. Rookies carry basic ammo, medkits, bandages. Veterans add premium ammo and grenades.\nCause: Supply Trader Available</text>
   </string>
   <string id="ui_mcm_ap_consequences_supply_trader_consequence_supply_trader_enabled">
     <text>Enabled</text>
@@ -1326,7 +1326,7 @@
     <text>Arrive action</text>
   </string>
   <string id="ui_mcm_ap_consequences_supply_trader_consequence_supply_trader_arrive_action_enabled_desc">
-    <text>Sell phase keeps equipped, quest, money, medkits, bandages, grenades, and ammo matching the equipped pistol or rifle; sells everything else (including spare guns not in a slot). Buy phase tops up pistol and rifle ammo plus the keep list (medkits, bandages, grenades).</text>
+    <text>Sell phase drops anything whose category count exceeds the policy max. Equipped items, quest items, and money are never touched. Buy phase fills any category whose count falls below the min, ammo per equipped slot and tier, consumables cheapest-first. Veterans add premium ammo and grenades. profit_max caps net cash gain per event.</text>
   </string>
   <!-- ==================== CONSEQUENCES / SUPPLY TRADER OFF-MAP ==================== -->
   <string id="ui_mcm_ap_consequences_supply_trader_offmap_title">
@@ -1351,7 +1351,7 @@
     <text>Arrive action</text>
   </string>
   <string id="ui_mcm_ap_consequences_supply_trader_offmap_consequence_supply_trader_offmap_arrive_action_enabled_desc">
-    <text>Sell phase keeps equipped, quest, money, medkits, bandages, grenades, and ammo matching the equipped pistol or rifle; sells everything else (including spare guns not in a slot). Buy phase tops up pistol and rifle ammo plus the keep list (medkits, bandages, grenades).</text>
+    <text>Sell phase drops anything whose category count exceeds the policy max. Equipped items, quest items, and money are never touched. Buy phase fills any category whose count falls below the min, ammo per equipped slot and tier, consumables cheapest-first. Veterans add premium ammo and grenades. profit_max caps net cash gain per event.</text>
   </string>
   <!-- ==================== CONSEQUENCES / JOB OUTPOST ==================== -->
   <string id="ui_mcm_ap_consequences_job_outpost_title">
