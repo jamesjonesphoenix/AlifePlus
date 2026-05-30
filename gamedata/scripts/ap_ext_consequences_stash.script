@@ -127,59 +127,70 @@ local function _find_section_for_category(index, cat)
     return nil
 end
 
--- Per-member ammo match. Walks (section, member) pairs starting from the rotating cursor so loot
--- spreads across eligible members rather than dumping on the first match. Returns (section_idx,
--- member_id) of the first untaken stash ammo section that resolves to `cat` for some member's
--- equipped pistol or rifle. The cursor advances at the caller.
-local function _find_ammo_section_for_category(index, cat, member_ids, member_opts, cursor)
+-- Walk members starting from the rotating cursor and return the first member whose
+-- equipped pistol or rifle accepts the given ammo section under category `cat`. Returns
+-- nil when no equipped weapon matches.
+local function _match_section_to_member(section, cat, member_ids, member_opts, cursor)
     local m_count = #member_ids
+    for k = 0, m_count - 1 do
+        local m_idx = ((cursor - 1 + k) % m_count) + 1
+        local m_id = member_ids[m_idx]
+        local opts = member_opts[m_id]
+        if opts and xinventory.resolve_ammo_category(section, opts) == cat then
+            return m_id
+        end
+    end
+    return nil
+end
+
+-- Per-member ammo match. Walks stash sections; for each untaken section, tries to match
+-- it to a member's equipped weapons via _match_section_to_member starting from the
+-- rotating cursor. Returns (section_idx, member_id) of the first hit.
+local function _find_ammo_section_for_category(index, cat, member_ids, member_opts, cursor)
     for j = 1, #index do
         if not index[j].taken then
-            for k = 0, m_count - 1 do
-                local m_idx = ((cursor - 1 + k) % m_count) + 1
-                local m_id = member_ids[m_idx]
-                local opts = member_opts[m_id]
-                if opts and xinventory.resolve_ammo_category(index[j].sec, opts) == cat then
-                    return j, m_id
-                end
-            end
+            local m_id = _match_section_to_member(index[j].sec, cat, member_ids, member_opts, cursor)
+            if m_id then return j, m_id end
         end
     end
     return nil, nil
 end
 
--- Fill ONE policy entry's min target by taking matching sections from stash. Returns updated cursor.
--- Ammo entries route to per-member resolution; non-ammo entries use section-only resolution with
--- round-robin assignment.
-local function _loot_entry(entry, index, member_ids, member_opts, counts, taken_secs, cursor)
+-- Resolve one stash candidate for an entry: returns (section_idx, owner_id) or nil/nil.
+-- Ammo categories route per-member; non-ammo use section-only resolution.
+local function _resolve_candidate(is_ammo, entry, ctx, cursor)
+    if is_ammo then
+        return _find_ammo_section_for_category(ctx.index, entry.category, ctx.member_ids, ctx.member_opts, cursor)
+    end
+    return _find_section_for_category(ctx.index, entry.category), ctx.member_ids[cursor]
+end
+
+-- Fill ONE policy entry's min target by taking matching sections from stash. Returns
+-- updated cursor. ctx carries non-mutated per-loot state { index, member_ids,
+-- member_opts, counts, taken_secs }.
+local function _loot_entry(entry, ctx, cursor)
     if entry.rule.min <= 0 then return cursor end
     local cat = entry.category
-    local current = counts[cat] or 0
+    local current = ctx.counts[cat] or 0
     local is_ammo = _is_ammo_slot_category(cat)
     while current < entry.rule.min do
-        local found_at, owner_id
-        if is_ammo then
-            found_at, owner_id = _find_ammo_section_for_category(index, cat, member_ids, member_opts, cursor)
-        else
-            found_at = _find_section_for_category(index, cat)
-            owner_id = member_ids[cursor]
-        end
+        local found_at, owner_id = _resolve_candidate(is_ammo, entry, ctx, cursor)
         if not found_at then break end
-        if not xinventory.create_item(index[found_at].sec, owner_id) then break end
-        index[found_at].taken = true
+        if not xinventory.create_item(ctx.index[found_at].sec, owner_id) then break end
+        ctx.index[found_at].taken = true
         current = current + 1
-        counts[cat] = current
-        cursor = (cursor % #member_ids) + 1
-        taken_secs[#taken_secs + 1] = index[found_at].sec
+        ctx.counts[cat] = current
+        cursor = (cursor % #ctx.member_ids) + 1
+        ctx.taken_secs[#ctx.taken_secs + 1] = ctx.index[found_at].sec
     end
     return cursor
 end
 
 -- Per-category loot pass. Walk policy entries in declaration order; delegates each entry to _loot_entry.
-local function _loot_by_category(index, member_ids, member_opts, counts, taken_secs)
+local function _loot_by_category(ctx)
     local cursor = 1
     for i = 1, #STASH_POLICY.entries do
-        cursor = _loot_entry(STASH_POLICY.entries[i], index, member_ids, member_opts, counts, taken_secs, cursor)
+        cursor = _loot_entry(STASH_POLICY.entries[i], ctx, cursor)
     end
 end
 
@@ -248,7 +259,13 @@ local function _arrive_loot(squad, args)
     ap_core_debug.observe(nil, PHASE.COMPLETE_STASH_LOOT, function(trace)
         local taken_secs = {}
         local index = _index_with_cost(sections)
-        _loot_by_category(index, member_ids, member_opts, counts, taken_secs)
+        _loot_by_category({
+            index       = index,
+            member_ids  = member_ids,
+            member_opts = member_opts,
+            counts      = counts,
+            taken_secs  = taken_secs,
+        })
         _loot_extras(index, member_ids, taken_secs)
         ap_core_debug.observe(trace, PHASE.LOOT_STASH, function()
             return xstash.loot_stash(stash_id)
