@@ -27,7 +27,7 @@ local function _evaluate(_trace, item, npc)
     end
 
     local section = item:section()
-    if not xinventory.is_artefact(item) then return { code = RESULT.FAILED_RULES, reason = REASON.NOT_ARTEFACT, section = section } end
+    if not xinventory.is_in_category(section, "artefact") then return { code = RESULT.FAILED_RULES, reason = REASON.NOT_ARTEFACT, section = section } end
 
     if _pickup_cooldown:has(section) then
         return { code = RESULT.FAILED_RULES, reason = REASON.ON_COOLDOWN, section = section }

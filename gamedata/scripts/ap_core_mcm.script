@@ -177,15 +177,11 @@ defaults = {
     -- Consequence: Stash Loot
     consequence_stash_loot_enabled = true,
     consequence_stash_loot_rush = false,
-    consequence_stash_loot_min_items = 1,
-    consequence_stash_loot_max_items = 2,
     consequence_stash_loot_skip_crafting = true,
 
     -- Consequence: Stash Fill
     consequence_stash_fill_enabled = true,
     consequence_stash_fill_rush = false,
-    consequence_stash_fill_min_items = 1,
-    consequence_stash_fill_max_items = 3,
 
     -- Consequence: Squadkill Revenge
     consequence_squadkill_revenge_enabled = true,
@@ -477,13 +473,9 @@ local _key_to_tab = {
     consequence_stash_ambush_rush = "consequences/stash_ambush",
     consequence_stash_loot_enabled = "consequences/stash_loot",
     consequence_stash_loot_rush = "consequences/stash_loot",
-    consequence_stash_loot_min_items = "consequences/stash_loot",
-    consequence_stash_loot_max_items = "consequences/stash_loot",
     consequence_stash_loot_skip_crafting = "consequences/stash_loot",
     consequence_stash_fill_enabled = "consequences/stash_fill",
     consequence_stash_fill_rush = "consequences/stash_fill",
-    consequence_stash_fill_min_items = "consequences/stash_fill",
-    consequence_stash_fill_max_items = "consequences/stash_fill",
     consequence_squadkill_revenge_enabled = "consequences/squadkill_revenge",
     consequence_squadkill_revenge_rush = "consequences/squadkill_revenge",
     consequence_squadkill_revenge_max_squads = "consequences/squadkill_revenge",
@@ -565,8 +557,16 @@ local _path_builder = function(key)
 end
 cfg, get_config, load_config = xmcm.create_config("ap", defaults, _path_builder)
 
--- functor_ui receives the UI_MCM instance as trailing arg (ui_mcm.script:1435). functor would receive nothing. MCM 1.7.2fix leaves the file-local GUI nil on fresh opens (only Open_to sets it, and Reset_last_opt skips Open_to when last_path is nil), so ui_mcm.get_gui() returns nil. functor_ui sidesteps that bug.
--- MCM keeps file-local opt_temp (pending widget edits) at ui_mcm.script:175. Any widget the user touched before clicking the profile button is still there, and On_Accept at ui_mcm.script:2393 writes opt_temp AFTER our config writes, partially un-applying the profile. On_Discard flushes opt_temp and closes the dialog; same path the Cancel button takes. gui.owner:SetMsg is the same top-of-screen call MCM uses at ui_mcm.script:2528 for its built-in "changes done" message; works in main menu and pause menu both.
+-- functor_ui receives the UI_MCM instance as trailing arg (ui_mcm.script:1435).
+-- functor would receive nothing. MCM 1.7.2fix leaves the file-local GUI nil on fresh opens
+-- (only Open_to sets it, and Reset_last_opt skips Open_to when last_path is nil), so
+-- ui_mcm.get_gui() returns nil. functor_ui sidesteps that bug.
+-- MCM keeps file-local opt_temp (pending widget edits) at ui_mcm.script:175. Any widget
+-- the user touched before clicking the profile button is still there, and On_Accept at
+-- ui_mcm.script:2393 writes opt_temp AFTER our config writes, partially un-applying the
+-- profile. On_Discard flushes opt_temp and closes the dialog; same path the Cancel button
+-- takes. gui.owner:SetMsg is the same top-of-screen call MCM uses at ui_mcm.script:2528
+-- for its built-in "changes done" message; works in main menu and pause menu both.
 local function _apply_profile(gui, overrides, msg)
     local config = axr_main.config
     for k, v in pairs(defaults) do
@@ -986,8 +986,6 @@ function on_mcm_load()
                             _tag("ui_mcm_ap_consequences_stash_loot_tag"),
                             _check("consequence_stash_loot_enabled"),
                             _check("consequence_stash_loot_rush"),
-                            _track("consequence_stash_loot_min_items", 1, 5, 1),
-                            _track("consequence_stash_loot_max_items", 1, 10, 1),
                             _check("consequence_stash_loot_skip_crafting"),
                         },
                     },
@@ -999,8 +997,6 @@ function on_mcm_load()
                             _tag("ui_mcm_ap_consequences_stash_fill_tag"),
                             _check("consequence_stash_fill_enabled"),
                             _check("consequence_stash_fill_rush"),
-                            _track("consequence_stash_fill_min_items", 1, 5, 1),
-                            _track("consequence_stash_fill_max_items", 1, 10, 1),
                         },
                     },
                     {

@@ -25,7 +25,7 @@ local LOG_INIT = ap_core_debug.bracket(CAUSE_CATEGORY.NEEDS)
 local cfg = ap_core_mcm.cfg
 
 --- Trade visitor inventory against any service NPC at smart.
---- Delegates to ap_ext_trade.trade; trade flow now uses per-rank LTX policy (incl. max_profit
+--- Delegates to ap_ext_trade.trade; trade flow now uses per-rank LTX policy (incl. profit_max
 --- cap) rather than the old MCM cash_cap.
 local function _arrive_trade(visitor_go, smart_id, log_prefix)
     local smart_se = smart_id and xobject.se(smart_id)

@@ -853,18 +853,6 @@
   <string id="ui_mcm_ap_consequences_stash_loot_consequence_stash_loot_rush_desc">
     <text>Скриптованные отряды двигаются на максимальной скорости. Отключите для более медленного, реалистичного движения.</text>
   </string>
-  <string id="ui_mcm_ap_consequences_stash_loot_consequence_stash_loot_min_items">
-    <text>Мин. предметов</text>
-  </string>
-  <string id="ui_mcm_ap_consequences_stash_loot_consequence_stash_loot_min_items_desc">
-    <text>Минимальное число предметов, которые отряд забирает из тайника.</text>
-  </string>
-  <string id="ui_mcm_ap_consequences_stash_loot_consequence_stash_loot_max_items">
-    <text>Макс. предметов</text>
-  </string>
-  <string id="ui_mcm_ap_consequences_stash_loot_consequence_stash_loot_max_items_desc">
-    <text>Максимальное число предметов, которые отряд забирает из тайника.</text>
-  </string>
   <!-- ==================== CONSEQUENCES / STASH FILL ==================== -->
   <string id="ui_mcm_ap_consequences_stash_loot_consequence_stash_loot_skip_crafting">
     <text>Пропускать тайники с крафтовыми предметами</text>
@@ -889,18 +877,6 @@
   </string>
   <string id="ui_mcm_ap_consequences_stash_fill_consequence_stash_fill_rush_desc">
     <text>Скриптованные отряды двигаются на максимальной скорости. Отключите для более медленного, реалистичного движения.</text>
-  </string>
-  <string id="ui_mcm_ap_consequences_stash_fill_consequence_stash_fill_min_items">
-    <text>Мин. предметов</text>
-  </string>
-  <string id="ui_mcm_ap_consequences_stash_fill_consequence_stash_fill_min_items_desc">
-    <text>Минимальное число предметов для закладки в тайник.</text>
-  </string>
-  <string id="ui_mcm_ap_consequences_stash_fill_consequence_stash_fill_max_items">
-    <text>Макс. предметов</text>
-  </string>
-  <string id="ui_mcm_ap_consequences_stash_fill_consequence_stash_fill_max_items_desc">
-    <text>Максимальное число предметов для закладки в тайник.</text>
   </string>
   <!-- ==================== CONSEQUENCES / SQUADKILL REVENGE ==================== -->
   <string id="ui_mcm_ap_consequences_squadkill_revenge_title">

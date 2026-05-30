@@ -883,18 +883,6 @@
   <string id="ui_mcm_ap_consequences_stash_loot_consequence_stash_loot_rush_desc">
     <text>Scripted squads move at maximum speed. Disable for slower, more realistic movement.</text>
   </string>
-  <string id="ui_mcm_ap_consequences_stash_loot_consequence_stash_loot_min_items">
-    <text>Min items</text>
-  </string>
-  <string id="ui_mcm_ap_consequences_stash_loot_consequence_stash_loot_min_items_desc">
-    <text>Minimum items the squad takes from a stash.</text>
-  </string>
-  <string id="ui_mcm_ap_consequences_stash_loot_consequence_stash_loot_max_items">
-    <text>Max items</text>
-  </string>
-  <string id="ui_mcm_ap_consequences_stash_loot_consequence_stash_loot_max_items_desc">
-    <text>Maximum items the squad takes from a stash.</text>
-  </string>
   <string id="ui_mcm_ap_consequences_stash_loot_consequence_stash_loot_skip_crafting">
     <text>Skip stashes with crafting items</text>
   </string>
@@ -919,18 +907,6 @@
   </string>
   <string id="ui_mcm_ap_consequences_stash_fill_consequence_stash_fill_rush_desc">
     <text>Scripted squads move at maximum speed. Disable for slower, more realistic movement.</text>
-  </string>
-  <string id="ui_mcm_ap_consequences_stash_fill_consequence_stash_fill_min_items">
-    <text>Min items</text>
-  </string>
-  <string id="ui_mcm_ap_consequences_stash_fill_consequence_stash_fill_min_items_desc">
-    <text>Minimum items to hide in stash.</text>
-  </string>
-  <string id="ui_mcm_ap_consequences_stash_fill_consequence_stash_fill_max_items">
-    <text>Max items</text>
-  </string>
-  <string id="ui_mcm_ap_consequences_stash_fill_consequence_stash_fill_max_items_desc">
-    <text>Maximum items to hide in stash.</text>
   </string>
   <!-- ==================== CONSEQUENCES / SQUADKILL REVENGE ==================== -->
   <string id="ui_mcm_ap_consequences_squadkill_revenge_title">

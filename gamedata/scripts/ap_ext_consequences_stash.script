@@ -1,11 +1,27 @@
---- ap_ext_consequences_stash: STASH family consequences (loot + ambush + fill). CONFIGS factory.
+--- ap_ext_consequences_stash: STASH family consequences (loot + ambush + fill). LTX policy.
+---
+--- Policy loaded from `configs/alifeplus/ap_stash_policy.ltx`. Single uniform block (no per-rank).
+--- Each entry lists every reachable category with {min, max}. Loot fills any entry where squad
+--- count < min by taking matching stash sections; fill deposits items where squad count > max.
+--- extras_max: top-N by cost from sections NOT taken by category pass (the "valuable" pick).
+--- fill_max: per-event total deposit cap.
+---
+--- Untouchable preservation: any section classified as "untouchable" (quest / anim / blacklisted)
+--- in the stash forces a whole-stash skip (no loot, no clear). Quest items always survive.
+---
+--- Crafting preservation: MCM toggle `consequence_stash_loot_skip_crafting` skips the whole
+--- stash when any tool / part / upgrade section is present.
+---
+--- Ammo categories (ammo_slot_*_t*) in policy do not currently trigger LOOT — the stash-side
+--- section -> category resolution lacks per-NPC weapon context (get_section_category returns
+--- "ammo_not_equipped" for all ammo). Ammo can still flow via FILL (per-NPC counts use the
+--- proper opts via _scan_squad). Squad-context ammo loot is future work.
 
-local pairs = pairs
-local random = math.random
-local table_concat = table.concat
+local pairs, tonumber = pairs, tonumber
+local string_match = string.match
+local table_concat, table_sort = table.concat, table.sort
 local xobject, xtime, xstash, xinventory = xobject, xtime, xstash, xinventory
 local ap_core_debug, ap_core_broker, ap_core_record, ap_core_consumer = ap_core_debug, ap_core_broker, ap_core_record, ap_core_consumer
-local ap_ext_tracker = ap_ext_tracker
 
 local CAUSE = ap_core_const.CAUSE
 local RESULT = ap_core_const.RESULT
@@ -24,64 +40,166 @@ local LOG_FILL = ap_core_debug.bracket(CONSEQUENCE.STASH_FILL)
 
 local cfg = ap_core_mcm.cfg
 
---- Stash policy: per-category fill floor + loot target.
---- Only listed categories participate. Untouchables, weapons, outfits, helmets, devices are
---- excluded by absence -- their state-bearing fields (condition, upgrades, charge, ammo count)
---- are lost across the vanilla `treasure_manager` cache_string round-trip; the engine re-spawns
---- items from section names alone.
---- fill_above  = squad deposits anything above this many of the category
---- loot_target = squad takes from stash until it holds this many of the category
-local STASH_POLICY = {
-    medkit       = { fill_above = 3, loot_target = 3 },
-    bandage      = { fill_above = 5, loot_target = 5 },
-    antirad      = { fill_above = 3, loot_target = 3 },
-    stim         = { fill_above = 2, loot_target = 2 },
-    pill         = { fill_above = 3, loot_target = 3 },
-    food         = { fill_above = 3, loot_target = 3 },
-    drink        = { fill_above = 2, loot_target = 2 },
-    grenade_ammo = { fill_above = 2, loot_target = 2 },
-}
+local POLICY_PATH    = "alifeplus\\ap_stash_policy.ltx"
+local POLICY_SECTION = "ap_stash_policy"
+local DEFAULT_COST   = 30
 
--- True if any section in the stash is a crafting workflow item.
--- Aborts loot for the whole stash (GAMMA-protected crafting chain preservation).
-local function _stash_has_crafting(sections)
+-- Populated by _load_stash_policy at on_game_start. Shape:
+--   { entries = { { category, rule = {min, max} }, ... },
+--     rules   = { [category] = { min, max }, ... },
+--     extras_max = N, fill_max = N }
+local STASH_POLICY = nil
+
+local function _parse_min_max(value)
+    if not value or value == "" then return nil end
+    local min_str, max_str = string_match(value, "(%S+)%s*,%s*(%S+)")
+    if not min_str then return nil end
+    local min, max = tonumber(min_str), tonumber(max_str)
+    if not min or not max then return nil end
+    return { min = min, max = max }
+end
+
+local function _absorb_policy_line(key, value, entries, rules, totals)
+    if key == "extras_max" then
+        totals.extras_max = tonumber(value) or 0
+        return
+    end
+    if key == "fill_max" then
+        totals.fill_max = tonumber(value) or 0
+        return
+    end
+    local rule = _parse_min_max(value)
+    if not rule then return end
+    entries[#entries + 1] = { category = key, rule = rule }
+    rules[key] = rule
+end
+
+local function _load_stash_policy()
+    local ini = ini_file(POLICY_PATH)
+    local entries, rules, totals = {}, {}, { extras_max = 0, fill_max = 0 }
+    if not ini:section_exist(POLICY_SECTION) then
+        STASH_POLICY = { entries = entries, rules = rules, extras_max = 0, fill_max = 0 }
+        return
+    end
+    local line_count = ini:line_count(POLICY_SECTION)
+    for i = 0, line_count - 1 do
+        local _, key, value = ini:r_line_ex(POLICY_SECTION, i, "", "")
+        if key and key ~= "" then _absorb_policy_line(key, value, entries, rules, totals) end
+    end
+    STASH_POLICY = { entries = entries, rules = rules, extras_max = totals.extras_max, fill_max = totals.fill_max }
+end
+
+local function _stash_has_untouchable(sections)
     for i = 1, #sections do
-        if xinventory.is_crafting(sections[i]) then return true end
+        if xinventory.is_in_category(sections[i], "untouchable") then return true end
     end
     return false
 end
 
+local function _stash_has_crafting(sections)
+    for i = 1, #sections do
+        if xinventory.is_in_category(sections[i], "crafting") then return true end
+    end
+    return false
+end
+
+-- Per-squad-member iterate handler: counts items by category into `counts` using member's opts.
+-- @cost O(items_in_inventory) | per item: 1 get_category call (cached chain hits in xinventory)
+local function _scan_member(member_se, member_ids, _opts_out, counts)
+    local member_id = member_se.id
+    member_ids[#member_ids + 1] = member_id
+    local npc_go = xobject.go(member_id)
+    if not npc_go then return end
+    local opts = xinventory.get_category_opts(npc_go)
+    _opts_out[member_id] = opts
+    xinventory.iterate_inventory(member_id, function(_, item)
+        local cat = xinventory.get_category(item, opts)
+        counts[cat] = (counts[cat] or 0) + 1
+    end)
+end
+
 -- Walk squad members. Returns (member_ids, member_opts, counts) where counts is {[category]=n}.
 -- member_ids covers online + offline via squad_members iterator (preserves round-robin shape).
--- member_opts is populated for ONLINE members only (xobject.go is nil for offline). Categories
--- computed via xinventory.get_category with per-member opts (equipped pre-filter respected).
--- @cost O(members * items_per_member) | per online member: ~14 luabind trivial + 2 heavy for get_category_opts, + iterate STL m_all walk
+-- member_opts is populated for ONLINE members only (xobject.go is nil for offline).
 local function _scan_squad(squad)
     local member_ids, member_opts, counts = {}, {}, {}
     if not squad or not squad.squad_members then return member_ids, member_opts, counts end
     if squad:npc_count() == 0 then return member_ids, member_opts, counts end
     for member_se in squad:squad_members() do
-        local mid = member_se.id
-        member_ids[#member_ids + 1] = mid
-        local npc_go = xobject.go(mid)
-        if npc_go then
-            local opts = xinventory.get_category_opts(npc_go)
-            member_opts[mid] = opts
-            xinventory.iterate_inventory(mid, function(_, item)
-                local cat = xinventory.get_category(item, opts)
-                counts[cat] = (counts[cat] or 0) + 1
-            end)
-        end
+        _scan_member(member_se, member_ids, member_opts, counts)
     end
     return member_ids, member_opts, counts
 end
 
---- Loot a stash. Two-stage: stash-wide crafting gate (skip if any tool/kit/part/upgrade),
---- then per-section walk. For each section, resolve category via xinventory.get_section_category;
---- if STASH_POLICY has an entry for that category AND squad holds less than loot_target,
---- create one copy on a squad member (round-robin) via xinventory.create_item. Then clear the
---- stash via xstash.loot_stash; sections in categories outside STASH_POLICY are destroyed by
---- the clear (NPCs would never have used them per category policy).
+-- Index stash sections with cost + a `taken` flag, for the two loot passes.
+local function _index_with_cost(sections)
+    local idx = {}
+    for i = 1, #sections do
+        idx[i] = { sec = sections[i], cost = xinventory.get_cost(sections[i]) or DEFAULT_COST, taken = false }
+    end
+    return idx
+end
+
+-- Find first non-taken stash section whose category matches `cat`.
+local function _find_section_for_category(index, cat)
+    for j = 1, #index do
+        if not index[j].taken and xinventory.get_section_category(index[j].sec) == cat then
+            return j
+        end
+    end
+    return nil
+end
+
+-- Fill ONE policy entry's min target by taking matching sections from stash. Returns updated cursor.
+local function _loot_entry(entry, index, member_ids, counts, taken_secs, cursor)
+    if entry.rule.min <= 0 then return cursor end
+    local cat = entry.category
+    local current = counts[cat] or 0
+    while current < entry.rule.min do
+        local found_at = _find_section_for_category(index, cat)
+        if not found_at then break end
+        if not xinventory.create_item(index[found_at].sec, member_ids[cursor]) then break end
+        index[found_at].taken = true
+        current = current + 1
+        counts[cat] = current
+        cursor = (cursor % #member_ids) + 1
+        taken_secs[#taken_secs + 1] = index[found_at].sec
+    end
+    return cursor
+end
+
+-- Per-category loot pass. Walk policy entries in declaration order; delegates each entry to _loot_entry.
+local function _loot_by_category(index, member_ids, counts, taken_secs)
+    local cursor = 1
+    for i = 1, #STASH_POLICY.entries do
+        cursor = _loot_entry(STASH_POLICY.entries[i], index, member_ids, counts, taken_secs, cursor)
+    end
+end
+
+-- Extras pass. Top-N by cost from sections not taken by the category pass.
+local function _loot_extras(index, member_ids, taken_secs)
+    if STASH_POLICY.extras_max <= 0 then return end
+    local leftover = {}
+    for i = 1, #index do
+        if not index[i].taken then leftover[#leftover + 1] = index[i] end
+    end
+    table_sort(leftover, function(a, b) return a.cost > b.cost end)
+    local cursor, taken = 1, 0
+    for i = 1, #leftover do
+        if taken >= STASH_POLICY.extras_max then break end
+        if xinventory.create_item(leftover[i].sec, member_ids[cursor]) then
+            leftover[i].taken = true
+            cursor = (cursor % #member_ids) + 1
+            taken = taken + 1
+            taken_secs[#taken_secs + 1] = leftover[i].sec
+        end
+    end
+end
+
+--- Loot a stash. Three-stage gate:
+---   1. Untouchable in stash -> skip whole stash (no loot, no clear). Always-on.
+---   2. Crafting in stash AND MCM toolkit-skip on -> skip whole stash (preserve toolkits).
+---   3. Otherwise: per-category loot pass + extras pass + clear stash.
 local function _arrive_loot(squad, args)
     if not args then return end
     ap_ext_tracker.reset_squad_opportunity(squad.id, args.dto_field, xtime.game_sec())
@@ -93,7 +211,13 @@ local function _arrive_loot(squad, args)
     local sections = xstash.get_stash_items(stash_id)
     if not sections or #sections == 0 then return end
 
-    -- Crafting-supply preservation (MCM-gated)
+    -- Untouchable preservation (always-on; quest items must survive)
+    if _stash_has_untouchable(sections) then
+        ap_core_debug.debug(LOG_LOOT .. " arrive: stash=%d squad=%d untouchable_present, skipping", stash_id, squad.id)
+        return
+    end
+
+    -- Crafting preservation (MCM-gated)
     if cfg.consequence_stash_loot_skip_crafting and _stash_has_crafting(sections) then
         ap_core_debug.debug(LOG_LOOT .. " arrive: stash=%d squad=%d crafting_present, skipping", stash_id, squad.id)
         return
@@ -109,33 +233,20 @@ local function _arrive_loot(squad, args)
 
     local member_ids, _, counts = _scan_squad(squad)
     if #member_ids == 0 then
-        ap_core_debug.debug(LOG_LOOT .. " arrive: stash=%d squad=%d no_members", stash_id, squad.id)
+        ap_core_debug.debug(LOG_LOOT .. " arrive: stash=%d squad=%d no_members, clearing stash", stash_id, squad.id)
+        xstash.loot_stash(stash_id)
         return
     end
 
-    local max_take = random(cfg.consequence_stash_loot_min_items, cfg.consequence_stash_loot_max_items)
     ap_core_debug.observe(nil, PHASE.COMPLETE_STASH_LOOT, function(trace)
-        local taken = 0
         local taken_secs = {}
-        local cursor = 1
-        for i = 1, #sections do
-            if taken >= max_take then break end
-            local sec = sections[i]
-            local cat = xinventory.get_section_category(sec)
-            local rule = STASH_POLICY[cat]
-            if not rule then goto continue end
-            if (counts[cat] or 0) >= rule.loot_target then goto continue end
-            if not xinventory.create_item(sec, member_ids[cursor]) then goto continue end
-            counts[cat] = (counts[cat] or 0) + 1
-            cursor = (cursor % #member_ids) + 1
-            taken = taken + 1
-            taken_secs[taken] = sec
-            ::continue::
-        end
+        local index = _index_with_cost(sections)
+        _loot_by_category(index, member_ids, counts, taken_secs)
+        _loot_extras(index, member_ids, taken_secs)
         ap_core_debug.observe(trace, PHASE.LOOT_STASH, function()
             return xstash.loot_stash(stash_id)
         end)
-        return { code = TRACE.OK, stash = stash_id, squad = squad.id, taken = taken, items = #sections,
+        return { code = TRACE.OK, stash = stash_id, squad = squad.id, taken = #taken_secs, items = #sections,
             looted = table_concat(taken_secs, ",") }
     end)
 end
@@ -146,45 +257,42 @@ local function _arrive_ambush(squad, args)
     ap_ext_tracker.reset_squad_opportunity(squad.id, args.dto_field, xtime.game_sec())
 end
 
--- Pick items to deposit: per category in STASH_POLICY where the squad's count exceeds
--- fill_above, walk online members and collect up to (count - fill_above) items. Capped at
--- max_items total. Two passes: scan_squad already counted by category; walk again, pick.
--- @cost O(members * items_per_member) | 2 luabind medium per member (iterate_inventory walked twice via _scan_squad + pick pass) + per item: ~12 hash lookups in get_category
-local function _collect_fill_picks(squad, max_items)
+-- Per-member pick handler for fill pass. Mutates picks + surplus.
+local function _pick_for_member(member_id, opts, surplus, picks, fill_max)
+    xinventory.iterate_inventory(member_id, function(_, item)
+        if #picks >= fill_max then return end
+        local cat = xinventory.get_category(item, opts)
+        if surplus[cat] and surplus[cat] > 0 then
+            picks[#picks + 1] = item
+            surplus[cat] = surplus[cat] - 1
+        end
+    end)
+end
+
+-- Per-category surplus computed from squad counts vs policy max. Capped at fill_max total.
+local function _collect_fill_picks(squad, fill_max)
     local picks = {}
+    if fill_max <= 0 then return picks end
     local member_ids, member_opts, counts = _scan_squad(squad)
     if #member_ids == 0 then return picks end
 
     local surplus = {}
     for cat, count in pairs(counts) do
-        local rule = STASH_POLICY[cat]
-        if rule then
-            local diff = count - rule.fill_above
-            if diff > 0 then surplus[cat] = diff end
-        end
+        local rule = STASH_POLICY.rules[cat]
+        local diff = rule and (count - rule.max) or 0
+        if diff > 0 then surplus[cat] = diff end
     end
 
     for i = 1, #member_ids do
-        if #picks >= max_items then break end
-        local mid = member_ids[i]
-        local opts = member_opts[mid]
-        xinventory.iterate_inventory(mid, function(_, item)
-            if #picks >= max_items then return end
-            local cat = xinventory.get_category(item, opts)
-            if surplus[cat] and surplus[cat] > 0 then
-                picks[#picks + 1] = item
-                surplus[cat] = surplus[cat] - 1
-            end
-        end)
+        if #picks >= fill_max then break end
+        local member_id = member_ids[i]
+        _pick_for_member(member_id, member_opts[member_id], surplus, picks, fill_max)
     end
     return picks
 end
 
---- Fill the stash with squad surplus. For each category in STASH_POLICY where the squad holds
---- more than fill_above, deposit the excess via xinventory.release_item + xstash.fill_stash.
---- Total deposits capped by the MCM items-per-stash range. Vanilla treasure_manager re-spawns
---- items from section names alone (no condition / ammo / uses preserved), so only stateless
---- categories appear in STASH_POLICY -- weapons / outfits / helmets / devices excluded by design.
+--- Fill a stash. Deposit any category whose squad count exceeds policy max, total per-event
+--- capped by STASH_POLICY.fill_max.
 local function _arrive_fill(squad, args)
     if not args then return end
     ap_ext_tracker.reset_squad_opportunity(squad.id, args.dto_field, xtime.game_sec())
@@ -198,8 +306,7 @@ local function _arrive_fill(squad, args)
     end
 
     ap_core_debug.observe(nil, PHASE.COMPLETE_STASH_FILL, function(trace)
-        local max_items = random(cfg.consequence_stash_fill_min_items, cfg.consequence_stash_fill_max_items)
-        local picks = _collect_fill_picks(squad, max_items)
+        local picks = _collect_fill_picks(squad, STASH_POLICY.fill_max)
         if #picks == 0 then
             return { code = TRACE.NO_ITEMS, stash = stash_id, squad = squad.id }
         end
@@ -283,6 +390,7 @@ local function _make_handler(entry)
 end
 
 function on_game_start()
+    _load_stash_policy()
     for i = 1, #CONFIGS do
         local entry = CONFIGS[i]
         ap_core_consumer.register(entry.consequence, {

@@ -4,22 +4,24 @@
 --- RANK_VETERAN (12000). Each tier block lists every reachable category with {min, max}.
 --- Entry declaration order in the LTX = BUY priority (top fills first; stops when cash
 --- exhausted). SELL phase iterates inventory, drops anything above category max.
---- max_profit per tier caps net cash gain per trade event (replaces old cash_cap).
+--- profit_max per tier caps net cash gain per trade event (replaces old cash_cap).
 ---
 --- Pre-filter ("untouchable" + "equipped") short-circuits before policy lookup so quest
 --- items and equipped gear are never touched regardless of policy contents.
 
-local floor, pairs, ipairs = math.floor, pairs, ipairs
+local floor, pairs, ipairs, tonumber = math.floor, pairs, ipairs, tonumber
 local string_match, string_sub = string.match, string.sub
-local xinventory, xcreature, xmath = xinventory, xcreature, xmath
-local ap_core_const = ap_core_const
+local table_sort = table.sort
+local xinventory, xcreature = xinventory, xcreature
 
 local SELL_MULT = 0.5
 local BUY_MULT  = 1.0
 local DEFAULT_COST = 30
 local POLICY_PATH = "alifeplus\\ap_trade_policy.ltx"
 
-local TRADE_POLICY = nil  -- { rookie = {entries, rules, max_profit}, veteran = {...} }
+-- Populated by _load_trade_policy at on_game_start. Shape:
+--   { rookie = { entries, rules, profit_max }, veteran = { ... } }
+local TRADE_POLICY = nil
 
 -- Parse a "min, max" CSV value into a rule table.
 local function _parse_min_max(value)
@@ -31,27 +33,29 @@ local function _parse_min_max(value)
     return { min = min, max = max }
 end
 
--- Load one policy block in declaration order. max_profit pulled out as a top-level field;
+-- Single-line ingest helper. Routes profit_max to totals; rest become entries+rules pairs.
+local function _absorb_trade_line(key, value, entries, rules, totals)
+    if key == "profit_max" then
+        totals.profit_max = tonumber(value) or 0
+        return
+    end
+    local rule = _parse_min_max(value)
+    if not rule then return end
+    entries[#entries + 1] = { category = key, rule = rule }
+    rules[key] = rule
+end
+
+-- Load one policy block in declaration order. profit_max pulled out as a top-level field;
 -- other entries land in entries (ordered list) AND rules (hash for fast SELL lookup).
 local function _load_policy_block(ini, section)
-    local entries, rules, max_profit = {}, {}, nil
-    if not ini:section_exist(section) then return { entries = entries, rules = rules, max_profit = 0 } end
-    local n = ini:line_count(section)
-    for i = 0, n - 1 do
+    local entries, rules, totals = {}, {}, { profit_max = 0 }
+    if not ini:section_exist(section) then return { entries = entries, rules = rules, profit_max = 0 } end
+    local line_count = ini:line_count(section)
+    for i = 0, line_count - 1 do
         local _, key, value = ini:r_line_ex(section, i, "", "")
-        if key and key ~= "" then
-            if key == "max_profit" then
-                max_profit = tonumber(value) or 0
-            else
-                local rule = _parse_min_max(value)
-                if rule then
-                    entries[#entries + 1] = { category = key, rule = rule }
-                    rules[key] = rule
-                end
-            end
-        end
+        if key and key ~= "" then _absorb_trade_line(key, value, entries, rules, totals) end
     end
-    return { entries = entries, rules = rules, max_profit = max_profit or 0 }
+    return { entries = entries, rules = rules, profit_max = totals.profit_max }
 end
 
 local function _load_trade_policy()
@@ -62,29 +66,39 @@ local function _load_trade_policy()
     }
 end
 
--- Buy the target tier's cheapest section as boxes, until rounds >= target OR cash insufficient.
--- Returns rounds actually added (sum of box_size per box bought).
+-- Return a fresh cost-asc-sorted copy of sections (does not mutate the input list, which
+-- may be cached by xinventory and shared with other callers).
+local function _sorted_by_cost(sections)
+    local sorted = {}
+    for i = 1, #sections do sorted[i] = sections[i] end
+    table_sort(sorted, function(a, b)
+        return (xinventory.get_cost(a) or DEFAULT_COST) < (xinventory.get_cost(b) or DEFAULT_COST)
+    end)
+    return sorted
+end
+
+-- Buy ammo for the target tier. Walks tier sections cheapest-first; on `cash < cost` or
+-- create_item failure, breaks inner loop so the outer for can try the next section. Cheaper
+-- alternative usually fails the same way (cost is monotonic across sorted sections), but
+-- create_item failures on the cheapest are recoverable by falling through.
 local function _buy_ammo_tier(npc, seller, weapon_sec, tier_num, target_rounds, bought)
     if not weapon_sec or target_rounds <= 0 then return 0 end
     local tier_map = xinventory.get_ammo_tier_map(weapon_sec, 2)
 
-    -- Collect sections of the target tier, sorted by cost ascending (cheapest first).
     local tier_sections = {}
-    for sec, t in pairs(tier_map) do
-        if t == tier_num then tier_sections[#tier_sections + 1] = sec end
+    for sec, tier in pairs(tier_map) do
+        if tier == tier_num then tier_sections[#tier_sections + 1] = sec end
     end
     if #tier_sections == 0 then return 0 end
-    table.sort(tier_sections, function(a, b)
-        return (xinventory.get_cost(a) or DEFAULT_COST) < (xinventory.get_cost(b) or DEFAULT_COST)
-    end)
+    tier_sections = _sorted_by_cost(tier_sections)
 
     local rounds_added = 0
     for _, sec in ipairs(tier_sections) do
         local box = xinventory.get_box_size(sec) or 30
         local cost = floor((xinventory.get_cost(sec) or DEFAULT_COST) * BUY_MULT)
         while rounds_added < target_rounds do
-            if xcreature.get_money(npc) < cost then return rounds_added end
-            if not xinventory.create_item(sec, npc:id(), { ammo = box }) then return rounds_added end
+            if xcreature.get_money(npc) < cost then break end
+            if not xinventory.create_item(sec, npc:id(), { ammo = box }) then break end
             xcreature.transfer_money(npc, cost, seller)
             rounds_added = rounds_added + box
             bought[#bought + 1] = sec
@@ -94,19 +108,25 @@ local function _buy_ammo_tier(npc, seller, weapon_sec, tier_num, target_rounds, 
     return rounds_added
 end
 
--- Buy one random section from a consumable category, while count < target AND cash allows.
+-- Buy from a consumable category cheapest-first until count >= target OR no affordable
+-- section remains. Falls through to the next-cheapest section on per-section unaffordable
+-- or create_item failure, so an expensive section never blocks NPCs that can still afford
+-- a cheaper one.
 local function _buy_consumable_category(npc, seller, category, current, target, bought)
     local sections = xinventory.get_category_sections(category)
     if #sections == 0 then return current end
-    while current < target do
-        if xcreature.get_money(npc) <= 0 then return current end
-        local pick = xmath.sample(sections)
-        local cost = floor((xinventory.get_cost(pick) or DEFAULT_COST) * BUY_MULT)
-        if xcreature.get_money(npc) < cost then return current end
-        if not xinventory.create_item(pick, npc:id()) then return current end
-        xcreature.transfer_money(npc, cost, seller)
-        current = current + 1
-        bought[#bought + 1] = pick
+    local sorted = _sorted_by_cost(sections)
+    for i = 1, #sorted do
+        local sec = sorted[i]
+        local cost = floor((xinventory.get_cost(sec) or DEFAULT_COST) * BUY_MULT)
+        while current < target do
+            if xcreature.get_money(npc) < cost then break end
+            if not xinventory.create_item(sec, npc:id()) then break end
+            xcreature.transfer_money(npc, cost, seller)
+            current = current + 1
+            bought[#bought + 1] = sec
+        end
+        if current >= target then return current end
     end
     return current
 end
@@ -116,12 +136,31 @@ local function _is_ammo_slot_category(cat)
 end
 
 -- For the ammo buy path: resolve the equipped weapon section and tier number from category.
+-- Parses the trailing _t<N> via string_match so categories like ammo_slot_2_t10 resolve
+-- correctly (a previous last-char slice broke for n_tiers > 9).
 local function _resolve_ammo_buy_context(category, cat_opts)
     local prefix = string_sub(category, 1, 11)
-    local tier_num = tonumber(string_sub(category, -1))
+    local tier_num = tonumber(string_match(category, "_t(%d+)$"))
     if prefix == "ammo_slot_2" then return cat_opts.equipped_pistol_sec, tier_num end
     if prefix == "ammo_slot_3" then return cat_opts.equipped_rifle_sec,  tier_num end
     return nil, nil
+end
+
+-- Execute one BUY policy entry against the NPC's current counts. Ammo categories dispatch
+-- through _buy_ammo_tier (per-slot tier map); consumables dispatch through cheapest-first
+-- _buy_consumable_category. Updates counts[cat] in place.
+local function _run_buy_entry(entry, npc, seller, cat_opts, counts, bought)
+    if not (entry.rule.min and entry.rule.min > 0) then return end
+    local cat = entry.category
+    local current = counts[cat] or 0
+    if current >= entry.rule.min then return end
+    if _is_ammo_slot_category(cat) then
+        local weapon_sec, tier_num = _resolve_ammo_buy_context(cat, cat_opts)
+        if not (weapon_sec and tier_num) then return end
+        counts[cat] = current + _buy_ammo_tier(npc, seller, weapon_sec, tier_num, entry.rule.min - current, bought)
+    else
+        counts[cat] = _buy_consumable_category(npc, seller, cat, current, entry.rule.min, bought)
+    end
 end
 
 --- Run a sell + buy trade between NPC and trader, per the NPC's rank-tier policy.
@@ -129,14 +168,14 @@ end
 --- declaration order (= BUY priority) and fill any whose count < min, ammo via tier-aware
 --- per-slot section pick, consumables via random section pick from the category set.
 --- Phase 3: SELL pass — iterate inventory, drop anything whose category count > max.
---- Phase 4: max_profit cap — transfer NPC cash gained beyond max_profit back to seller.
+--- Phase 4: profit_max cap — transfer NPC cash gained beyond profit_max back to seller.
 --- @safety SAFE - nil-guarded npc/seller; iterate_inventory tolerant of nil items
 --- @cost O(n inventory) | 2 iterate walks + buy loop per policy entry with cash check
 --- @param npc game_object Trading NPC (gains money from sales, spends money on buys)
 --- @param seller game_object Trader receiving items + paying for ammo
---- @param opts table|nil unused (kept for caller compatibility; cap is now per-rank max_profit)
+--- @param _opts table|nil unused (kept for caller compatibility; cap is now per-rank profit_max)
 --- @return table { sold = { sec, ... }, bought = { sec, ... } }
-function trade(npc, seller, opts)
+function trade(npc, seller, _opts)
     local sold, bought = {}, {}
     if not npc or not seller then return { sold = sold, bought = bought } end
 
@@ -162,22 +201,7 @@ function trade(npc, seller, opts)
 
     -- Phase 2: BUY pass (priority = declaration order in LTX).
     for _, entry in ipairs(policy.entries) do
-        local cat = entry.category
-        local rule = entry.rule
-        if rule.min and rule.min > 0 then
-            local current = counts[cat] or 0
-            if current < rule.min then
-                if _is_ammo_slot_category(cat) then
-                    local weapon_sec, tier_num = _resolve_ammo_buy_context(cat, cat_opts)
-                    if weapon_sec and tier_num then
-                        local added = _buy_ammo_tier(npc, seller, weapon_sec, tier_num, rule.min - current, bought)
-                        counts[cat] = current + added
-                    end
-                else
-                    counts[cat] = _buy_consumable_category(npc, seller, cat, current, rule.min, bought)
-                end
-            end
-        end
+        _run_buy_entry(entry, npc, seller, cat_opts, counts, bought)
     end
 
     -- Phase 3: SELL pass (anything above category max).
@@ -197,11 +221,11 @@ function trade(npc, seller, opts)
         sold[#sold + 1] = sec
     end)
 
-    -- Phase 4: max_profit cap (net gain).
-    if policy.max_profit and policy.max_profit > 0 then
+    -- Phase 4: profit_max cap (net gain).
+    if policy.profit_max and policy.profit_max > 0 then
         local delta = xcreature.get_money(npc) - cash_before
-        if delta > policy.max_profit then
-            xcreature.transfer_money(npc, delta - policy.max_profit, seller)
+        if delta > policy.profit_max then
+            xcreature.transfer_money(npc, delta - policy.profit_max, seller)
         end
     end
 
