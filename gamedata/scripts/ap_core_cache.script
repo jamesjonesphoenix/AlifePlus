@@ -4,7 +4,7 @@
 ---   _smarts_by_level over SIMBOARD smarts (step=50)
 ---   _stashes_by_level over treasure_manager.caches (step=3)
 ---   _squads_by_level over SIMBOARD squads (step=50)
----   _standalone_role_npcs over actor-level stalker + trader CSEs (step=50) keyed by smart_id
+---   _standalone_role_npcs over the full alife CSE pool (step=50) keyed by smart_id (cross-level)
 --- Step sizes target ~0.5ms per tick (~5us per smart/squad bucketing, ~12us per stash).
 --- Per-tick cost is bounded well under the 4ms ceiling per architecture.md "Invariants".
 --- Wall-clock warmup: ~0.1-1s for smart/squad/standalone, ~2-3s for stash. Consumers pass
@@ -30,10 +30,12 @@
 --- xlevel.get_level_id lookup), so stale entries reject at ~0 cost.
 ---
 --- Standalone role NPCs: full rebuild per level transition, no incremental upkeep. Scope
---- is the actor's CURRENT level, snapshotted via alife():iterate_level_objects_of_clsid
---- (alife_simulator_script.cpp:479-488) which C++-filters by per-level CSE registry +
---- script clsid (script_stalker, script_trader). Mid-level death/spawn drift is tolerated:
---- consumers walk by id and skip dead refs via xobject.go() / .alive() nil checks.
+--- is the full alife pool (cross-level), snapshotted via sim:iterate_objects. The earlier
+--- 1.7.1 path used alife():iterate_level_objects_of_clsid which walks graph().level().objects()
+--- — the engine's switched-in registry, not the full per-level alife pool — and silently
+--- dropped offline NPCs and members of offline squads. Cross-level scope also unlocks
+--- off-map destinations resolving traders on neighbor levels. Mid-level death/spawn drift
+--- is tolerated: consumers walk by id and skip dead refs via xobject.go() / .alive() nil checks.
 ---
 --- Lifecycle: every actor level transition wipes the Lua VM. Proof chain:
 --- M_CHANGE_LEVEL packet -> Level_network_messages.cpp:308-333 -> MakeReconnect
@@ -62,8 +64,6 @@ local IsStalker, IsTrader = IsStalker, IsTrader
 
 local CALLBACK = ap_core_const.CALLBACK
 local CLSID_SQUAD = clsid.online_offline_group_s
-local CLSID_SCRIPT_STALKER = clsid.script_stalker
-local CLSID_SCRIPT_TRADER = clsid.script_trader
 
 local SMART_BUILD_QUEUE = "ap_core_cache_smarts"
 local SMART_BUILD_STEP = 50
@@ -78,6 +78,14 @@ local _smarts_by_level = nil
 local _stashes_by_level = nil
 local _squads_by_level = nil
 local _standalone_role_npcs = nil
+-- Reverse map of NPC section -> smart_id, built once per VM from each smart's [exclusive]
+-- section in its loaded smart.ini. Authoritative for offline exclusive-job NPCs (Loris,
+-- Sidorovich, all curated traders / medics / mechanics): smart.npc_info populates only when
+-- the NPC's gulag logic activates online, so an offline NPC's owning smart can't be read
+-- from npc_info. Reading smart.ini "exclusive" mirrors how gulag_general.script:1358-1364
+-- creates the exclusive jobs at smart load. ~500 smarts * ~5-10 entries each = single-pass
+-- build at actor_on_first_update; lookup O(1) per NPC thereafter.
+local _exclusive_owner = nil
 local _initialized = false
 
 -- Bucket one smart into _smarts_by_level. Returns true to drain (xslice survivor protocol).
@@ -257,49 +265,99 @@ local function _on_squad_level_change(squad, from_level_name, to_level_name)
     bucket[id] = true
 end
 
--- Map a stalker section to its standalone service role, or nil if not curated.
+-- Collect ALL service roles a section is curated for. Multi-role NPCs (mechanics with
+-- dm_init_trader, Yar = medic+trader) get added to every applicable role bucket.
+-- Returns nil when the NPC has no service role (quest/leader/guide-only entries).
 -- @cost O(1) | 3 hash lookups in xdata buckets
-local function _resolve_role(section)
-    if xdata.traders[section]   then return "trader"   end
-    if xdata.medics[section]    then return "medic"    end
-    if xdata.mechanics[section] then return "mechanic" end
-    return nil
+local function _resolve_roles(section)
+    local roles = nil
+    if xdata.traders[section]   then roles = roles or {}; roles[#roles+1] = "trader"   end
+    if xdata.medics[section]    then roles = roles or {}; roles[#roles+1] = "medic"    end
+    if xdata.mechanics[section] then roles = roles or {}; roles[#roles+1] = "mechanic" end
+    return roles
 end
 
--- Resolve nearest smart on the entity's level; insert (smart_id, role, npc_id) into the index.
--- Class-gates on Stalker OR Trader: caller (xslice over alife():iterate_level_objects_of_clsid
--- with script_stalker + script_trader clsids) already filters in C++. Safety belt protects
--- against pure-virtual on section_name if a non-matching entity ever leaks through. xdata.npc_roles
--- maps section -> role for both pools: stalker NPCs (medics, mechanics, curated traders) and
--- Script_Trader story NPCs (Sidorovich-class, ~10 vanilla entities Zone-wide).
--- @cost O(1) for non-matching entities (1 luabind clsid + class check, early return); for matches,
---       1 luabind heavy (xlevel.get_level_id cold) + xsmart.find_smart O(n) smarts on level.
+-- Build the section->smart_id reverse map from every smart's [exclusive] section in its
+-- loaded smart.ini. Mirrors how gulag_general.script:1358-1364 reads exclusive job assignments.
+-- Each [exclusive] line is "<npc_section> = <logic_ltx_path>"; we map npc_section -> smart.id
+-- so offline exclusive NPCs can resolve their owning smart authoritatively without relying
+-- on smart.npc_info (online-only) or find_smart-by-centroid (geometric approximation).
+-- @cost O(s * e) one-time | s ~ 500 smarts, e ~ 0-10 exclusive entries per smart.
+--       Per smart: 1 section_exist + 1 line_count + e * r_line. Sub-millisecond total.
+local function _build_exclusive_owner_map()
+    if _exclusive_owner then return end
+    _exclusive_owner = {}
+    if not SIMBOARD or not SIMBOARD.smarts_by_names then return end
+    for _, smart in pairs(SIMBOARD.smarts_by_names) do
+        local ini = smart.ini
+        if ini and ini:section_exist("exclusive") then
+            local n = ini:line_count("exclusive")
+            for i = 0, n - 1 do
+                local _, key = ini:r_line("exclusive", i, "", "")
+                if key and key ~= "" then _exclusive_owner[key] = smart.id end
+            end
+        end
+    end
+end
+
+-- Class-gates Stalker OR Trader, looks up curated roles via xdata.npc_roles, resolves the
+-- owning smart, and inserts the NPC into EVERY applicable role bucket (multi-role NPCs are
+-- in trader AND mechanic / medic AND trader / etc as their curation declares). Class check
+-- is the safety belt against pure-virtual on section_name for non-matching entities. Smart
+-- binding cascade, most-authoritative first:
+--   1. smart.npc_info[se.id]   - engine roster, populated when NPC's gulag logic is online
+--   2. _exclusive_owner[section] - smart.ini [exclusive] section reverse map (offline-authoritative)
+--   3. xsmart.find_smart(se.position) - nearest by centroid, last-resort approximation
+-- xdata.npc_roles maps section -> roles for both pools: stalker NPCs (medics, mechanics,
+-- curated traders) and Script_Trader story NPCs (Sidorovich-class).
+-- @cost O(1) for non-matching entities. For matches: smart.npc_info hash walk (~ smarts on
+--       level), or _exclusive_owner hash lookup (~0), or find_smart, plus one bucket insert
+--       per role (typically 1-2).
 local function _index_standalone(se)
     if not se then return end
     local cls = se:clsid()
     if not (IsStalker(nil, cls) or IsTrader(nil, cls)) then return end
     local section = se:section_name()
     if not section then return end
-    local role = _resolve_role(section)
-    if not role then return end
-    local level_id = xlevel.get_level_id(se)
-    if not level_id then return end
-    local smart = xsmart.find_smart(se.position, { level_id = level_id })
-    if not smart then
-        ap_core_debug.debug("[CORE.CACHE] _index_standalone find_smart nil section=%s level_id=%s id=%d", section, tostring(level_id), se.id)
-        return
+    local roles = _resolve_roles(section)
+    if not roles then return end
+    -- (1) engine smart binding (online-authoritative)
+    local owning_smart_id
+    for _, smart in pairs(SIMBOARD and SIMBOARD.smarts_by_names or {}) do
+        if smart.npc_info and smart.npc_info[se.id] then
+            owning_smart_id = smart.id
+            break
+        end
     end
-    local by_role = _standalone_role_npcs[smart.id]
+    -- (2) exclusive-section reverse map (offline-authoritative)
+    if not owning_smart_id then
+        owning_smart_id = _exclusive_owner and _exclusive_owner[section] or nil
+    end
+    -- (3) find_smart-by-centroid (geometric approximation, last resort)
+    if not owning_smart_id then
+        local level_id = xlevel.get_level_id(se)
+        if not level_id then return end
+        local smart = xsmart.find_smart(se.position, { level_id = level_id })
+        if not smart then
+            ap_core_debug.debug("[CORE.CACHE] _index_standalone no smart resolved section=%s id=%d level_id=%s", section, se.id, tostring(level_id))
+            return
+        end
+        owning_smart_id = smart.id
+    end
+    local by_role = _standalone_role_npcs[owning_smart_id]
     if not by_role then
         by_role = {}
-        _standalone_role_npcs[smart.id] = by_role
+        _standalone_role_npcs[owning_smart_id] = by_role
     end
-    local by_id = by_role[role]
-    if not by_id then
-        by_id = {}
-        by_role[role] = by_id
+    for i = 1, #roles do
+        local role = roles[i]
+        local by_id = by_role[role]
+        if not by_id then
+            by_id = {}
+            by_role[role] = by_id
+        end
+        by_id[se.id] = true
     end
-    by_id[se.id] = true
 end
 
 -- Re-resolve via xobject.se(id) per tick (which wraps alife_object): the queue captures IDs
@@ -319,28 +377,30 @@ local function _on_standalone_build_done()
     ap_core_debug.debug("[CORE.CACHE] standalone role bucket built")
 end
 
--- Snapshot Stalker + Trader CSE IDs on the actor's current level via the engine
--- accessor alife():iterate_level_objects_of_clsid (alife_simulator_script.cpp:479-488).
--- C++ filters by per-level CSE registry + script clsid; one call per clsid (script_stalker,
--- script_trader). Per-tick handler re-resolves via alife_object(id) so entities destroyed
--- mid-warmup return nil safely.
--- @cost O(n) actor-level CSEs per iterate call (1 C++ clsid compare each, no Lua per entity
---       except queue append on match); O(s+t) entities queued; xslice ticks pay 1 alife_object
---       + section lookup + find_smart on curated match.
+-- Snapshot every CSE in the full alife pool via sim:iterate_objects. The earlier 1.7.1
+-- approach using alife():iterate_level_objects_of_clsid walks graph().level().objects() which
+-- is the engine's switched-in registry, not the full per-level CSE pool: it silently drops
+-- offline NPCs outside actor's switch_distance and members of currently-offline squads,
+-- missing most curated trader/medic/mechanic entries (probed on Cordon: 6 of 8 curated NPCs
+-- missing including Loris, mil trader, mechanics). The full-pool walk catches everyone;
+-- _index_standalone class-gates the per-entity handler so only Stalker + Trader CSEs reach
+-- the role lookup. Cache is cross-level (no actor-level filter at snapshot time) so off-map
+-- destinations can resolve traders on neighbor levels.
+-- @cost O(n) total alife CSEs for snapshot (~40k on heavy GAMMA saves); xslice ticks pay
+--       1 alife_object + class check (early-out for non-stalker/trader, typical 90%+) +
+--       section lookup + smart binding on curated matches.
 local function _build_standalone_role_bucket()
     if _standalone_role_npcs then return end
     if xslice.is_active(STANDALONE_BUILD_QUEUE) then return end
     local sim = alife()
     if not sim then return end
+    -- Build the section -> smart_id reverse map before the bucket fill so per-NPC binding
+    -- can consult it without falling through to find_smart-by-centroid for offline NPCs.
+    _build_exclusive_owner_map()
     _standalone_role_npcs = {}
     local queue = {}
-    sim:iterate_level_objects_of_clsid(CLSID_SCRIPT_STALKER, function(se)
-        queue[#queue + 1] = se.id
-        return false
-    end)
-    sim:iterate_level_objects_of_clsid(CLSID_SCRIPT_TRADER, function(se)
-        queue[#queue + 1] = se.id
-        return false
+    sim:iterate_objects(function(se)
+        if se then queue[#queue + 1] = se.id end
     end)
     xslice.start(STANDALONE_BUILD_QUEUE, queue, {
         step = STANDALONE_BUILD_STEP,
