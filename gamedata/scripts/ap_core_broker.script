@@ -842,6 +842,8 @@ local function _on_entity_unregister(se_obj)
     if data then
         if data.offmap then
             ap_core_debug.debug("[SQUAD.OFFMAP] cleanup_on_unregister: squad=%d", id)
+        else
+            ap_core_debug.debug("[SQUAD] cleanup_on_unregister: squad=%d target=%s", id, tostring(data.scripted_target))
         end
         _ap_scripted_squads[id] = nil
     end

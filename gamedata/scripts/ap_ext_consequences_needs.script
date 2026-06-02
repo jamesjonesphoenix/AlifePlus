@@ -88,14 +88,20 @@ local function _make_on_arrive(entry)
         if not args or not args.dto_field then return end
         ap_core_debug.observe(nil, PHASE.COMPLETE_NEEDS, function(trace)
             ap_ext_tracker.reset_stalker_need(squad.id, args.dto_field, xtime.game_sec())
-            if entry.arrive_action
-                and cfg["consequence_" .. entry.name .. "_arrive_action_enabled"] ~= false then
-                local st = db.storage[squad:commander_id()]
-                if st and st.object then
-                    entry.arrive_action(trace, st.object, args)
+            local skip
+            if entry.arrive_action then
+                if cfg["consequence_" .. entry.name .. "_arrive_action_enabled"] == false then
+                    skip = "arrive_action_disabled"
+                else
+                    local st = db.storage[squad:commander_id()]
+                    if st and st.object then
+                        entry.arrive_action(trace, st.object, args)
+                    else
+                        skip = "commander_offline"
+                    end
                 end
             end
-            return { code = TRACE.OK, squad = squad.id, need = entry.name, dst = args.dst_name }
+            return { code = TRACE.OK, squad = squad.id, need = entry.name, dst = args.dst_name, skip = skip }
         end)
     end
 end

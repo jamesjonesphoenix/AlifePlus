@@ -158,6 +158,7 @@ local function _on_server_entity_on_unregister(se_obj)
     if _marker_state[id] then
         xpda.unmark_squad(id)
         _marker_state[id] = nil
+        ap_core_debug.debug("[CORE.MAP] unmark_on_unregister: squad=%d", id)
     end
 end
 
