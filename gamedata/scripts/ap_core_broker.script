@@ -114,6 +114,21 @@ function build_protection_opts(caller_opts)
     return out
 end
 
+-- Defensive diag string for squads with a broken Lua class binding (assign_smart missing).
+-- Other methods may also be missing on the same squad, so every Lua method call is pcalled.
+-- Field reads (player_id, online, smart_id) cannot error in Lua; missing fields return nil.
+local function _broken_squad_diag(squad, squad_id)
+    local function _safe(fn) local ok, v = pcall(fn); return ok and tostring(v or "?") or "?" end
+    return string_format("squad=%d section=%s name=%s faction=%s level=%s online=%s smart_id=%s",
+        squad_id,
+        _safe(function() return squad:section_name() end),
+        _safe(function() return squad:name() end),
+        tostring(squad.player_id),
+        _safe(function() return xlevel.get_level_id(squad) end),
+        tostring(squad.online),
+        tostring(squad.smart_id))
+end
+
 -- exclude_filter for the preempt-fallback pass. Rejects external owners and squads
 -- with scripted_target set but not tracked by AP (externally scripted by other mods).
 -- AP-scripted-and-interruptable pass through; non-interruptable AP-scripted are kept
@@ -362,7 +377,10 @@ local function _dispatch_return_home(squad_id, squad, data, now)
     if not name or name == "" then return false end
     if not xsquad.acquire_squad(squad, home_smart, false) then return false end
     -- Clear source (foreign dwell smart) before engine bumps smart_id to home_smart.
-    xsmart.assign_squad_to_smart(squad, nil)
+    if not xsmart.assign_squad_to_smart(squad, nil) then
+        ap_core_debug.warn("[SQUAD.OFFMAP] return_home_detach_skipped_no_assign_smart: %s",
+            _broken_squad_diag(squad, squad_id))
+    end
     _ap_scripted_squads[squad_id] = {
         scripted_target   = name,
         target_smart_id   = home_smart.id,
@@ -495,7 +513,10 @@ function script_squad(squad, smart, opts)
     -- Clear source from SIMBOARD roster before engine specific_update bumps squad.smart_id
     -- to the new target on next tick (sim_squad_scripted.script:288-290). Reading smart_id
     -- after that bump would lose the true source. The nil-target form fires squad_on_leave_smart.
-    xsmart.assign_squad_to_smart(squad, nil)
+    if not xsmart.assign_squad_to_smart(squad, nil) then
+        ap_core_debug.warn("[SQUAD] script_squad_detach_skipped_no_assign_smart: %s",
+            _broken_squad_diag(squad, squad.id))
+    end
     local now = xtime.game_sec()
     local data = {
         scripted_target   = name,
@@ -619,7 +640,10 @@ local function _commit_arrival(squad_id, squad, smart, data, now)
     end
     data.arrived = true
     data.release_at = now + data.pre_release_gulag
-    xsmart.assign_squad_to_smart(squad, smart.id)
+    if not xsmart.assign_squad_to_smart(squad, smart.id) then
+        ap_core_debug.warn("[SQUAD] commit_arrival_attach_skipped_no_assign_smart: %s",
+            _broken_squad_diag(squad, squad_id))
+    end
     return true
 end
 
@@ -631,7 +655,10 @@ end
 -- semantics match (outbound registers via _commit_arrival).
 local function _handle_offmap_arrival(squad_id, squad, smart, data, now)
     if data.arrived_at and not data.return_home_at then
-        xsmart.assign_squad_to_smart(squad, smart.id)
+        if not xsmart.assign_squad_to_smart(squad, smart.id) then
+            ap_core_debug.warn("[SQUAD.OFFMAP] home_arrived_attach_skipped_no_assign_smart: %s",
+                _broken_squad_diag(squad, squad_id))
+        end
         ap_core_debug.debug("[SQUAD.OFFMAP] home_arrived: squad=%d", squad_id)
         _unscript_squad(squad)
         return true
