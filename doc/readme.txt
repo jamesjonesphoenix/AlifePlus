@@ -1,5 +1,5 @@
 AlifePlus: Emergent A-Life for STALKER Anomaly, by Damian
-- Version: 1.7.1 (xlibs 1.7.0)
+- Version: 1.7.5 (xlibs 1.7.5)
 - Manifesto: https://github.com/damiansirbu-stalker/AlifePlus/blob/main/doc/manifesto.md
 - Integration guide: https://github.com/damiansirbu-stalker/AlifePlus/blob/main/doc/integration.md
 - Changelog: https://github.com/damiansirbu-stalker/AlifePlus/blob/main/doc/changelog
@@ -228,11 +228,11 @@ Needs
   - Heal - The stalker walks to a shelter when injured.
   - Shelter - The stalker walks to a safe location when exposed too long.
   - Money - The stalker searches anomaly fields for artefacts or hunts mutant lairs.
-  - Supply - The stalker walks to a trader, sells surplus, and restocks per a rank-tiered policy. Veterans add premium ammo, grenades, and larger consumable bands. Rookies carry basic ammo and standard medkits.
+  - Supply - The stalker walks to a trader, medic, or mechanic (anyone wired to dm_init_trader in vanilla) to sell surplus and restock per a rank-tiered policy. Veterans add premium ammo, grenades, and larger consumable bands. Rookies carry basic ammo and standard medkits.
   - Job - The stalker guards outposts and checkpoints, explores the Zone, or researches anomalies.
   - Social - The stalker walks to a campfire or base for company.
 
-  Cross-map sibling rows: Social and Job Explore each ship a paired off-map row. Peaceful sociable factions (Ecologists, Clear Sky, Freedom, Loners) visit other camps for company. Peaceful curious factions (Ecologists, Clear Sky) scout neighbor maps. Army, Monolith, and Zombified squads never travel off-map.
+  Cross-map sibling rows: Social, Supply Trader, and Job Explore each ship a paired off-map row. Peaceful sociable factions (Ecologists, Clear Sky, Freedom, Loners) visit other camps for company. Peaceful greedy factions cross to another map to restock when no on-map trader is reachable. Peaceful curious factions (Ecologists, Clear Sky) scout neighbor maps. Army, Monolith, and Zombified squads never travel off-map.
   Reach grows with player progression. Stalkers reach the next map once Yantar X-16 is shut down, the next after the Brain Scorcher is deactivated at Radar, and master-rank squad commanders push one map further. Each step is tunable under MCM > World > Off-map.
   Squads return home after a few in-zone days. Travellers stuck off-map are released after a week to keep level populations clean. Dispatches are also capped per source map within a sliding two-day window so no level bleeds traffic forever.
 
@@ -395,8 +395,10 @@ Disable or remove in MO2.
 Configuration:
 
 Each cause and consequence is a module you can enable or disable through MCM.
-Gameplay actions (item consumption, stash looting, supply trader visits) each have their own toggles and tunable values: chances, cooldowns, thresholds, quantities, rate limits, and budgets.
+Gameplay actions (trade, stash looting, supply trader visits) each have their own toggles and tunable values: chances, cooldowns, thresholds, quantities, rate limits, and budgets.
 Log level goes from silent to full tracing with pathing, performance timing, and PDA map markers.
+
+Two reset buttons live under Development. Reset ALL to Defaults restores every setting to factory state and takes effect on the first click. Reset ALL to Stateless Defaults restores factory state and then disables trade, item consumption, stash fill, stash loot, and smart ownership. AlifePlus dispatch and travel still run. Use the stateless preset on installs where another mod owns those systems.
 
 Presets:
   Calm Zone: A-Life Interval 15-20, Cause Budget 5, Consequence Budget 1, Global Rate Limit 2

@@ -5,66 +5,54 @@
   selene... OK
   contract... OK
   load... OK
-  gitleaks... OK
 
 --- AlifeGuard ---
   luacheck... OK
   selene... OK
   contract... OK
   load... OK
-  gitleaks... OK
 
 --- AlifePlus ---
   luacheck... OK
   selene... OK
   contract... OK
   load... OK
-  gitleaks... OK
 
 --- AlifeTactics ---
   luacheck... OK
   selene... OK
-  contract... 2 pts (S+)
-    [crossfile-unused-global] LUA-LOW (2x1=2)
-        gamedata\scripts\at_state_machine.script:189: Global function 'set_state' not used (checked at_state_machine.set_state pattern)
-        gamedata\scripts\at_state_machine.script:195: Global function 'get_state' not used (checked at_state_machine.get_state pattern)
+  contract... OK
   load... OK
-  gitleaks... OK
 
 --- Diegetic-Audio-Control ---
   luacheck... OK
   selene... OK
   contract... OK
   load... OK
-  gitleaks... OK
 
 --- Hideout-Furniture-Infinite-Fuel ---
   luacheck... OK
   selene... OK
   contract... OK
   load... OK
-  gitleaks... OK
 
 --- Standalone-Companions ---
   luacheck... OK
   selene... OK
   contract... OK
   load... OK
-  gitleaks... OK
 
 --- TestZone ---
   luacheck... OK
   selene... OK
   contract... OK
   load... OK
-  gitleaks... OK
 
 --- xlibs ---
   luacheck... OK
   selene... OK
   contract... OK
   load... OK
-  gitleaks... OK
 
 ========================================
-Grade: S+ - Score: 2
+PASS - Grade: S+

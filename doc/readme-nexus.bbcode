@@ -231,12 +231,12 @@ Stalkers have human needs. Drives inspired by Maslow-Hull are scored by how long
 [*][b]Heal[/b] - The stalker walks to a shelter when injured.
 [*][b]Shelter[/b] - The stalker walks to a safe location when exposed too long.
 [*][b]Money[/b] - The stalker searches anomaly fields for artefacts or hunts mutant lairs.
-[*][b]Supply[/b] - The stalker walks to a trader, sells surplus, and restocks per a rank-tiered policy. Veterans add premium ammo, grenades, and larger consumable bands. Rookies carry basic ammo and standard medkits.
+[*][b]Supply[/b] - The stalker walks to a trader, medic, or mechanic (anyone wired to dm_init_trader in vanilla) to sell surplus and restock per a rank-tiered policy. Veterans add premium ammo, grenades, and larger consumable bands. Rookies carry basic ammo and standard medkits.
 [*][b]Job[/b] - The stalker guards outposts and checkpoints, explores the Zone, or researches anomalies.
 [*][b]Social[/b] - The stalker walks to a campfire or base for company.
 [/list]
 
-[b]Cross-map sibling rows:[/b] Social and Job Explore each ship a paired off-map row. Peaceful sociable factions (Ecologists, Clear Sky, Freedom, Loners) visit other camps for company. Peaceful curious factions (Ecologists, Clear Sky) scout neighbor maps. Army, Monolith, and Zombified squads never travel off-map.
+[b]Cross-map sibling rows:[/b] Social, Supply Trader, and Job Explore each ship a paired off-map row. Peaceful sociable factions (Ecologists, Clear Sky, Freedom, Loners) visit other camps for company. Peaceful greedy factions cross to another map to restock when no on-map trader is reachable. Peaceful curious factions (Ecologists, Clear Sky) scout neighbor maps. Army, Monolith, and Zombified squads never travel off-map.
 
 Reach grows with player progression. Stalkers reach the next map once Yantar X-16 is shut down, the next after the Brain Scorcher is deactivated at Radar, and master-rank squad commanders push one map further. Each step is tunable under MCM > World > Off-map.
 
@@ -405,7 +405,9 @@ Disable or remove in MO2.
 
 [size=3][b]Configuration[/b][/size]
 
-Each cause and consequence is a module you can enable or disable through MCM. Gameplay actions (item consumption, stash looting, supply trader visits) each have their own toggles and tunable values: chances, cooldowns, thresholds, quantities, rate limits, and budgets. Log level goes from silent to full tracing with pathing, performance timing, and PDA map markers.
+Each cause and consequence is a module you can enable or disable through MCM. Gameplay actions (trade, stash looting, supply trader visits) each have their own toggles and tunable values: chances, cooldowns, thresholds, quantities, rate limits, and budgets. Log level goes from silent to full tracing with pathing, performance timing, and PDA map markers.
+
+Two reset buttons live under Development. [b]Reset ALL to Defaults[/b] restores every setting to factory state and takes effect on the first click. [b]Reset ALL to Stateless Defaults[/b] restores factory state and then disables trade, item consumption, stash fill, stash loot, and smart ownership. AlifePlus dispatch and travel still run. Use the stateless preset on installs where another mod owns those systems.
 
 [b]Presets:[/b]
 Calm Zone: A-Life Interval 15-20, Cause Budget 5, Consequence Budget 1, Global Rate Limit 2
