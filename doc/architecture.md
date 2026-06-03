@@ -373,7 +373,15 @@ Save persistence: the offmap counter exports / imports via xttltable in `ap_core
 
 ## Item flow
 
-Three AP flows touch items. All three resolve item categories via `xinventory.get_category(item, opts)` / `xinventory.get_section_category(sec)` (the unified xinventory category model); per-flow policy lives in dedicated LTX files under `configs/alifeplus/`, DLTX-overridable.
+Three AP flows touch items: Supply Trader (buy/sell on arrival), Stash Loot (squad takes from stash), Stash Fill (squad deposits surplus to stash). All three load their LTX via `xinventory.load_policy`, classify inventory via `xinventory.get_category(item, opts)` / `xinventory.get_section_category(sec)`, and resolve untouchables through the same categorizer.
+
+The unified category model is the modernization step over Alundaio's `items\trade\gulag_job_trade_buy_sell.ltx` (per-section keep counts inside each tradeable item's LTX). Per-section meant every tradeable section had to declare its own buy_sell row, and modpacks adding items had to dirty the item files to participate. AP's `xinventory.get_category` reads engine-baked `_ITM` Parse_ITM buckets (outfit, helmet, artefact, device, money, grenade_ammo, ammo, eatable filtered to food/drink) plus hand-set predicates for the medical 5 (medkit, bandage, antirad, stim, pill) and grenades. A modpack medkit section gets `medkit` category automatically when the engine binds it to `kind=i_medical`. No per-modpack LTX maintenance, no item file edits — the policy operates on categories, the engine assigns categories to sections.
+
+Runtime untouchable checks layered in 1.7.5 (`xinventory.get_category:632-637`): runtime `story_id` via `get_object_story_id` (vanilla quest-tracker convention, `release_npc_inventory.script:81` precedent), `axr_companions.is_assigned_item(opts.npc_id, item:id())` (companion-gifted, `axr_companions.script:1300,1360` precedent), `se_load_var(item_id, "", "strapped_item")` (player-strapped, `itms_manager.script:338` precedent). Section-level untouchable (quest / anim / blacklisted) gates first via `get_section_category`. Equipped check uses `opts.equipped_ids`. All three runtime checks centralized in `get_category` so every consumer (trade, stash loot, stash fill, AlifeBalance inventory-balance) respects them without per-consumer code.
+
+`xinventory.load_policy(path, sections, specials_set)` is the shared LTX kernel. Each named section yields `{ entries, rules, specials }`. `entries` preserves declaration order (= BUY / LOOT priority); `rules` is the per-category hash for O(1) lookup; `specials` carries numeric keys named in `specials_set` (`profit_max`, `extras_max`, `fill_max`, ...). Consumer mods ship their own policy LTX under `configs/<mod>/<purpose>_policy.ltx`; the shape is fixed in xlibs, the values are owned by the mod. AlifePlus uses `ap_trade_policy.ltx` for trade and `ap_stash_policy.ltx` for stash. AlifeBalance uses `ab_inventory_policy.ltx` for the inventory-balance cull pass.
+
+Per-flow policy lives in dedicated LTX files under `configs/alifeplus/`, DLTX-overridable.
 
 | Flow | Site | Policy | Behavior |
 |------|------|--------|----------|

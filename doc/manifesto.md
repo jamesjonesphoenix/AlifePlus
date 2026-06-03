@@ -647,11 +647,28 @@ But `npc_trade_buy_sell` only fires when a long orchestration sequence lines up:
 If any link drops, the function falls through to `alife_release_id` and items are deleted with no buyer.
 In vanilla Anomaly, the conditions almost never align: NPC trade is functionally dead.
 
-AlifePlus extracts the mechanics into a callable module (`ap_ext_trade`) and drives them through radiant dispatch.
+AlifePlus extracts Alundaio's core into a callable module (`ap_ext_trade`) and drives it through radiant dispatch.
 The Supply drive picks a candidate smart (one hosting a curated trader, medic, or mechanic; faction HQs without a known service NPC are excluded), the consequence walks the squad there, `ap_ext_trade.trade(visitor, trader, opts)` runs synchronously on arrival.
-Same ltx, same row schema, same cost formulas the engine reads.
+Same cost formula the engine reads (`floor(cost * mult)`).
 Trade sellers are resolved by character profile name (`trader` / `barman` / `barmen`), covering all 20 vanilla trader smarts: Sidorovich at Cordon, Beard at Skadovsk, Owl at Marsh and Zaton, Ashot at Yanov, the barmen at Bar / Marsh / Yanov / Skadovsk, the faction traders, the 11 minor-base traders.
-The trade system GSC designed and Tronex finished maintaining now actually fires.
+
+The row schema is where the modernization happens.
+Alundaio's `buy_sell` lived inside each item's LTX: every tradeable section had to declare its own row, and modpacks adding items had to dirty the item files to participate in trade.
+AlifePlus inverts that: the policy declares categories (`medkit`, `ammo_slot_2_t1`, ...), and `xinventory.get_category` resolves any section to its category through the engine's own `_ITM` Parse_ITM buckets plus hand-set predicates for the medical 5 and grenades.
+A Boomsticks AP round, a GAMMA addon medkit, an EFP grenade all classify automatically through their existing `kind` and `class` fields.
+No per-modpack LTX maintenance.
+No item file edits.
+The modder adds the item, the mod ships, AP trades it.
+
+The depth Alundaio's row schema could not express now layers on top of the same engine cost formula.
+Two rank blocks split policy by `character_rank()`; rookies carry basics, veterans carry premium ammo, grenades, and larger consumable bands.
+The equipped pistol's `ammo_class` is read at runtime and split by `k_ap` into basic / premium tiers; same for the rifle.
+Three runtime untouchable checks (`story_id`, `axr_companions.is_assigned_item`, `se_load_var "strapped_item"`) sit inside `get_category` so player gifts and quest items survive every consumer.
+`profit_max` per rank block caps net cash gain so NPCs never clean out the trader.
+SELL precedes BUY so the cash from selling spares funds the buy phase.
+Within a tier, the cheapest section is picked first so cash-limited NPCs fill the slot instead of rolling expensive sections and walking out empty.
+
+The trade system GSC designed and Tronex finished maintaining now actually fires, with modpack onboarding for free.
 
 ---
 
