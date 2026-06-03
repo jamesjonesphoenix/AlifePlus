@@ -316,13 +316,14 @@ defaults = {
 
 }
 
--- Stateless profile: AlifePlus dispatch and travel stay active, but every mechanic that
--- mutates inventory, trade, or world spawn flips off. Squads still get hungry, still travel
--- to traders / campfires / outposts, still scan for area opportunities. They just do not
--- consume the medkit, swap inventory, or mutate the spawn table on arrival. Stash loot and
--- fill have no separate arrive-action toggle (the whole consequence bundles dispatch and
--- item move at ap_ext_consequences_stash.script:99,213), so the consequence-level flags go
--- off; squads stop dispatching to stashes entirely under this profile.
+-- Stateless profile: disables the mechanics that mutate trader stocks, area spawn tables,
+-- and stash contents. Squads still dispatch and travel; only the payload at the destination
+-- is skipped. supply_trader and supply_trader_offmap have arrive_action toggles (gated in
+-- ap_ext_consequences_needs.script via _make_on_arrive). stash_loot and stash_fill have no
+-- arrive_action split, so the whole consequence flag is off (dispatch and item move bundle
+-- at ap_ext_consequences_stash.script:99,213). hunger_campfire, rest_campfire, heal_shelter,
+-- job_outpost, social_campfire, social_base have no arrive_action toggle in the current
+-- ruleset, so this profile does not gate them.
 local stateless_overrides = {
     -- Arrive-action toggles (trade-only; gated in ap_ext_consequences_needs.script:_make_on_arrive)
     consequence_supply_trader_arrive_action_enabled = false,
@@ -573,8 +574,16 @@ local function _apply_profile(gui, overrides, msg)
         if gui.owner and gui.owner.SetMsg then
             gui.owner:SetMsg(msg, 5)
         end
-        if gui.On_Discard then
-            gui:On_Discard()
+        -- Close via On_Cancel, not On_Discard. On_Discard calls Reset_opt -> scroll_opt:Clear
+        -- at ui_mcm.script:949, which destroys the btn_reset button while its click handler
+        -- is still on the stack; C++ dispatcher returns into the freed control and SEH-fires
+        -- on some exe builds (e.g. modified vanilla 1.5.3). On_Cancel only calls HideDialog +
+        -- Unregister_UI -- scroll_opt children stay alive long enough for the handler to
+        -- unwind. Trade-off: opt_temp is not cleared (vanilla Cancel-without-prompt parity).
+        -- If the user touched widgets before clicking reset, those edits remain pending and
+        -- will be re-applied on the next On_Accept.
+        if gui.On_Cancel then
+            gui:On_Cancel()
         end
     end
     if db.actor then
@@ -1368,6 +1377,7 @@ function on_mcm_load()
                     }),
                     _check("map_markers"),
                     { id = "div_reset", type = "line" },
+                    { id = "warn_reset", type = "desc", text = "ui_mcm_ap_development_reset_warning", clr = {255, 240, 200, 80} },
                     { id = "btn_reset_all", type = "button", functor_ui = { btn_reset_all } },
                     { id = "btn_reset_stateless", type = "button", functor_ui = { btn_reset_stateless } },
                 },

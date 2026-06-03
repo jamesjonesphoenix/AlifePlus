@@ -1866,6 +1866,9 @@
   <string id="ui_mcm_ap_development_btn_reset_stateless_desc">
     <text>Reset every setting to its factory default, then disable any functionality that mutates inventory, trade, or world spawn like trading, item consumption, stash filling and looting, smart ownership.</text>
   </string>
+  <string id="ui_mcm_ap_development_reset_warning">
+    <text>Внимание: сохраните или отмените незавершённые изменения MCM; иначе они перезапишут сброс при следующем Принять.</text>
+  </string>
   <string id="ui_mcm_ap_world_offmap_offmap_despawn_hours">
     <text>Принудительный отзыв: часов</text>
   </string>
