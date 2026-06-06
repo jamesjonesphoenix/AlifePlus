@@ -10,7 +10,7 @@ Alife Collection:
 AlifePlus: https://www.moddb.com/mods/stalker-anomaly/addons/alifeplus-v1-0-01
 AlifeBalance: https://www.moddb.com/mods/stalker-anomaly/addons/alifebalance
 AlifeGuard: https://www.moddb.com/mods/stalker-anomaly/addons/alifeguard-1001
-AlifeTactics: TBD
+AlifeTactics: https://www.moddb.com/mods/stalker-anomaly/addons/alifetactics
 
 ! Please use the RESET button in MCM when updating to a new version !
 
