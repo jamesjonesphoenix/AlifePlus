@@ -17,7 +17,7 @@ local RESULT = ap_core_const.RESULT
 local REASON = ap_core_const.REASON
 local RANGE_RADIO = ap_core_const.RANGE_RADIO
 local HOURS_TO_SECONDS = ap_core_const.HOURS_TO_SECONDS
-local RANK_MASTER = ap_core_const.RANK_MASTER
+local RANK_VETERAN = ap_core_const.RANK_VETERAN
 local PERSONALITY = ap_ext_const.PERSONALITY
 
 -- Vanilla Anomaly story flags consumed by _resolve_offmap_hops.
@@ -88,14 +88,14 @@ end
 
 -- Resolve total BFS hops for off-map adjacency search.
 -- Pre-story stalkers stay home (hops = 0 -> empty neighbor set -> off-map row never publishes).
--- Each progression milestone (X-16 deactivated, Brain Scorcher deactivated) and master rank
+-- Each progression milestone (X-16 deactivated, Brain Scorcher deactivated) and veteran rank
 -- commander adds reach via MCM-tunable bonuses.
 -- @cost O(1) | 2 alife_info reads + commander rank (3-4 luabind)
 local function _resolve_offmap_hops(squad)
     local hops = cfg.offmap_base_hops
     if has_alife_info(STORY_FLAG.X16_OFF) then hops = hops + cfg.offmap_extra_map_x16 end
     if has_alife_info(STORY_FLAG.RADAR_OFF) then hops = hops + cfg.offmap_extra_map_radar end
-    if xsquad.get_commander_rank(squad) >= RANK_MASTER then hops = hops + cfg.offmap_extra_map_rank end
+    if xsquad.get_commander_rank(squad) >= RANK_VETERAN then hops = hops + cfg.offmap_extra_map_rank end
     return hops
 end
 
