@@ -379,6 +379,20 @@ Compatibility & Safety:
 - Unauthorized patches that claim compatibility are not endorsed and will cause instability and save corruption.
 - See integration.md on the project site for API reference and examples.
 
+Mod compatibility:
+
+  Superseded: none. AlifePlus is a reactive layer, not a replacement for any one mod.
+
+  Conflicts (critical):
+  - Unauthorized "synergy" / "bridge" patches claiming to connect AlifePlus to another mod: instability, save corruption.
+  - Squad-scripting "brains" that take squads without the ownership handshake: two systems fight for the same squads.
+
+  Affects / coexists:
+  - Warfare A-Life Overhaul, Better A-Life Overhaul: own their squads; excluded via the ownership registry.
+  - Faction-relation mods (Dynamic Faction Relations, zone-relation tweaks): change which causes can fire. Intended.
+  - Spawn / population mods (Dynamic Mutants, ReSpawn Mutant Collection, Rebound Encounters): more entities to act on; pair with AlifeGuard.
+  - Extended sim-distance / offline mods (Living Zone, Extended Offline, ROAD alife range): enlarge the population; fight AlifeGuard more than AlifePlus.
+
 ---
 
 Requirements:
