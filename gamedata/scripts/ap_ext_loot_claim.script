@@ -27,10 +27,12 @@ local cfg = ap_core_mcm.cfg
 
 local LOG = "[EXT.LOOT]"
 
--- Owner ledger TTL (game seconds). Hygiene + time-based abandonment: a claim older than the
--- realistic corpse-persistence window lapses so the ledger stays bounded and reused server ids
--- cannot mis-attribute. game_sec clock so export/import survives save/load (absolute game-time
--- timestamps stay valid across sessions; os.clock would not).
+-- Owner ledger TTL (game seconds). Bounds the ledger and ages out reused server ids: a claim past
+-- the corpse-persistence window is swept by _cleanup (piggybacked on the next :set, i.e. the next
+-- death), so an expired claim can still read via :get until then. game_sec (not os.clock) so the
+-- window tracks in-game time and pauses with the game. Save/load preserves the owner mapping only,
+-- not TTLs: :export drops them and :import assigns a fresh full TTL from load time, so a claim's
+-- window restarts on reload.
 local OWNER_TTL_SEC = 6 * HOURS_TO_SECONDS
 
 -- victim_id -> killer_id
@@ -99,10 +101,15 @@ end
 
 --- Apply the ladder once for a theft from owner_id. First strike in the window warns;
 --- subsequent strikes drop the owner's personal goodwill toward the actor until the engine
---- flips it to enemy. Dead/offline owner: claim void, no reaction.
+--- flips it to enemy. Dead, offline, out-of-radius, or already-hostile owner: claim void, no reaction.
 local function _process_theft(owner_id)
     local owner = xobject.go(owner_id)
     if not owner or not owner:alive() then return end
+    -- Owner must be within the reservation radius to notice the theft (symmetric with the NPC
+    -- side; an owner simulated but far away does not react).
+    if db.actor:position():distance_to(owner:position()) > cfg.loot_reservation_radius then return end
+    -- Already hostile (looting-driven or faction-enemy): the ladder has nothing to escalate.
+    if owner:relation(db.actor) == game_object.enemy then return end
     local timer = xprofiler.new_if(ap_core_debug.enabled()):start()
     local strikes = _strikes:count(owner_id)
     _strikes:add(owner_id)
@@ -193,6 +200,7 @@ function on_game_start()
     RegisterScriptCallback(CALLBACK.ACTOR_ON_ITEM_TAKE, _on_item_take)
     RegisterScriptCallback(CALLBACK.ACTOR_ON_FIRST_UPDATE, _on_first_update)
     RegisterScriptCallback(CALLBACK.ON_OPTION_CHANGE, _on_option_change)
+    RegisterScriptCallback(CALLBACK.MCM_OPTION_RESTORE_DEFAULT, _on_option_change)
     RegisterScriptCallback(CALLBACK.SAVE_STATE, _on_save_state)
     RegisterScriptCallback(CALLBACK.LOAD_STATE, _on_load_state)
     ap_core_debug.info("%s Initialized", LOG)
