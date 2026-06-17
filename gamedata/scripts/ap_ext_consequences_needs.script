@@ -27,8 +27,8 @@ local LOG_INIT = ap_core_debug.bracket(CAUSE_CATEGORY.NEEDS)
 local cfg = ap_core_mcm.cfg
 
 --- Trade arrival action: trade visitor inventory with any service NPC at the destination smart.
---- Delegates to ap_ext_trade.trade; trade flow now uses per-rank LTX policy (incl. profit_max
---- cap) rather than the old MCM cash_cap. Wraps observe so the trade is one PHASE.ARRIVE entry.
+--- Delegates to ap_ext_trade.trade; trade uses the per-rank LTX policy for categories and the
+--- MCM trade_profit_max cap (economy > trade). Wraps observe so the trade is one PHASE.ARRIVE entry.
 local function _arrive_action_trade(trace, visitor_go, args)
     ap_core_debug.observe(trace, PHASE.ARRIVE, function()
         local smart_se = args.dst_smart_id and xobject.se(args.dst_smart_id)

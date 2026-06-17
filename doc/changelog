@@ -1,6 +1,11 @@
 next
-  Summary: AOEngine compatibility, massacre human-only
+  Summary: Loot ownership, trade profit cap, AOEngine compatibility, massacre human-only
 
+  - Added loot ownership: NPCs no longer strip the kills you made while you are nearby.
+    Looting a kill a living NPC claimed warns that stalker once, then turns him hostile to you alone.
+    The grudge stays personal to that stalker, never his faction.
+    Reservation radius, goodwill penalty, warnings, and forgiveness window are tunable under Economy.
+  - Added a Trade profit cap (Economy): net rubles an NPC gains per trade, all ranks, default 5000.
   - Added AOEngine v0.55+ support.
   - Fixed massacre investigations firing when a mutant pack wipes a stalker squad.
 

@@ -94,6 +94,9 @@ CALLBACK = {
     -- Behavior (mutators)
     NPC_ON_BEFORE_HIT = "npc_on_before_hit",
     MONSTER_ON_BEFORE_HIT = "monster_on_before_hit",
+    -- Death
+    NPC_ON_DEATH_CALLBACK = "npc_on_death_callback",
+    MONSTER_ON_DEATH_CALLBACK = "monster_on_death_callback",
     -- Loot
     MONSTER_ON_LOOT_INIT = "monster_on_loot_init",
     -- Lifecycle (HUD cleanup + GUI visibility)

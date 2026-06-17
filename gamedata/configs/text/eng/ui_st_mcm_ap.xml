@@ -1320,7 +1320,7 @@
     <text>Arrive action</text>
   </string>
   <string id="ui_mcm_ap_consequences_supply_trader_consequence_supply_trader_arrive_action_enabled_desc">
-    <text>Sell phase drops anything whose category count exceeds the policy max. Equipped items, quest items, and money are never touched. Buy phase fills any category whose count falls below the min, ammo per equipped slot and tier, consumables cheapest-first. Veterans add premium ammo and grenades. profit_max caps net cash gain per event.</text>
+    <text>Sell phase drops anything whose category count exceeds the policy max. Equipped items, quest items, and money are never touched. Buy phase fills any category whose count falls below the min, ammo per equipped slot and tier, consumables cheapest-first. Veterans add premium ammo and grenades. The trade profit cap (economy &gt; trade) limits net cash gain per event.</text>
   </string>
   <!-- ==================== CONSEQUENCES / SUPPLY TRADER OFF-MAP ==================== -->
   <string id="ui_mcm_ap_consequences_supply_trader_offmap_title">
@@ -1345,7 +1345,7 @@
     <text>Arrive action</text>
   </string>
   <string id="ui_mcm_ap_consequences_supply_trader_offmap_consequence_supply_trader_offmap_arrive_action_enabled_desc">
-    <text>Sell phase drops anything whose category count exceeds the policy max. Equipped items, quest items, and money are never touched. Buy phase fills any category whose count falls below the min, ammo per equipped slot and tier, consumables cheapest-first. Veterans add premium ammo and grenades. profit_max caps net cash gain per event.</text>
+    <text>Sell phase drops anything whose category count exceeds the policy max. Equipped items, quest items, and money are never touched. Buy phase fills any category whose count falls below the min, ammo per equipped slot and tier, consumables cheapest-first. Veterans add premium ammo and grenades. The trade profit cap (economy &gt; trade) limits net cash gain per event.</text>
   </string>
   <!-- ==================== CONSEQUENCES / JOB OUTPOST ==================== -->
   <string id="ui_mcm_ap_consequences_job_outpost_title">
@@ -1951,5 +1951,53 @@
   </string>
   <string id="ui_mcm_ap_consequences_area_infest_consequence_area_infest_rush_desc">
     <text>When enabled, squads move at rush speed to claim their nest.</text>
+  </string>
+  <string id="ui_mcm_ap_economy_loot_title">
+    <text>Loot Ownership</text>
+  </string>
+  <string id="ui_mcm_ap_economy_loot_desc">
+    <text>Reserve your kills from NPC looters, and make looting an NPC's kill a personal matter. NPCs no longer strip corpses you killed while you are nearby. Taking a kill claimed by a living NPC warns that stalker once, then costs you their personal goodwill until they turn on you - that NPC only, never their faction.</text>
+  </string>
+  <string id="ui_mcm_ap_economy_loot_loot_enabled">
+    <text>Enable loot ownership</text>
+  </string>
+  <string id="ui_mcm_ap_economy_loot_loot_enabled_desc">
+    <text>Master switch. Off = vanilla looting: NPCs may strip your kills and you face no claim on theirs.</text>
+  </string>
+  <string id="ui_mcm_ap_economy_loot_loot_reservation_radius">
+    <text>Reservation radius (m)</text>
+  </string>
+  <string id="ui_mcm_ap_economy_loot_loot_reservation_radius_desc">
+    <text>NPCs skip corpses you killed while you are within this distance. Beyond it the claim lapses and scavengers may loot.</text>
+  </string>
+  <string id="ui_mcm_ap_economy_loot_loot_goodwill_step">
+    <text>Goodwill penalty per theft</text>
+  </string>
+  <string id="ui_mcm_ap_economy_loot_loot_goodwill_step_desc">
+    <text>Personal goodwill lost each time you loot a living NPC's claimed kill after the warning. That NPC turns hostile once its attitude drops below the enemy threshold. Affects that NPC only, not its faction.</text>
+  </string>
+  <string id="ui_mcm_ap_economy_loot_loot_warn_count">
+    <text>Warnings before penalty</text>
+  </string>
+  <string id="ui_mcm_ap_economy_loot_loot_warn_count_desc">
+    <text>Free thefts from a given owner before goodwill starts dropping. 0 = penalty immediately, no warning.</text>
+  </string>
+  <string id="ui_mcm_ap_economy_loot_loot_forgive_hours">
+    <text>Forgiveness window (game hours)</text>
+  </string>
+  <string id="ui_mcm_ap_economy_loot_loot_forgive_hours_desc">
+    <text>An owner forgets your thefts after this many game hours without a new one, resetting to a fresh warning.</text>
+  </string>
+  <string id="ui_mcm_ap_economy_trade_title">
+    <text>Trade</text>
+  </string>
+  <string id="ui_mcm_ap_economy_trade_desc">
+    <text>Stalkers restock ammo and gear and offload surplus when they reach a trader. What each rank buys and sells is defined in the trade policy file. The cap below limits the rubles an NPC can net from one trade and applies to everyone. Trading itself is toggled under Supply (causes).</text>
+  </string>
+  <string id="ui_mcm_ap_economy_trade_trade_profit_max">
+    <text>Max profit per trade (rubles)</text>
+  </string>
+  <string id="ui_mcm_ap_economy_trade_trade_profit_max_desc">
+    <text>Net rubles an NPC may gain from a single trade visit, all ranks. 0 = no profit. Overrides the trade policy file. Default 5000.</text>
   </string>
 </string_table>

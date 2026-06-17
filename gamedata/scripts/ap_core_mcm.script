@@ -309,6 +309,14 @@ defaults = {
     mutator_area_infest_spawn_num = 3,
     mutator_area_infest_decay_hours = 48,
 
+    -- Economy: loot ownership + trade resolution
+    loot_enabled = true,
+    loot_reservation_radius = 30,
+    loot_goodwill_step = 250,
+    loot_warn_count = 1,
+    loot_forgive_hours = 2,
+    trade_profit_max = 5000,
+
     -- Development
     log_level = "WARN",
     map_markers = false,
@@ -355,6 +363,12 @@ local _key_to_tab = {
     news_interval_max_sec = "news",
     news_scope = "news",
     news_max_age_game_hours = "news",
+    loot_enabled = "economy/loot",
+    loot_reservation_radius = "economy/loot",
+    loot_goodwill_step = "economy/loot",
+    loot_warn_count = "economy/loot",
+    loot_forgive_hours = "economy/loot",
+    trade_profit_max = "economy/trade",
     cause_alpha_enabled = "causes/reactions",
     cause_alpha_kills_per_level = "causes/reactions",
     cause_alphakill_enabled = "causes/reactions",
@@ -713,6 +727,33 @@ function on_mcm_load()
                             _track("mutator_area_infest_max_per_level", 1, 5, 1),
                             _track("mutator_area_infest_spawn_num", 1, 5, 1),
                             _track("mutator_area_infest_decay_hours", 0, 168, 4),
+                        },
+                    },
+                },
+            },
+            {
+                id = "economy",
+                gr = {
+                    {
+                        id = "loot",
+                        sh = true,
+                        gr = {
+                            _slide("ui_mcm_ap_economy_loot_title"),
+                            _desc("ui_mcm_ap_economy_loot_desc"),
+                            _check("loot_enabled"),
+                            _track("loot_reservation_radius", 10, 150, 10),
+                            _track("loot_goodwill_step", 50, 2000, 50),
+                            _track("loot_warn_count", 0, 3, 1),
+                            _track("loot_forgive_hours", 1, 24, 1),
+                        },
+                    },
+                    {
+                        id = "trade",
+                        sh = true,
+                        gr = {
+                            _slide("ui_mcm_ap_economy_trade_title"),
+                            _desc("ui_mcm_ap_economy_trade_desc"),
+                            _track("trade_profit_max", 0, 20000, 500),
                         },
                     },
                 },

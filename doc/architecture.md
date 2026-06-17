@@ -113,7 +113,7 @@ Multi-cause files (4): ap_ext_causes_area, ap_ext_causes_instincts, ap_ext_cause
 
 Consequence files (11, always plural): ap_ext_consequences_alpha, ap_ext_consequences_alphakill, ap_ext_consequences_area, ap_ext_consequences_basekill, ap_ext_consequences_harvest, ap_ext_consequences_instincts, ap_ext_consequences_massacre, ap_ext_consequences_needs, ap_ext_consequences_squadkill, ap_ext_consequences_stash, ap_ext_consequences_wounded.
 
-### Ext: named modules (9 files)
+### Ext: named modules (10 files)
 
 | File | Role |
 |------|------|
@@ -122,7 +122,8 @@ Consequence files (11, always plural): ap_ext_consequences_alpha, ap_ext_consequ
 | ap_ext_common | Shared chase pattern: move_actor_chasers / make_move_smart_chasers / make_on_arrive |
 | ap_ext_tracker | Domain state: kill counts, alphas, alpha-dead grace, stalker NEEDS DTO, mutant INSTINCTS DTO, squad OPPORTUNITY DTO |
 | ap_ext_smart_mutator | Runtime smart terrain mutations: territory conquest (shared spawn) and mutant infestation (exclusive spawn) |
-| ap_ext_trade | NPC supply-trader orchestration: loads `configs/alifeplus/ap_trade_policy.ltx` per-rank blocks (`[ap_trade_policy_rookie]` / `[ap_trade_policy_veteran]` split by `RANK_VETERAN`); per-category min / max plus `profit_max` cap per event |
+| ap_ext_trade | NPC supply-trader orchestration: loads `configs/alifeplus/ap_trade_policy.ltx` per-rank blocks (`[ap_trade_policy_rookie]` / `[ap_trade_policy_veteran]` split by `RANK_VETERAN`) for per-category min / max; per-event net-profit cap is the MCM `trade_profit_max` override (economy > trade), applied to all ranks |
+| ap_ext_loot_claim | Corpse loot ownership: xttltable ledger keyed victim -> killer; xevent-hooks `xr_corpse_detection.near_actor` to reserve actor kills from NPC looters within radius; GUI_on_show + actor_on_item_take drive a per-owner goodwill ladder when the player loots a living NPC's claimed kill |
 | ap_ext_fx | Multi-source horror aggregator: composes xpp psy_antenna tint, xsound tinnitus, and level snd_volume ducking via max-across-sources factor; consumers call add_source / remove_source / clear; acquires xpp + xsound slots on first source, releases on last clear |
 | ap_ext_news | News composer: per-consequence templates, slot substitution, speaker selection, dynamic_news_manager dispatch |
 | ap_ext_test | In-game debug commands |

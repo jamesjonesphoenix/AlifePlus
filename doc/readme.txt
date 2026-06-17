@@ -72,6 +72,11 @@ Trade and needs:
 - Squads fill stashes with squad surplus above each category's max, capped per event. Quest items and equipped gear are never deposited.
 - Hunger, fatigue, heal, social, and outpost needs drive campfire and base behavior. Arrival satisfies the need. Inventory items are not destroyed.
 
+Loot ownership:
+- NPCs no longer strip the kills you made while you stand nearby. Walk away and scavengers may take them.
+- Looting a body a living NPC claimed warns that stalker once, then turns him hostile to you alone, never his faction.
+- These controls and the per-visit trade profit cap live under the Economy menu.
+
 Day/night cycle:
 - Stalkers work and trade by day.
 - Stalkers rest and sleep at campfires by night.
@@ -381,7 +386,8 @@ Compatibility & Safety:
 
 Mod compatibility:
 
-  Superseded: none. AlifePlus is a reactive layer, not a replacement for any one mod.
+  Superseded:
+  - NPC Loot Claim, NPC Loot Claim Remade: loot ownership covers both directions (your kills and theirs). Disable them, otherwise both intercept looting a claimed corpse and fight over it.
 
   Conflicts (critical):
   - Unauthorized "synergy" / "bridge" patches claiming to connect AlifePlus to another mod: instability, save corruption.
@@ -392,6 +398,8 @@ Mod compatibility:
   - Faction-relation mods (Dynamic Faction Relations, zone-relation tweaks): change which causes can fire. Intended.
   - Spawn / population mods (Dynamic Mutants, ReSpawn Mutant Collection, Rebound Encounters): more entities to act on; pair with AlifeGuard.
   - Extended sim-distance / offline mods (Living Zone, Extended Offline, ROAD alife range): enlarge the population; fight AlifeGuard more than AlifePlus.
+  - Autolooter / proximity-loot mods: their auto-transfer bypasses the loot-ownership claim when you take an NPC's kill (the warning-and-goodwill ladder never fires); reserving your own kills from NPC looters still works.
+  - Death-drop / weapon-on-ground mods: gear dropped to the ground on death is taken through the gather-items scheme, outside corpse ownership.
 
 ---
 

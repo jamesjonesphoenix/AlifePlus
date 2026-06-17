@@ -1,0 +1,199 @@
+--- ap_ext_loot_claim: corpse loot ownership. One ledger, two enforcement points.
+---
+--- Ledger: every death writes owner = killer_id (xttltable, game-time TTL for hygiene +
+--- abandonment). The owner being the actor reserves the corpse from NPC looting; the owner
+--- being a living NPC makes the player's looting of it a graded relation event.
+---
+--- NPC side (prevention): xevent-hook xr_corpse_detection.near_actor — actor-owned corpses
+--- within the reservation radius are skipped by the corpse-detection scheme (they read as
+--- "near actor"). Beyond the radius the claim lapses and scavengers may loot. Hot path is one
+--- ttl-table lookup + a distance check only for actor-owned corpses.
+---
+--- Player side (consequence): opening an NPC-owned corpse (GUI_on_show mode 4 partner) arms
+--- the session; the first take from that owner warns, subsequent takes (per-owner sliding
+--- window) decrement that owner's personal goodwill until the engine flips it to enemy
+--- (attitude < game_relations attitude_neutal_threshold = -999). Personal only, never faction.
+---
+--- Corpse looting fires only actor_on_item_take (no source object); the corpse is identified
+--- via the open partner. Verified in-game (GAMMA + Anomaly): corpses never fire
+--- actor_on_item_take_from_box (boxes only). One charge per corpse-open session.
+
+local type, tostring, RegisterScriptCallback = type, tostring, RegisterScriptCallback
+local xevent, xttltable, xcreature = xevent, xttltable, xcreature
+local xtime, xobject, xprofiler, xpda = xtime, xobject, xprofiler, xpda
+local CALLBACK = ap_core_const.CALLBACK
+local HOURS_TO_SECONDS = ap_core_const.HOURS_TO_SECONDS
+local cfg = ap_core_mcm.cfg
+
+local LOG = "[EXT.LOOT]"
+
+-- Owner ledger TTL (game seconds). Hygiene + time-based abandonment: a claim older than the
+-- realistic corpse-persistence window lapses so the ledger stays bounded and reused server ids
+-- cannot mis-attribute. game_sec clock so export/import survives save/load (absolute game-time
+-- timestamps stay valid across sessions; os.clock would not).
+local OWNER_TTL_SEC = 6 * HOURS_TO_SECONDS
+
+-- victim_id -> killer_id
+local _owner = nil
+-- per-owner sliding-window theft counter (forgiveness via TTL)
+local _strikes = nil
+-- current corpse-open session: { id, owner, charged }
+local _open = nil
+-- actor id, captured at first update (avoids depending on AC_ID load-time global)
+local _ac_id = nil
+
+--- xevent wrapper over xr_corpse_detection.near_actor. Returns true ("skip, near actor") for a
+--- corpse the actor killed while the actor is within the reservation radius; otherwise the
+--- vanilla distance check. Disabled-system and non-actor-owned corpses fall straight through.
+--- Traces the reserve/lapse decision (gated by ap_core_debug.enabled(); noop when off -- the
+--- common non-owned path returns before the trace branch, so disabled cost is unchanged).
+--- @cost O(1) | common case 1 ttl lookup; actor-owned case + 2 luabind (position/distance)
+local function _near_actor_hook(orig, obj)
+    if not cfg.loot_enabled or not obj or not _ac_id then return orig(obj) end
+    local id = obj:id()
+    if id and _owner:get(id) == _ac_id then
+        local actor = db.actor
+        if not actor then return true end
+        local dist = actor:position():distance_to(obj:position())
+        local reserved = dist < cfg.loot_reservation_radius
+        if ap_core_debug.enabled() then
+            ap_core_debug.debug("%s corpse=%s actor_dist=%.1f radius=%s -> %s",
+                LOG, id, dist, cfg.loot_reservation_radius, reserved and "reserved" or "lapsed")
+        end
+        if reserved then return true end
+        -- beyond reservation radius: claim lapses, vanilla decides
+    end
+    return orig(obj)
+end
+
+--- Record corpse ownership on death. Skips suicides, story corpses, and (for NPC killers)
+--- non-stalker / companion / zombied kills: only a living stalker can hold and defend a claim,
+--- so the player is never penalised for looting those, and goodwill is never set on a mutant.
+--- @cost O(1) | story id always; is_stalker/companion/community only for NPC killers
+local function _on_death(victim, killer)
+    if not cfg.loot_enabled or not victim or not killer then return end
+    _ac_id = _ac_id or (db.actor and db.actor:id())
+    local victim_id, killer_id = victim:id(), killer:id()
+    if victim_id == killer_id then return end
+    if get_object_story_id(victim_id) then return end
+    if killer_id ~= _ac_id then
+        if not xcreature.is_stalker(killer) then return end
+        if killer:has_info("npcx_is_companion") then return end
+        if xcreature.community(killer) == "zombied" then return end
+    end
+    _owner:set(victim_id, killer_id)
+    if ap_core_debug.enabled() then
+        ap_core_debug.debug("%s death v=%s k=%s actor_kill=%s", LOG, victim_id, killer_id, tostring(killer_id == _ac_id))
+    end
+end
+
+--- Warn the actor that the kill is claimed: a PDA tip headed by the owner's name + portrait.
+local function _warn(owner)
+    xpda.npc_tip(owner, "st_ap_loot_claim_warn", { sound = "beep_1" })
+end
+
+--- Notify that the owner has turned on the actor (alarm sound).
+local function _notify_hostile(owner)
+    xpda.npc_tip(owner, "st_ap_loot_claim_hostile", { sound = "danger" })
+end
+
+--- Apply the ladder once for a theft from owner_id. First strike in the window warns;
+--- subsequent strikes drop the owner's personal goodwill toward the actor until the engine
+--- flips it to enemy. Dead/offline owner: claim void, no reaction.
+local function _process_theft(owner_id)
+    local owner = xobject.go(owner_id)
+    if not owner or not owner:alive() then return end
+    local timer = xprofiler.new_if(ap_core_debug.enabled()):start()
+    local strikes = _strikes:count(owner_id)
+    _strikes:add(owner_id)
+    local action
+    if strikes < cfg.loot_warn_count then
+        _warn(owner)
+        action = "warn"
+    else
+        local before = xcreature.get_goodwill(owner, db.actor)
+        xcreature.set_goodwill(owner, before - cfg.loot_goodwill_step, db.actor)
+        if owner:relation(db.actor) == game_object.enemy then _notify_hostile(owner) end
+        action = "penalty"
+    end
+    timer:stop()
+    if ap_core_debug.enabled() then
+        ap_core_debug.debug("%s theft owner=%s strikes=%s action=%s [%.2fms]", LOG, owner_id, strikes + 1, action, timer:get_ms())
+    end
+end
+
+--- Arm the session when an NPC-owned corpse opens. Boxes never match (only corpses are in the
+--- ledger); the actor's own kills are skipped (owner == actor).
+local function _on_gui_show(name)
+    _open = nil
+    if not cfg.loot_enabled or name ~= "UIInventory" then return end
+    if actor_menu.get_last_mode() ~= 4 then return end
+    local partner = ui_inventory.GUI and ui_inventory.GUI:GetPartner()
+    if not partner then return end
+    local id = partner:id()
+    local owner = id and _owner:get(id)
+    if not owner or owner == _ac_id then return end
+    _open = { id = id, owner = owner, charged = false }
+end
+
+local function _on_gui_hide(_name)
+    _open = nil
+end
+
+--- A take while an owned corpse is open = theft. Charge once per session.
+local function _on_item_take(_item)
+    if not _open or _open.charged then return end
+    _open.charged = true
+    _process_theft(_open.owner)
+end
+
+local function _on_first_update()
+    _ac_id = db.actor and db.actor:id()
+end
+
+local function _make_strike_counter()
+    return xttltable.create_ttl_counter({
+        ttl = cfg.loot_forgive_hours * HOURS_TO_SECONDS,
+        clock = xtime.game_sec,
+    })
+end
+
+local function _on_option_change()
+    if _strikes then _strikes = _make_strike_counter() end
+end
+
+local function _on_save_state(m_data)
+    m_data.ap_ext_loot_claim = { owner = _owner:export() }
+end
+
+local function _on_load_state(m_data)
+    local saved = m_data.ap_ext_loot_claim
+    if type(saved) ~= "table" then return end
+    if type(saved.owner) == "table" then _owner:import(saved.owner) end
+end
+
+function on_game_start()
+    _owner = xttltable.create_ttl_table({ default_ttl = OWNER_TTL_SEC, clock = xtime.game_sec })
+    _strikes = _make_strike_counter()
+    _open = nil
+
+    -- on_game_start re-runs on every save load; the hook persists across loads (xevent state is
+    -- not reset), so re-hooking returns false. is_hooked distinguishes that from a real failure.
+    if xevent.is_hooked("xr_corpse_detection", "near_actor")
+        or xevent.hook("xr_corpse_detection", "near_actor", _near_actor_hook) then
+        ap_core_debug.info("%s hooked xr_corpse_detection.near_actor", LOG)
+    else
+        ap_core_debug.warn("%s FAILED to hook xr_corpse_detection.near_actor", LOG)
+    end
+
+    RegisterScriptCallback(CALLBACK.NPC_ON_DEATH_CALLBACK, _on_death)
+    RegisterScriptCallback(CALLBACK.MONSTER_ON_DEATH_CALLBACK, _on_death)
+    RegisterScriptCallback(CALLBACK.GUI_ON_SHOW, _on_gui_show)
+    RegisterScriptCallback(CALLBACK.GUI_ON_HIDE, _on_gui_hide)
+    RegisterScriptCallback(CALLBACK.ACTOR_ON_ITEM_TAKE, _on_item_take)
+    RegisterScriptCallback(CALLBACK.ACTOR_ON_FIRST_UPDATE, _on_first_update)
+    RegisterScriptCallback(CALLBACK.ON_OPTION_CHANGE, _on_option_change)
+    RegisterScriptCallback(CALLBACK.SAVE_STATE, _on_save_state)
+    RegisterScriptCallback(CALLBACK.LOAD_STATE, _on_load_state)
+    ap_core_debug.info("%s Initialized", LOG)
+end

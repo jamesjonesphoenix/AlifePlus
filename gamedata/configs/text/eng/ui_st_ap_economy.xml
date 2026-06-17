@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+  <!-- ==================== LOOT CLAIM TIPS ==================== -->
+  <string id="st_ap_loot_claim_warn">
+    <text>That kill is mine. Hands off.</text>
+  </string>
+  <string id="st_ap_loot_claim_hostile">
+    <text>You robbed the wrong corpse.</text>
+  </string>
+</string_table>
