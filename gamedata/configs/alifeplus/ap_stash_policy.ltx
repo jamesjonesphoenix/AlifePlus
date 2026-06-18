@@ -5,6 +5,9 @@
 ; Quest / untouchable sections in stash -> whole stash skipped (no loot, no clear). Hardcoded.
 ; Toolkit-containing stashes -> whole stash skipped only when MCM consequence_stash_loot_skip_crafting on.
 ; Sell-only categories use 0, 0 (never lootable to squad, never deposited to stash).
+; A row key is either a category or a single item section; an item unlisted by any row is left
+; alone (never looted, never deposited). Grenades are listed individually so smoke (grenade_smoke)
+; is simply left out -- it never enters or leaves a stash (engine crash on NPC throw).
 
 [ap_stash_policy]
 ammo_slot_3_t1    = 15, 15
@@ -12,7 +15,9 @@ ammo_slot_2_t1    = 16, 16
 ammo_slot_3_t2    = 0, 0
 ammo_slot_2_t2    = 0, 0
 ammo_not_equipped = 0, 0
-grenade           = 0, 3
+grenade_f1        = 0, 3
+grenade_rgd5      = 0, 3
+grenade_gd-05     = 0, 3
 grenade_ammo      = 0, 2
 medkit            = 2, 3
 bandage           = 0, 3

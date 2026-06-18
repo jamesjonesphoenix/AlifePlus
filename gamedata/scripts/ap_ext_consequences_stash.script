@@ -76,8 +76,11 @@ local function _stash_has_crafting(sections)
     return false
 end
 
--- Per-squad-member iterate handler: counts items by category into `counts` using member's opts.
--- @cost O(items_in_inventory) | per item: 1 get_category call (cached chain hits in xinventory)
+-- Per-squad-member iterate handler: counts items by policy key into `counts` using member's opts.
+-- policy_key keys an item under its section when the policy names that section, else its category
+-- (and drops untouchable / equipped). An item the policy never names has no key in counts, so it
+-- is invisible to fill / loot -- that is how smoke stays out of stashes (it is simply unlisted).
+-- @cost O(items_in_inventory) | per item: 1 policy_key call (cached chain hits in xinventory)
 local function _scan_member(member_se, member_ids, _opts_out, counts)
     local member_id = member_se.id
     member_ids[#member_ids + 1] = member_id
@@ -85,9 +88,10 @@ local function _scan_member(member_se, member_ids, _opts_out, counts)
     if not npc_go then return end
     local opts = xinventory.get_category_opts(npc_go)
     _opts_out[member_id] = opts
+    local rules = STASH_POLICY.rules
     xinventory.iterate_inventory(member_id, function(_, item)
-        local cat = xinventory.get_category(item, opts)
-        counts[cat] = (counts[cat] or 0) + 1
+        local key = xinventory.policy_key(item, opts, rules)
+        if key then counts[key] = (counts[key] or 0) + 1 end
     end)
 end
 
@@ -117,12 +121,13 @@ local function _is_ammo_slot_category(cat)
     return string_sub(cat, 1, 10) == "ammo_slot_"
 end
 
--- Section-only match for non-ammo categories.
-local function _find_section_for_category(index, cat)
+-- Match an untaken stash section to a non-ammo policy key. A stash section resolves the same
+-- way an item does: its own section name when the policy names that section, else its category.
+local function _find_section_for_category(index, key, rules)
     for j = 1, #index do
-        if not index[j].taken and xinventory.get_section_category(index[j].sec) == cat then
-            return j
-        end
+        local sec = index[j].sec
+        local sec_key = (rules and rules[sec]) and sec or xinventory.get_section_category(sec)
+        if not index[j].taken and sec_key == key then return j end
     end
     return nil
 end
@@ -162,12 +167,12 @@ local function _resolve_candidate(is_ammo, entry, ctx, cursor)
     if is_ammo then
         return _find_ammo_section_for_category(ctx.index, entry.category, ctx.member_ids, ctx.member_opts, cursor)
     end
-    return _find_section_for_category(ctx.index, entry.category), ctx.member_ids[cursor]
+    return _find_section_for_category(ctx.index, entry.category, ctx.rules), ctx.member_ids[cursor]
 end
 
 -- Fill ONE policy entry's min target by taking matching sections from stash. Returns
 -- updated cursor. ctx carries non-mutated per-loot state { index, member_ids,
--- member_opts, counts, taken_secs }.
+-- member_opts, counts, taken_secs, rules }.
 local function _loot_entry(entry, ctx, cursor)
     if entry.rule.min <= 0 then return cursor end
     local cat = entry.category
@@ -265,6 +270,7 @@ local function _arrive_loot(squad, args)
             member_opts = member_opts,
             counts      = counts,
             taken_secs  = taken_secs,
+            rules       = STASH_POLICY.rules,
         })
         _loot_extras(index, member_ids, taken_secs)
         ap_core_debug.observe(trace, PHASE.LOOT_STASH, function()
@@ -281,14 +287,17 @@ local function _arrive_ambush(squad, args)
     ap_ext_tracker.reset_squad_opportunity(squad.id, args.dto_field, xtime.game_sec())
 end
 
--- Per-member pick handler for fill pass. Mutates picks + surplus.
+-- Per-member pick handler for fill pass. Mutates picks + surplus. Each item resolves to its
+-- policy key (section if the policy names it, else category) so a deposit only happens for keys
+-- with surplus -- an unlisted item (e.g. smoke) has no key in surplus and is never deposited.
 local function _pick_for_member(member_id, opts, surplus, picks, fill_max)
+    local rules = STASH_POLICY.rules
     xinventory.iterate_inventory(member_id, function(_, item)
         if #picks >= fill_max then return end
-        local cat = xinventory.get_category(item, opts)
-        if surplus[cat] and surplus[cat] > 0 then
+        local key = xinventory.policy_key(item, opts, rules)
+        if key and surplus[key] and surplus[key] > 0 then
             picks[#picks + 1] = item
-            surplus[cat] = surplus[cat] - 1
+            surplus[key] = surplus[key] - 1
         end
     end)
 end
