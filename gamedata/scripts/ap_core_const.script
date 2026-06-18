@@ -84,6 +84,7 @@ CALLBACK = {
     ACTOR_ON_ITEM_USE = "actor_on_item_use",
     ACTOR_ON_ITEM_TAKE = "actor_on_item_take",
     NPC_ON_ITEM_TAKE = "npc_on_item_take",
+    ACTOR_MENU_ON_ITEM_BEFORE_MOVE = "ActorMenu_on_item_before_move",
     -- Lifecycle
     ACTOR_ON_FIRST_UPDATE = "actor_on_first_update",
     SAVE_STATE = "save_state",
@@ -96,6 +97,7 @@ CALLBACK = {
     -- Death
     NPC_ON_DEATH_CALLBACK = "npc_on_death_callback",
     MONSTER_ON_DEATH_CALLBACK = "monster_on_death_callback",
+    NPC_ON_HIT_CALLBACK = "npc_on_hit_callback",
     -- Loot
     MONSTER_ON_LOOT_INIT = "monster_on_loot_init",
     -- Lifecycle (HUD cleanup + GUI visibility)

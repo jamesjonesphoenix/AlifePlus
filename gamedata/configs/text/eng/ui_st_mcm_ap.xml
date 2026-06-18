@@ -23,6 +23,15 @@
   <string id="ui_mcm_menu_development">
     <text>Development</text>
   </string>
+  <string id="ui_mcm_menu_economy">
+    <text>Economy</text>
+  </string>
+  <string id="ui_mcm_menu_loot">
+    <text>Loot</text>
+  </string>
+  <string id="ui_mcm_menu_trade">
+    <text>Trade</text>
+  </string>
   <!-- ==================== LEVEL 3 MENU NAMES (CAUSE CATEGORIES) ==================== -->
   <string id="ui_mcm_menu_reactions">
     <text>Reactions</text>
@@ -1953,10 +1962,10 @@
     <text>When enabled, squads move at rush speed to claim their nest.</text>
   </string>
   <string id="ui_mcm_ap_economy_loot_title">
-    <text>Loot Ownership</text>
+    <text>Loot</text>
   </string>
   <string id="ui_mcm_ap_economy_loot_desc">
-    <text>Reserve your kills from NPC looters, and make looting an NPC's kill a personal matter. NPCs no longer strip corpses you killed while you are nearby. Taking a kill claimed by a living NPC warns that stalker once, then costs you their personal goodwill until they turn on you - that NPC only, never their faction.</text>
+    <text>NPCs no longer strip the kills you made while you are nearby. A body a living NPC killed cannot be looted while that stalker is alive and within range. Step away, or wait until he dies, and it opens up. The reservation radius governs both sides.</text>
   </string>
   <string id="ui_mcm_ap_economy_loot_loot_enabled">
     <text>Enable loot ownership</text>
@@ -1968,25 +1977,7 @@
     <text>Reservation radius (m)</text>
   </string>
   <string id="ui_mcm_ap_economy_loot_loot_reservation_radius_desc">
-    <text>NPCs skip corpses you killed while you are within this distance. Beyond it the claim lapses and scavengers may loot.</text>
-  </string>
-  <string id="ui_mcm_ap_economy_loot_loot_goodwill_step">
-    <text>Goodwill penalty per theft</text>
-  </string>
-  <string id="ui_mcm_ap_economy_loot_loot_goodwill_step_desc">
-    <text>Personal goodwill lost each time you loot a living NPC's claimed kill after the warning. That NPC turns hostile once its attitude drops below the enemy threshold. Affects that NPC only, not its faction.</text>
-  </string>
-  <string id="ui_mcm_ap_economy_loot_loot_warn_count">
-    <text>Warnings before penalty</text>
-  </string>
-  <string id="ui_mcm_ap_economy_loot_loot_warn_count_desc">
-    <text>Free thefts from a given owner before goodwill starts dropping. 0 = penalty immediately, no warning.</text>
-  </string>
-  <string id="ui_mcm_ap_economy_loot_loot_forgive_hours">
-    <text>Forgiveness window (game hours)</text>
-  </string>
-  <string id="ui_mcm_ap_economy_loot_loot_forgive_hours_desc">
-    <text>An owner forgets your thefts after this many game hours without a new one, resetting to a fresh warning.</text>
+    <text>NPCs skip the corpses you killed while you are within this distance, and a kill a living NPC made cannot be looted while its killer is this close. Beyond it, claims lapse.</text>
   </string>
   <string id="ui_mcm_ap_economy_trade_title">
     <text>Trade</text>

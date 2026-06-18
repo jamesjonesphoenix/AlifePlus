@@ -312,9 +312,6 @@ defaults = {
     -- Economy: loot ownership + trade resolution
     loot_enabled = true,
     loot_reservation_radius = 30,
-    loot_goodwill_step = 250,
-    loot_warn_count = 1,
-    loot_forgive_hours = 2,
     trade_profit_max = 5000,
 
     -- Development
@@ -365,9 +362,6 @@ local _key_to_tab = {
     news_max_age_game_hours = "news",
     loot_enabled = "economy/loot",
     loot_reservation_radius = "economy/loot",
-    loot_goodwill_step = "economy/loot",
-    loot_warn_count = "economy/loot",
-    loot_forgive_hours = "economy/loot",
     trade_profit_max = "economy/trade",
     cause_alpha_enabled = "causes/reactions",
     cause_alpha_kills_per_level = "causes/reactions",
@@ -742,9 +736,6 @@ function on_mcm_load()
                             _desc("ui_mcm_ap_economy_loot_desc"),
                             _check("loot_enabled"),
                             _track("loot_reservation_radius", 10, 150, 10),
-                            _track("loot_goodwill_step", 50, 2000, 50),
-                            _track("loot_warn_count", 0, 3, 1),
-                            _track("loot_forgive_hours", 1, 24, 1),
                         },
                     },
                     {

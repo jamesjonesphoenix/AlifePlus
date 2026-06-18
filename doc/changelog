@@ -1,15 +1,14 @@
 next
   Summary: Loot ownership, trade profit cap, smoke grenade exclusion, AOEngine compatibility, massacre human-only
 
-  - Added loot ownership: NPCs no longer strip the kills you made while you are nearby.
-    Looting a kill a living NPC claimed warns that stalker once, then turns him hostile to you alone.
-    The grudge stays personal to that stalker, never his faction.
-    Reservation radius, goodwill penalty, warnings, and forgiveness window are tunable under Economy.
+  - Added loot ownership, enforced both ways:
+    Kills you made: nearby NPCs leave them for you instead of stripping them.
+    Kills an NPC made: you cannot loot the body while its killer is alive and close by.
+    Tunable reservation radius under Economy.
   - Added a Trade profit cap (Economy): net rubles an NPC gains per trade, all ranks, default 5000.
-  - Changed trade to exclude smoke grenades. NPCs no longer buy them and sell off any they carry.
-    Other grenades trade as before.
+  - Changed trade and stash to leave smoke grenades out of NPC item flow.
+    Grenades are listed individually and smoke is left off, so NPCs never buy, sell, or stash it.
     Smoke grenades crash the game when an NPC throws them on current exes.
-    ap_trade_policy.ltx now takes per-item rows like grenade_smoke = 0, 0 alongside category bands.
   - Added AOEngine v0.55+ support.
   - Fixed massacre investigations firing when a mutant pack wipes a stalker squad.
 
